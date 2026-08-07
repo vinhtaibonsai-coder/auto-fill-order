@@ -3,11 +3,13 @@ import react from '@vitejs/plugin-react'
 import { crx } from '@crxjs/vite-plugin'
 import manifest from './manifest.json'
 
+const isVercel = Boolean(process.env.VERCEL)
+
 export default defineConfig({
   plugins: [
     react(),
-    crx({ manifest }),
-  ],
+    !isVercel && crx({ manifest }),
+  ].filter(Boolean),
   build: {
     rollupOptions: {
       input: {
