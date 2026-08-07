@@ -19,3 +19,4 @@ dist-zip/
 .agents/
 .claude/
 .gemini/
+spec-kit/
