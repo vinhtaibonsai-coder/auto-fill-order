@@ -19,6 +19,14 @@ export default function Quotas() {
   const [groqKeysInput, setGroqKeysInput] = useState('');
   const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
   
+  // Database Live Verification State
+  const [dbStatusInfo, setDbStatusInfo] = useState({
+    synced: false,
+    keyCount: 0,
+    lastUpdated: 'Chưa kiểm tra',
+    dbValue: null
+  });
+
   const [keySaveStatus, setKeySaveStatus] = useState({ text: '', type: '' });
   const [testingKey, setTestingKey] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,81 +39,89 @@ export default function Quotas() {
     .map(k => k.trim())
     .filter(Boolean);
 
-  // 1. TẢI DỮ LIỆU BAN ĐẦU (Ưu tiên LocalStorage + DB Sync)
-  useEffect(() => {
-    const initData = async () => {
-      setLoading(true);
+  // 1. TẢI DỮ LIỆU BAN ĐẦU & TRUY VẤN XÁC MINH TRỰC TIẾP TỪ DATABASE SUPABASE
+  const verifyAndLoadFromDB = async () => {
+    setLoading(true);
 
-      // 1. Tải từ LocalStorage trước để F5 không bao giờ bị mất Key
-      try {
-        const cached = localStorage.getItem(STORAGE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.provider) setAiProvider(parsed.provider);
-          if (parsed.model) setSelectedModel(parsed.model);
-          if (Array.isArray(parsed.keys) && parsed.keys.length > 0) {
-            setGroqKeysInput(parsed.keys.join('\n'));
-          } else if (typeof parsed.keys === 'string') {
-            setGroqKeysInput(parsed.keys);
-          }
+    // Load LocalStorage backup trước
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.provider) setAiProvider(parsed.provider);
+        if (parsed.model) setSelectedModel(parsed.model);
+        if (Array.isArray(parsed.keys) && parsed.keys.length > 0) {
+          setGroqKeysInput(parsed.keys.join('\n'));
         }
-      } catch (e) {
-        console.warn("Lỗi đọc cache LocalStorage:", e);
       }
+    } catch (e) {
+      console.warn("Lỗi đọc LocalStorage:", e);
+    }
 
-      // 2. Kết nối Database Supabase để sync
-      try {
-        if (globalThis.SupabaseCloud) {
-          const configRes = await globalThis.SupabaseCloud.loadConfig();
-          const sess = await AuthSession.getSession();
-          const token = sess ? sess.access_token : configRes.anonKey;
+    // Đọc trực tiếp từ Supabase Database
+    try {
+      if (globalThis.SupabaseCloud) {
+        const configRes = await globalThis.SupabaseCloud.loadConfig();
+        const sess = await AuthSession.getSession();
+        const token = sess ? sess.access_token : configRes.anonKey;
 
-          // Fetch Shops
-          const shopRes = await fetch(`${configRes.url}/rest/v1/shops?select=id,name`, {
-            headers: { 'apikey': configRes.anonKey, 'Authorization': `Bearer ${token}` }
-          });
-          if (shopRes.ok) {
-            const shopData = await shopRes.json();
-            setShops(shopData);
-            if (shopData.length > 0) setSelectedShopId(shopData[0].id);
-          }
+        // Fetch Shops
+        const shopRes = await fetch(`${configRes.url}/rest/v1/shops?select=id,name`, {
+          headers: { 'apikey': configRes.anonKey, 'Authorization': `Bearer ${token}` }
+        });
+        if (shopRes.ok) {
+          const shopData = await shopRes.json();
+          setShops(shopData);
+          if (shopData.length > 0 && !selectedShopId) setSelectedShopId(shopData[0].id);
+        }
 
-          // Fetch System Config (groq_api_keys) từ DB
-          const keyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value&key=eq.groq_api_keys`, {
-            headers: { 'apikey': configRes.anonKey, 'Authorization': `Bearer ${token}` }
-          });
+        // Fetch System Configs (groq_api_keys) từ Supabase Database
+        const keyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value,updated_at&key=eq.groq_api_keys`, {
+          headers: { 'apikey': configRes.anonKey, 'Authorization': `Bearer ${token}` }
+        });
 
-          if (keyRes.ok) {
-            const keyData = await keyRes.json();
-            if (keyData && keyData.length > 0 && keyData[0].value) {
-              const val = keyData[0].value;
-              if (val.provider) setAiProvider(val.provider);
-              if (val.model) setSelectedModel(val.model);
-              
-              let fetchedKeys = [];
-              if (Array.isArray(val.keys)) fetchedKeys = val.keys;
-              else if (typeof val.keys === 'string') fetchedKeys = [val.keys];
+        if (keyRes.ok) {
+          const keyData = await keyRes.json();
+          if (keyData && keyData.length > 0 && keyData[0].value) {
+            const val = keyData[0].value;
+            const lastUpdate = keyData[0].updated_at;
 
-              if (fetchedKeys.length > 0) {
-                const joined = fetchedKeys.join('\n');
-                setGroqKeysInput(joined);
-                // Cập nhật lại cache LocalStorage
-                localStorage.setItem(STORAGE_KEY, JSON.stringify({ provider: val.provider || 'groq', keys: fetchedKeys, model: val.model || 'llama-3.3-70b-versatile' }));
-              }
+            if (val.provider) setAiProvider(val.provider);
+            if (val.model) setSelectedModel(val.model);
+            
+            let fetchedKeys = [];
+            if (Array.isArray(val.keys)) fetchedKeys = val.keys;
+            else if (typeof val.keys === 'string') fetchedKeys = [val.keys];
+
+            if (fetchedKeys.length > 0) {
+              setGroqKeysInput(fetchedKeys.join('\n'));
+              localStorage.setItem(STORAGE_KEY, JSON.stringify({ provider: val.provider || 'groq', keys: fetchedKeys, model: val.model || 'llama-3.3-70b-versatile' }));
             }
+
+            setDbStatusInfo({
+              synced: true,
+              keyCount: fetchedKeys.length,
+              lastUpdated: lastUpdate ? new Date(lastUpdate).toLocaleTimeString() : 'Vừa xong',
+              dbValue: val
+            });
+          } else {
+            setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Chưa có bản ghi trong DB', dbValue: null });
           }
         }
-      } catch (err) {
-        console.warn("Lỗi sync DB:", err);
       }
+    } catch (err) {
+      console.warn("Lỗi kiểm tra DB:", err);
+      setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Lỗi truy vấn DB: ' + err.message, dbValue: null });
+    }
 
-      setLoading(false);
-    };
+    setLoading(false);
+  };
 
-    initData();
+  useEffect(() => {
+    verifyAndLoadFromDB();
   }, []);
 
-  // 2. TẢI QUOTA CỦA SHOP ĐƯỢC CHỌN
+  // 2. TẢI QUOTA SHOP
   useEffect(() => {
     if (!selectedShopId) return;
 
@@ -142,9 +158,9 @@ export default function Quotas() {
     fetchShopQuota();
   }, [selectedShopId]);
 
-  // 3. LƯU VÀ ĐỒNG BỘ AI KEYS (Lưu cả LocalStorage + DB)
+  // 3. ĐỒNG BỘ NGAY LẬP TỨC LÊN SUPABASE DB VÀ ĐỌC LẠI ĐỂ XÁC MINH 100%
   const handleSaveAIKeys = async () => {
-    setKeySaveStatus({ text: 'Đang lưu...', type: 'info' });
+    setKeySaveStatus({ text: '⏳ Đang ghi vào Supabase Database...', type: 'info' });
     const keysArray = keysList;
 
     if (keysArray.length === 0) {
@@ -158,41 +174,72 @@ export default function Quotas() {
       model: selectedModel
     };
 
-    // 1. Lưu lập tức vào LocalStorage (Đảm bảo F5 không bị mất)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payloadObj));
-
-    if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
-      chrome.storage.local.set({ ai_provider: aiProvider, groq_keys: keysArray, ai_model: selectedModel });
-    }
-
-    // 2. Đồng bộ lên Supabase DB
     try {
-      if (globalThis.SupabaseCloud) {
-        const configRes = await globalThis.SupabaseCloud.loadConfig();
-        const sess = await AuthSession.getSession();
-        const token = sess ? sess.access_token : configRes.anonKey;
+      if (!globalThis.SupabaseCloud) throw new Error('Không tìm thấy Supabase Connection');
+      const configRes = await globalThis.SupabaseCloud.loadConfig();
+      const sess = await AuthSession.getSession();
+      const token = sess ? sess.access_token : configRes.anonKey;
 
-        await fetch(`${configRes.url}/rest/v1/system_configs?on_conflict=key`, {
-          method: 'POST',
-          headers: {
-            'apikey': configRes.anonKey,
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify({
-            key: 'groq_api_keys',
-            value: payloadObj,
-            description: `API Keys do Master Admin cấu hình`,
-            updated_at: new Date().toISOString()
-          })
-        });
+      // STEP 1: GHI THẲNG VÀO BẢNG system_configs TRÊN SUPABASE DB
+      const dbRes = await fetch(`${configRes.url}/rest/v1/system_configs?on_conflict=key`, {
+        method: 'POST',
+        headers: {
+          'apikey': configRes.anonKey,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          key: 'groq_api_keys',
+          value: payloadObj,
+          description: `API Keys do Master Admin cấu hình`,
+          updated_at: new Date().toISOString()
+        })
+      });
+
+      if (!dbRes.ok) {
+        const errText = await dbRes.text();
+        throw new Error(`Supabase từ chối ghi DB (${dbRes.status}): ${errText}`);
       }
 
-      setKeySaveStatus({ text: `✅ Đã lưu ${keysArray.length} Keys thành công! (Dữ liệu đã được lưu bền vững)`, type: 'success' });
-      setTimeout(() => setKeySaveStatus({ text: '', type: '' }), 4000);
+      // STEP 2: TRUY VẤN LẠI NGAY TỪ DATABASE SUPABASE ĐỂ XÁC MINH 100% THÀNH CÔNG
+      const verifyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value,updated_at&key=eq.groq_api_keys`, {
+        headers: {
+          'apikey': configRes.anonKey,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!verifyRes.ok) throw new Error('Không thể đọc lại dữ liệu vừa lưu từ Supabase DB.');
+      const verifyData = await verifyRes.json();
+
+      if (verifyData && verifyData.length > 0 && verifyData[0].value) {
+        const savedCount = verifyData[0].value.keys?.length || 0;
+        const lastUpdate = verifyData[0].updated_at || new Date().toISOString();
+
+        // ĐỒNG BỘ ĐỒNG THỜI VÀO LOCALSTORAGE VÀ EXTENSION STORAGE KHI DB ĐÃ XÁC NHẬN
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payloadObj));
+        if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+          chrome.storage.local.set({ ai_provider: aiProvider, groq_keys: keysArray, ai_model: selectedModel });
+        }
+
+        setDbStatusInfo({
+          synced: true,
+          keyCount: savedCount,
+          lastUpdated: new Date(lastUpdate).toLocaleTimeString(),
+          dbValue: verifyData[0].value
+        });
+
+        setKeySaveStatus({
+          text: `🟢 ĐÃ ĐỒNG BỘ DATABASE SUPABASE THÀNH CÔNG 100%! (Đã đọc lại xác minh DB có ${savedCount} Keys lúc ${new Date(lastUpdate).toLocaleTimeString()})`,
+          type: 'success'
+        });
+      } else {
+        throw new Error('Database chưa lưu lại bản ghi.');
+      }
     } catch (e) {
-      setKeySaveStatus({ text: 'Đã lưu vào bộ nhớ máy (Lỗi kết nối DB: ' + e.message + ')', type: 'warning' });
+      setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Thất bại', dbValue: null });
+      setKeySaveStatus({ text: `🔴 LỖI ĐỒNG BỘ SUPABASE DATABASE: ${e.message}`, type: 'error' });
     }
   };
 
@@ -232,7 +279,7 @@ export default function Quotas() {
       }
 
       if (res.ok) {
-        setKeySaveStatus({ text: `🟢 Kiểm tra THÀNH CÔNG! Key hoạt động bình thường.`, type: 'success' });
+        setKeySaveStatus({ text: `🟢 Kiểm tra THÀNH CÔNG! API Key (${aiProvider.toUpperCase()}) hoạt động bình thường.`, type: 'success' });
       } else {
         const errJson = await res.json().catch(() => ({}));
         setKeySaveStatus({ text: `🔴 Key lỗi (${res.status}): ${errJson.error?.message || 'Không thể kết nối API'}`, type: 'error' });
@@ -287,24 +334,60 @@ export default function Quotas() {
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div>
-        <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 4px 0', color: '#0f172a' }}>
-          ⚙️ Cấu Hình AI & Quản Lý Quotas
-        </h2>
-        <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
-          Thiết lập nhà cung cấp AI, lưu API Key và quản lý hạn mức sử dụng theo từng cửa hàng.
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 4px 0', color: '#0f172a' }}>
+            ⚙️ Cấu Hình AI Engine & Quản Lý Quotas
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
+            Đồng bộ ngay tức thì giữa LocalStorage và Supabase Database kèm xác minh kết quả ghi DB.
+          </p>
+        </div>
+
+        {/* CỤM BADGE HIỂN THỊ TRẠNG THÁI XÁC MINH DATABASE */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={verifyAndLoadFromDB}
+            style={{ padding: '6px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            🔍 Verify DB Now
+          </button>
+        </div>
+      </div>
+
+      {/* KHỐI HIỂN THỊ TRẠNG THÁI ĐỒNG BỘ DATABASE LIVE */}
+      <div style={{
+        background: dbStatusInfo.synced ? '#f0fdf4' : '#fff1f2',
+        border: `1px solid ${dbStatusInfo.synced ? '#bbf7d0' : '#fecdd3'}`,
+        borderRadius: '8px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ fontSize: '18px' }}>{dbStatusInfo.synced ? '🟢' : '🔴'}</div>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: dbStatusInfo.synced ? '#166534' : '#991b1b' }}>
+              TRẠNG THÁI SUPABASE DATABASE: {dbStatusInfo.synced ? 'ĐÃ ĐỒNG BỘ 100%' : 'CHƯA ĐỒNG BỘ DB'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
+              Bảng <code>system_configs</code> | Số Keys trong DB: <strong>{dbStatusInfo.keyCount} Keys</strong> | Cập nhật lần cuối: <strong>{dbStatusInfo.lastUpdated}</strong>
+            </div>
+          </div>
+        </div>
+        {dbStatusInfo.synced && (
+          <span style={{ background: '#dcfce7', color: '#15803d', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', fontWeight: 700 }}>
+            VERIFIED IN DB
+          </span>
+        )}
       </div>
 
       {/* CARD 1: CẤU HÌNH AI PROVIDER & API KEYS */}
       <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 600, marginTop: 0, marginBottom: '16px', color: '#0f172a' }}>
-          1. Nhà Cung Cấp AI & API Keys
+          1. Nhà Cung Cấp AI Engine & API Keys
         </h3>
 
         {keySaveStatus.text && (
           <div style={{
-            padding: '10px 12px', marginBottom: '16px', borderRadius: '6px', fontSize: '13px', fontWeight: 500,
+            padding: '10px 12px', marginBottom: '16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
             background: keySaveStatus.type === 'error' ? '#fee2e2' : keySaveStatus.type === 'success' ? '#dcfce7' : '#f1f5f9',
             color: keySaveStatus.type === 'error' ? '#991b1b' : keySaveStatus.type === 'success' ? '#166534' : '#334155',
             border: `1px solid ${keySaveStatus.type === 'error' ? '#fca5a5' : keySaveStatus.type === 'success' ? '#86efac' : '#cbd5e1'}`
@@ -383,28 +466,21 @@ export default function Quotas() {
           />
         </div>
 
-        {/* THÔNG TIN KEYS ĐANG DÙNG */}
-        {keysList.length > 0 && (
-          <div style={{ marginBottom: '16px', fontSize: '12px', color: '#475569', background: '#f1f5f9', padding: '8px 12px', borderRadius: '6px' }}>
-            Đang cấu hình <strong>{keysList.length} API Key</strong> ({aiProvider.toUpperCase()}). Bản ghi sẽ được tự động lưu bền vững.
-          </div>
-        )}
-
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={handleSaveAIKeys}
             style={{
-              padding: '9px 18px', background: '#2563eb', color: '#ffffff', border: 'none',
+              padding: '10px 20px', background: '#2563eb', color: '#ffffff', border: 'none',
               borderRadius: '6px', fontWeight: 600, fontSize: '13px', cursor: 'pointer'
             }}
           >
-            💾 Lưu Cấu Hình AI
+            💾 Lưu & Đồng Bộ DATABASE
           </button>
           <button
             onClick={handleTestConnection}
             disabled={testingKey}
             style={{
-              padding: '9px 16px', background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1',
+              padding: '10px 16px', background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1',
               borderRadius: '6px', fontWeight: 600, fontSize: '13px', cursor: testingKey ? 'not-allowed' : 'pointer'
             }}
           >
