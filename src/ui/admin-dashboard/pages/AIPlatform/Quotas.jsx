@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthSession } from '../../../../domain/auth/auth.session.js';
+import { SystemConfigRepository, ShopQuotaRepository } from '../../../../domain/admin/admin.config.repository.js';
+import { AdminRepository } from '../../../../domain/admin/admin.repository.js';
 
 const STORAGE_KEY = 'ag_ai_provider_config';
 
@@ -10,25 +12,6 @@ CREATE POLICY "allow_read_system_configs" ON public.system_configs FOR SELECT US
 DROP POLICY IF EXISTS "allow_write_system_configs" ON public.system_configs;
 CREATE POLICY "allow_write_system_configs" ON public.system_configs FOR ALL USING (true) WITH CHECK (true);
 GRANT ALL ON TABLE public.system_configs TO authenticated, anon, service_role;`;
-
-// Helper kiềm tra và tạo Headers an toàn chuẩn 3 phần JWT
-const getValidAuthHeaders = (configRes, sess) => {
-  const anonKey = (configRes?.anonKey || '').trim();
-  const headers = { 'Content-Type': 'application/json' };
-  
-  if (anonKey) {
-    headers['apikey'] = anonKey;
-  }
-
-  const userToken = sess?.access_token;
-  if (typeof userToken === 'string' && userToken.split('.').length === 3) {
-    headers['Authorization'] = `Bearer ${userToken}`;
-  } else if (typeof anonKey === 'string' && anonKey.split('.').length === 3) {
-    headers['Authorization'] = `Bearer ${anonKey}`;
-  }
-
-  return headers;
-};
 
 export default function Quotas() {
   const [shops, setShops] = useState([]);
@@ -61,18 +44,15 @@ export default function Quotas() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [showSqlGuide, setShowSqlGuide] = useState(false);
 
-  // Key array computed
   const keysList = groqKeysInput
     .split(/[\n,]+/)
     .map(k => k.trim())
     .filter(Boolean);
 
-  // 1. TẢI DỮ LIỆU BAN ĐẦU & TRUY VẤN XÁC MINH TRỰC TIẾP TỪ DATABASE SUPABASE
   const verifyAndLoadFromDB = async () => {
     setLoading(true);
     let loadedFromCache = false;
 
-    // Load LocalStorage backup trước
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
@@ -88,59 +68,44 @@ export default function Quotas() {
       console.warn("Lỗi đọc LocalStorage:", e);
     }
 
-    // Đọc trực tiếp từ Supabase Database
     try {
       if (globalThis.SupabaseCloud) {
-        const configRes = await globalThis.SupabaseCloud.loadConfig();
-        const sess = await AuthSession.getSession().catch(() => null);
-        const headers = getValidAuthHeaders(configRes, sess);
+        const shopData = await AdminRepository.getShops().catch(() => []);
+        setShops(shopData);
+        if (shopData.length > 0 && !selectedShopId) setSelectedShopId(shopData[0].id);
 
-        // Fetch Shops
-        const shopRes = await fetch(`${configRes.url}/rest/v1/shops?select=id,name`, { headers });
-        if (shopRes.ok) {
-          const shopData = await shopRes.json();
-          setShops(shopData);
-          if (shopData.length > 0 && !selectedShopId) setSelectedShopId(shopData[0].id);
-        }
+        const keyData = await SystemConfigRepository.getSystemConfig('groq_api_keys');
 
-        // Fetch System Configs (groq_api_keys) từ Supabase Database
-        const keyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value,updated_at&key=eq.groq_api_keys`, { headers });
+        if (keyData && keyData.length > 0 && keyData[0].value) {
+          const val = keyData[0].value;
+          const lastUpdate = keyData[0].updated_at;
 
-        if (keyRes.ok) {
-          const keyData = await keyRes.json();
-          if (keyData && keyData.length > 0 && keyData[0].value) {
-            const val = keyData[0].value;
-            const lastUpdate = keyData[0].updated_at;
+          if (val.provider) setAiProvider(val.provider);
+          if (val.model) setSelectedModel(val.model);
+          
+          let fetchedKeys = [];
+          if (Array.isArray(val.keys)) fetchedKeys = val.keys;
+          else if (typeof val.keys === 'string') fetchedKeys = [val.keys];
 
-            if (val.provider) setAiProvider(val.provider);
-            if (val.model) setSelectedModel(val.model);
-            
-            let fetchedKeys = [];
-            if (Array.isArray(val.keys)) fetchedKeys = val.keys;
-            else if (typeof val.keys === 'string') fetchedKeys = [val.keys];
-
-            if (fetchedKeys.length > 0) {
-              setGroqKeysInput(fetchedKeys.join('\n'));
-              localStorage.setItem(STORAGE_KEY, JSON.stringify({ provider: val.provider || 'groq', keys: fetchedKeys, model: val.model || 'llama-3.3-70b-versatile' }));
-            }
-
-            setDbStatusInfo({
-              synced: true,
-              keyCount: fetchedKeys.length,
-              lastUpdated: lastUpdate ? new Date(lastUpdate).toLocaleTimeString() : 'Vừa xong',
-              errorDetails: null
-            });
-          } else {
-            setDbStatusInfo({ synced: false, keyCount: loadedFromCache ? keysList.length : 0, lastUpdated: 'Chưa có bản ghi groq_api_keys trong DB (Vui lòng bấm nút Lưu để tạo)', errorDetails: 'Bảng system_configs chưa có dữ liệu key' });
+          if (fetchedKeys.length > 0) {
+            setGroqKeysInput(fetchedKeys.join('\n'));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ provider: val.provider || 'groq', keys: fetchedKeys, model: val.model || 'llama-3.3-70b-versatile' }));
           }
+
+          setDbStatusInfo({
+            synced: true,
+            keyCount: fetchedKeys.length,
+            lastUpdated: lastUpdate ? new Date(lastUpdate).toLocaleTimeString() : 'Vừa xong',
+            errorDetails: null
+          });
         } else {
-          const errTxt = await keyRes.text();
-          setDbStatusInfo({ synced: false, keyCount: loadedFromCache ? keysList.length : 0, lastUpdated: 'Lỗi truy vấn DB', errorDetails: `Supabase HTTP ${keyRes.status}: ${errTxt}` });
+          setDbStatusInfo({ synced: false, keyCount: loadedFromCache ? keysList.length : 0, lastUpdated: 'Chưa có bản ghi groq_api_keys trong DB (Vui lòng bấm nút Lưu để tạo)', errorDetails: 'Bảng system_configs chưa có dữ liệu key' });
         }
       }
     } catch (err) {
       console.warn("Lỗi kiểm tra DB:", err);
       setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Lỗi kết nối DB', errorDetails: err.message });
+      if (err.message.includes('401') || err.message.includes('RLS')) setShowSqlGuide(true);
     }
 
     setLoading(false);
@@ -150,32 +115,24 @@ export default function Quotas() {
     verifyAndLoadFromDB();
   }, []);
 
-  // 2. TẢI QUOTA SHOP
   useEffect(() => {
     if (!selectedShopId) return;
 
     const fetchShopQuota = async () => {
       try {
         if (!globalThis.SupabaseCloud) return;
-        const configRes = await globalThis.SupabaseCloud.loadConfig();
-        const sess = await AuthSession.getSession().catch(() => null);
-        const headers = getValidAuthHeaders(configRes, sess);
+        const result = await ShopQuotaRepository.getShopQuota(selectedShopId);
 
-        const response = await fetch(`${configRes.url}/rest/v1/shop_quotas?select=*&shop_id=eq.${selectedShopId}`, { headers });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result && result.length > 0) {
-            const q = result[0];
-            setQuota({
-              shopId: q.shop_id,
-              planName: q.plan_name || 'FREE',
-              dailyQuota: q.ai_quota_limit || 100,
-              usedQuota: q.ai_quota_used || 0
-            });
-          } else {
-            setQuota({ shopId: selectedShopId, planName: 'FREE', dailyQuota: 100, usedQuota: 0 });
-          }
+        if (result && result.length > 0) {
+          const q = result[0];
+          setQuota({
+            shopId: q.shop_id,
+            planName: q.plan_name || 'FREE',
+            dailyQuota: q.ai_quota_limit || 100,
+            usedQuota: q.ai_quota_used || 0
+          });
+        } else {
+          setQuota({ shopId: selectedShopId, planName: 'FREE', dailyQuota: 100, usedQuota: 0 });
         }
       } catch (err) {
         console.error(err);
@@ -185,7 +142,6 @@ export default function Quotas() {
     fetchShopQuota();
   }, [selectedShopId]);
 
-  // 3. ĐỒNG BỘ NGAY LẬP TỨC LÊN SUPABASE DB VÀ ĐỌC LẠI XÁC MINH 100%
   const handleSaveAIKeys = async () => {
     setKeySaveStatus({ text: '⏳ Đang đồng bộ vào Supabase Database...', type: 'info' });
     const keysArray = keysList;
@@ -201,7 +157,6 @@ export default function Quotas() {
       model: selectedModel
     };
 
-    // Lưu LocalStorage lập tức để bảo vệ dữ liệu trên máy
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payloadObj));
     if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
       chrome.storage.local.set({ ai_provider: aiProvider, groq_keys: keysArray, ai_model: selectedModel });
@@ -209,36 +164,12 @@ export default function Quotas() {
 
     try {
       if (!globalThis.SupabaseCloud) throw new Error('Không tìm thấy Supabase Connection');
-      const configRes = await globalThis.SupabaseCloud.loadConfig();
-      const sess = await AuthSession.getSession().catch(() => null);
-      const headers = getValidAuthHeaders(configRes, sess);
-      headers['Prefer'] = 'resolution=merge-duplicates';
+      
+      await SystemConfigRepository.upsertSystemConfig('groq_api_keys', payloadObj, 'Groq & AI Provider Keys do Master Admin cấu hình');
+      
+      await AdminRepository.insertAuditLog('ADMIN_UPDATE_AI_KEYS', 'groq_api_keys', 'config', null, { keyCount: keysArray.length, provider: aiProvider });
 
-      // GHI TRỰC TIẾP VÀO BẢNG system_configs TRÊN SUPABASE DB
-      const dbRes = await fetch(`${configRes.url}/rest/v1/system_configs?on_conflict=key`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          key: 'groq_api_keys',
-          value: payloadObj,
-          description: `Groq & AI Provider Keys do Master Admin cấu hình`,
-          updated_at: new Date().toISOString()
-        })
-      });
-
-      if (!dbRes.ok) {
-        const errText = await dbRes.text();
-        setShowSqlGuide(true);
-        throw new Error(`Supabase RLS từ chối ghi DB (${dbRes.status}): ${errText}`);
-      }
-
-      // TRUY VẤN LẠI NGAY TỪ DATABASE SUPABASE ĐỂ XÁC MINH 100% THÀNH CÔNG
-      const verifyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value,updated_at&key=eq.groq_api_keys`, {
-        headers: getValidAuthHeaders(configRes, sess)
-      });
-
-      if (!verifyRes.ok) throw new Error('Không thể truy vấn lại dữ liệu vừa lưu từ Supabase DB.');
-      const verifyData = await verifyRes.json();
+      const verifyData = await SystemConfigRepository.getSystemConfig('groq_api_keys');
 
       if (verifyData && verifyData.length > 0 && verifyData[0].value) {
         const savedCount = verifyData[0].value.keys?.length || 0;
@@ -262,10 +193,10 @@ export default function Quotas() {
     } catch (e) {
       setDbStatusInfo({ synced: false, keyCount: keysArray.length, lastUpdated: 'Thất bại DB', errorDetails: e.message });
       setKeySaveStatus({ text: `🔴 LỖI ĐỒNG BỘ SUPABASE DATABASE: ${e.message}`, type: 'error' });
+      if (e.message.includes('RLS') || e.message.includes('401')) setShowSqlGuide(true);
     }
   };
 
-  // 4. TEST KẾT NỐI KEY
   const handleTestConnection = async () => {
     setTestingKey(true);
     setKeySaveStatus({ text: `⏳ Đang kiểm tra kết nối API Key...`, type: 'info' });
@@ -312,35 +243,18 @@ export default function Quotas() {
     setTestingKey(false);
   };
 
-  // Xóa 1 Key khỏi danh sách
   const handleRemoveSingleKey = (indexToRemove) => {
     const updatedList = keysList.filter((_, idx) => idx !== indexToRemove);
     setGroqKeysInput(updatedList.join('\n'));
   };
 
-  // 5. LƯU QUOTA SHOP
   const handleSaveQuota = async () => {
     setSaving(true);
     setMessage({ text: '', type: '' });
     try {
-      const configRes = await globalThis.SupabaseCloud.loadConfig();
-      const sess = await AuthSession.getSession().catch(() => null);
-      const headers = getValidAuthHeaders(configRes, sess);
-      headers['Prefer'] = 'resolution=merge-duplicates';
+      await ShopQuotaRepository.upsertShopQuota(selectedShopId, quota.planName, quota.dailyQuota, quota.usedQuota);
+      await AdminRepository.insertAuditLog('ADMIN_UPDATE_SHOP_QUOTA', selectedShopId, 'shop', null, { planName: quota.planName, dailyQuota: quota.dailyQuota });
 
-      const response = await fetch(`${configRes.url}/rest/v1/shop_quotas?on_conflict=shop_id`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          shop_id: selectedShopId,
-          plan_name: quota.planName,
-          ai_quota_limit: quota.dailyQuota,
-          ai_quota_used: quota.usedQuota,
-          updated_at: new Date().toISOString()
-        })
-      });
-
-      if (!response.ok) throw new Error('Lỗi lưu dữ liệu');
       setMessage({ text: 'Lưu Quota Shop thành công!', type: 'success' });
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err) {
