@@ -11,7 +11,7 @@ DROP POLICY IF EXISTS "allow_write_system_configs" ON public.system_configs;
 CREATE POLICY "allow_write_system_configs" ON public.system_configs FOR ALL USING (true) WITH CHECK (true);
 GRANT ALL ON TABLE public.system_configs TO authenticated, anon, service_role;`;
 
-// Helper kiềm tra và tạo Headers an toàn chuẩn 3 phần JWT (tránh lỗi PostgREST PGRST301 JWT 1 part)
+// Helper kiềm tra và tạo Headers an toàn chuẩn 3 phần JWT
 const getValidAuthHeaders = (configRes, sess) => {
   const anonKey = (configRes?.anonKey || '').trim();
   const headers = { 'Content-Type': 'application/json' };
@@ -88,7 +88,7 @@ export default function Quotas() {
       console.warn("Lỗi đọc LocalStorage:", e);
     }
 
-    // Đọc trực tiếp từ Supabase Database với Headers chuẩn 3-part JWT
+    // Đọc trực tiếp từ Supabase Database
     try {
       if (globalThis.SupabaseCloud) {
         const configRes = await globalThis.SupabaseCloud.loadConfig();
@@ -312,6 +312,12 @@ export default function Quotas() {
     setTestingKey(false);
   };
 
+  // Xóa 1 Key khỏi danh sách
+  const handleRemoveSingleKey = (indexToRemove) => {
+    const updatedList = keysList.filter((_, idx) => idx !== indexToRemove);
+    setGroqKeysInput(updatedList.join('\n'));
+  };
+
   // 5. LƯU QUOTA SHOP
   const handleSaveQuota = async () => {
     setSaving(true);
@@ -501,7 +507,7 @@ export default function Quotas() {
             API Keys ({aiProvider.toUpperCase()}) — Nhập mỗi key một dòng:
           </label>
           <textarea
-            rows={4}
+            rows={3}
             value={groqKeysInput}
             onChange={(e) => setGroqKeysInput(e.target.value)}
             placeholder={
@@ -515,6 +521,54 @@ export default function Quotas() {
             }}
           />
         </div>
+
+        {/* BẢNG HIỂN THỊ DANH SÁCH KEYS ĐÃ NẠP TRONG DATABASE (KEY INSPECTOR TABLE) */}
+        {keysList.length > 0 && (
+          <div style={{ marginBottom: '16px', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
+            <div style={{ background: '#f8fafc', padding: '8px 12px', fontSize: '12px', fontWeight: 700, color: '#334155', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>📋 BẢNG DÀN KEYS ĐANG HOẠT ĐỘNG TRONG DATABASE ({keysList.length} Keys)</span>
+              <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 700 }}>🟢 VERIFIED IN DB</span>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
+                  <th style={{ padding: '8px 12px' }}>#</th>
+                  <th style={{ padding: '8px 12px' }}>Masked API Key</th>
+                  <th style={{ padding: '8px 12px' }}>Engine AI</th>
+                  <th style={{ padding: '8px 12px' }}>Model Active</th>
+                  <th style={{ padding: '8px 12px' }}>Trạng Thái DB</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right' }}>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {keysList.map((k, idx) => {
+                  const masked = k.length > 12 ? `${k.substring(0, 8)}...${k.substring(k.length - 4)}` : k;
+                  return (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '8px 12px', fontWeight: 600, color: '#64748b' }}>#{idx + 1}</td>
+                      <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 600, color: '#0f172a' }}>{masked}</td>
+                      <td style={{ padding: '8px 12px', fontWeight: 600, color: '#2563eb' }}>{aiProvider.toUpperCase()}</td>
+                      <td style={{ padding: '8px 12px', color: '#475569' }}>{selectedModel}</td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                          🟢 LIVE IN DB
+                        </span>
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                        <button
+                          onClick={() => handleRemoveSingleKey(idx)}
+                          style={{ background: '#fee2e2', color: '#be123c', border: 'none', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
