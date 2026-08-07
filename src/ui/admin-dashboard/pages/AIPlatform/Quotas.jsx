@@ -11,6 +11,25 @@ DROP POLICY IF EXISTS "allow_write_system_configs" ON public.system_configs;
 CREATE POLICY "allow_write_system_configs" ON public.system_configs FOR ALL USING (true) WITH CHECK (true);
 GRANT ALL ON TABLE public.system_configs TO authenticated, anon, service_role;`;
 
+// Helper kiềm tra và tạo Headers an toàn chuẩn 3 phần JWT (tránh lỗi PostgREST PGRST301 JWT 1 part)
+const getValidAuthHeaders = (configRes, sess) => {
+  const anonKey = (configRes?.anonKey || '').trim();
+  const headers = { 'Content-Type': 'application/json' };
+  
+  if (anonKey) {
+    headers['apikey'] = anonKey;
+  }
+
+  const userToken = sess?.access_token;
+  if (typeof userToken === 'string' && userToken.split('.').length === 3) {
+    headers['Authorization'] = `Bearer ${userToken}`;
+  } else if (typeof anonKey === 'string' && anonKey.split('.').length === 3) {
+    headers['Authorization'] = `Bearer ${anonKey}`;
+  }
+
+  return headers;
+};
+
 export default function Quotas() {
   const [shops, setShops] = useState([]);
   const [selectedShopId, setSelectedShopId] = useState('');
@@ -53,7 +72,7 @@ export default function Quotas() {
     setLoading(true);
     let loadedFromCache = false;
 
-    // Tải từ LocalStorage trước để giao diện không bị gián đoạn
+    // Load LocalStorage backup trước
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
@@ -69,17 +88,15 @@ export default function Quotas() {
       console.warn("Lỗi đọc LocalStorage:", e);
     }
 
-    // Đọc trực tiếp từ Supabase Database
+    // Đọc trực tiếp từ Supabase Database với Headers chuẩn 3-part JWT
     try {
       if (globalThis.SupabaseCloud) {
         const configRes = await globalThis.SupabaseCloud.loadConfig();
-        const sess = await AuthSession.getSession();
-        const token = sess ? sess.access_token : configRes.anonKey;
+        const sess = await AuthSession.getSession().catch(() => null);
+        const headers = getValidAuthHeaders(configRes, sess);
 
         // Fetch Shops
-        const shopRes = await fetch(`${configRes.url}/rest/v1/shops?select=id,name`, {
-          headers: { 'apikey': configRes.anonKey, 'Authorization': `Bearer ${token}` }
-        });
+        const shopRes = await fetch(`${configRes.url}/rest/v1/shops?select=id,name`, { headers });
         if (shopRes.ok) {
           const shopData = await shopRes.json();
           setShops(shopData);
@@ -87,9 +104,7 @@ export default function Quotas() {
         }
 
         // Fetch System Configs (groq_api_keys) từ Supabase Database
-        const keyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value,updated_at&key=eq.groq_api_keys`, {
-          headers: { 'apikey': configRes.anonKey, 'Authorization': `Bearer ${token}` }
-        });
+        const keyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value,updated_at&key=eq.groq_api_keys`, { headers });
 
         if (keyRes.ok) {
           const keyData = await keyRes.json();
@@ -143,12 +158,10 @@ export default function Quotas() {
       try {
         if (!globalThis.SupabaseCloud) return;
         const configRes = await globalThis.SupabaseCloud.loadConfig();
-        const sess = await AuthSession.getSession();
-        const token = sess ? sess.access_token : configRes.anonKey;
+        const sess = await AuthSession.getSession().catch(() => null);
+        const headers = getValidAuthHeaders(configRes, sess);
 
-        const response = await fetch(`${configRes.url}/rest/v1/shop_quotas?select=*&shop_id=eq.${selectedShopId}`, {
-          headers: { 'apikey': configRes.anonKey, 'Authorization': `Bearer ${token}` }
-        });
+        const response = await fetch(`${configRes.url}/rest/v1/shop_quotas?select=*&shop_id=eq.${selectedShopId}`, { headers });
 
         if (response.ok) {
           const result = await response.json();
@@ -197,18 +210,14 @@ export default function Quotas() {
     try {
       if (!globalThis.SupabaseCloud) throw new Error('Không tìm thấy Supabase Connection');
       const configRes = await globalThis.SupabaseCloud.loadConfig();
-      const sess = await AuthSession.getSession();
-      const token = sess ? sess.access_token : configRes.anonKey;
+      const sess = await AuthSession.getSession().catch(() => null);
+      const headers = getValidAuthHeaders(configRes, sess);
+      headers['Prefer'] = 'resolution=merge-duplicates';
 
       // GHI TRỰC TIẾP VÀO BẢNG system_configs TRÊN SUPABASE DB
       const dbRes = await fetch(`${configRes.url}/rest/v1/system_configs?on_conflict=key`, {
         method: 'POST',
-        headers: {
-          'apikey': configRes.anonKey,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates'
-        },
+        headers: headers,
         body: JSON.stringify({
           key: 'groq_api_keys',
           value: payloadObj,
@@ -225,10 +234,7 @@ export default function Quotas() {
 
       // TRUY VẤN LẠI NGAY TỪ DATABASE SUPABASE ĐỂ XÁC MINH 100% THÀNH CÔNG
       const verifyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value,updated_at&key=eq.groq_api_keys`, {
-        headers: {
-          'apikey': configRes.anonKey,
-          'Authorization': `Bearer ${token}`
-        }
+        headers: getValidAuthHeaders(configRes, sess)
       });
 
       if (!verifyRes.ok) throw new Error('Không thể truy vấn lại dữ liệu vừa lưu từ Supabase DB.');
@@ -312,17 +318,13 @@ export default function Quotas() {
     setMessage({ text: '', type: '' });
     try {
       const configRes = await globalThis.SupabaseCloud.loadConfig();
-      const sess = await AuthSession.getSession();
-      const token = sess ? sess.access_token : configRes.anonKey;
+      const sess = await AuthSession.getSession().catch(() => null);
+      const headers = getValidAuthHeaders(configRes, sess);
+      headers['Prefer'] = 'resolution=merge-duplicates';
 
       const response = await fetch(`${configRes.url}/rest/v1/shop_quotas?on_conflict=shop_id`, {
         method: 'POST',
-        headers: {
-          'apikey': configRes.anonKey,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates'
-        },
+        headers: headers,
         body: JSON.stringify({
           shop_id: selectedShopId,
           plan_name: quota.planName,
