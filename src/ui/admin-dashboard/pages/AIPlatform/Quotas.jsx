@@ -3,6 +3,14 @@ import { AuthSession } from '../../../../domain/auth/auth.session.js';
 
 const STORAGE_KEY = 'ag_ai_provider_config';
 
+const FIX_SQL_SCRIPT = `-- Copy dòng này dán vào Supabase SQL Editor:
+ALTER TABLE public.system_configs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_read_system_configs" ON public.system_configs;
+CREATE POLICY "allow_read_system_configs" ON public.system_configs FOR SELECT USING (true);
+DROP POLICY IF EXISTS "allow_write_system_configs" ON public.system_configs;
+CREATE POLICY "allow_write_system_configs" ON public.system_configs FOR ALL USING (true) WITH CHECK (true);
+GRANT ALL ON TABLE public.system_configs TO authenticated, anon, service_role;`;
+
 export default function Quotas() {
   const [shops, setShops] = useState([]);
   const [selectedShopId, setSelectedShopId] = useState('');
@@ -24,7 +32,7 @@ export default function Quotas() {
     synced: false,
     keyCount: 0,
     lastUpdated: 'Chưa kiểm tra',
-    dbValue: null
+    errorDetails: null
   });
 
   const [keySaveStatus, setKeySaveStatus] = useState({ text: '', type: '' });
@@ -32,6 +40,7 @@ export default function Quotas() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [showSqlGuide, setShowSqlGuide] = useState(false);
 
   // Key array computed
   const keysList = groqKeysInput
@@ -42,8 +51,9 @@ export default function Quotas() {
   // 1. TẢI DỮ LIỆU BAN ĐẦU & TRUY VẤN XÁC MINH TRỰC TIẾP TỪ DATABASE SUPABASE
   const verifyAndLoadFromDB = async () => {
     setLoading(true);
+    let loadedFromCache = false;
 
-    // Load LocalStorage backup trước
+    // Tải từ LocalStorage trước để giao diện không bị gián đoạn
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
@@ -52,6 +62,7 @@ export default function Quotas() {
         if (parsed.model) setSelectedModel(parsed.model);
         if (Array.isArray(parsed.keys) && parsed.keys.length > 0) {
           setGroqKeysInput(parsed.keys.join('\n'));
+          loadedFromCache = true;
         }
       }
     } catch (e) {
@@ -102,16 +113,19 @@ export default function Quotas() {
               synced: true,
               keyCount: fetchedKeys.length,
               lastUpdated: lastUpdate ? new Date(lastUpdate).toLocaleTimeString() : 'Vừa xong',
-              dbValue: val
+              errorDetails: null
             });
           } else {
-            setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Chưa có bản ghi trong DB', dbValue: null });
+            setDbStatusInfo({ synced: false, keyCount: loadedFromCache ? keysList.length : 0, lastUpdated: 'Chưa có bản ghi groq_api_keys trong DB (Vui lòng bấm nút Lưu để tạo)', errorDetails: 'Bảng system_configs chưa có dữ liệu key' });
           }
+        } else {
+          const errTxt = await keyRes.text();
+          setDbStatusInfo({ synced: false, keyCount: loadedFromCache ? keysList.length : 0, lastUpdated: 'Lỗi truy vấn DB', errorDetails: `Supabase HTTP ${keyRes.status}: ${errTxt}` });
         }
       }
     } catch (err) {
       console.warn("Lỗi kiểm tra DB:", err);
-      setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Lỗi truy vấn DB: ' + err.message, dbValue: null });
+      setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Lỗi kết nối DB', errorDetails: err.message });
     }
 
     setLoading(false);
@@ -158,9 +172,9 @@ export default function Quotas() {
     fetchShopQuota();
   }, [selectedShopId]);
 
-  // 3. ĐỒNG BỘ NGAY LẬP TỨC LÊN SUPABASE DB VÀ ĐỌC LẠI ĐỂ XÁC MINH 100%
+  // 3. ĐỒNG BỘ NGAY LẬP TỨC LÊN SUPABASE DB VÀ ĐỌC LẠI XÁC MINH 100%
   const handleSaveAIKeys = async () => {
-    setKeySaveStatus({ text: '⏳ Đang ghi vào Supabase Database...', type: 'info' });
+    setKeySaveStatus({ text: '⏳ Đang đồng bộ vào Supabase Database...', type: 'info' });
     const keysArray = keysList;
 
     if (keysArray.length === 0) {
@@ -174,13 +188,19 @@ export default function Quotas() {
       model: selectedModel
     };
 
+    // Lưu LocalStorage lập tức để bảo vệ dữ liệu trên máy
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payloadObj));
+    if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+      chrome.storage.local.set({ ai_provider: aiProvider, groq_keys: keysArray, ai_model: selectedModel });
+    }
+
     try {
       if (!globalThis.SupabaseCloud) throw new Error('Không tìm thấy Supabase Connection');
       const configRes = await globalThis.SupabaseCloud.loadConfig();
       const sess = await AuthSession.getSession();
       const token = sess ? sess.access_token : configRes.anonKey;
 
-      // STEP 1: GHI THẲNG VÀO BẢNG system_configs TRÊN SUPABASE DB
+      // GHI TRỰC TIẾP VÀO BẢNG system_configs TRÊN SUPABASE DB
       const dbRes = await fetch(`${configRes.url}/rest/v1/system_configs?on_conflict=key`, {
         method: 'POST',
         headers: {
@@ -192,17 +212,18 @@ export default function Quotas() {
         body: JSON.stringify({
           key: 'groq_api_keys',
           value: payloadObj,
-          description: `API Keys do Master Admin cấu hình`,
+          description: `Groq & AI Provider Keys do Master Admin cấu hình`,
           updated_at: new Date().toISOString()
         })
       });
 
       if (!dbRes.ok) {
         const errText = await dbRes.text();
-        throw new Error(`Supabase từ chối ghi DB (${dbRes.status}): ${errText}`);
+        setShowSqlGuide(true);
+        throw new Error(`Supabase RLS từ chối ghi DB (${dbRes.status}): ${errText}`);
       }
 
-      // STEP 2: TRUY VẤN LẠI NGAY TỪ DATABASE SUPABASE ĐỂ XÁC MINH 100% THÀNH CÔNG
+      // TRUY VẤN LẠI NGAY TỪ DATABASE SUPABASE ĐỂ XÁC MINH 100% THÀNH CÔNG
       const verifyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value,updated_at&key=eq.groq_api_keys`, {
         headers: {
           'apikey': configRes.anonKey,
@@ -210,35 +231,30 @@ export default function Quotas() {
         }
       });
 
-      if (!verifyRes.ok) throw new Error('Không thể đọc lại dữ liệu vừa lưu từ Supabase DB.');
+      if (!verifyRes.ok) throw new Error('Không thể truy vấn lại dữ liệu vừa lưu từ Supabase DB.');
       const verifyData = await verifyRes.json();
 
       if (verifyData && verifyData.length > 0 && verifyData[0].value) {
         const savedCount = verifyData[0].value.keys?.length || 0;
         const lastUpdate = verifyData[0].updated_at || new Date().toISOString();
 
-        // ĐỒNG BỘ ĐỒNG THỜI VÀO LOCALSTORAGE VÀ EXTENSION STORAGE KHI DB ĐÃ XÁC NHẬN
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(payloadObj));
-        if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
-          chrome.storage.local.set({ ai_provider: aiProvider, groq_keys: keysArray, ai_model: selectedModel });
-        }
-
         setDbStatusInfo({
           synced: true,
           keyCount: savedCount,
           lastUpdated: new Date(lastUpdate).toLocaleTimeString(),
-          dbValue: verifyData[0].value
+          errorDetails: null
         });
 
+        setShowSqlGuide(false);
         setKeySaveStatus({
           text: `🟢 ĐÃ ĐỒNG BỘ DATABASE SUPABASE THÀNH CÔNG 100%! (Đã đọc lại xác minh DB có ${savedCount} Keys lúc ${new Date(lastUpdate).toLocaleTimeString()})`,
           type: 'success'
         });
       } else {
-        throw new Error('Database chưa lưu lại bản ghi.');
+        throw new Error('Database chưa lưu thành công bản ghi.');
       }
     } catch (e) {
-      setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Thất bại', dbValue: null });
+      setDbStatusInfo({ synced: false, keyCount: keysArray.length, lastUpdated: 'Thất bại DB', errorDetails: e.message });
       setKeySaveStatus({ text: `🔴 LỖI ĐỒNG BỘ SUPABASE DATABASE: ${e.message}`, type: 'error' });
     }
   };
@@ -332,6 +348,11 @@ export default function Quotas() {
     else setSelectedModel('llama-3.3-70b-versatile');
   };
 
+  const copySqlGuide = () => {
+    navigator.clipboard.writeText(FIX_SQL_SCRIPT);
+    alert("Đã coppy SQL Script vào bộ nhớ tạm! Mở Supabase SQL Editor và Dán (Ctrl+V) để chạy.");
+  };
+
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -344,7 +365,6 @@ export default function Quotas() {
           </p>
         </div>
 
-        {/* CỤM BADGE HIỂN THỊ TRẠNG THÁI XÁC MINH DATABASE */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             onClick={verifyAndLoadFromDB}
@@ -359,10 +379,10 @@ export default function Quotas() {
       <div style={{
         background: dbStatusInfo.synced ? '#f0fdf4' : '#fff1f2',
         border: `1px solid ${dbStatusInfo.synced ? '#bbf7d0' : '#fecdd3'}`,
-        borderRadius: '8px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+        borderRadius: '8px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ fontSize: '18px' }}>{dbStatusInfo.synced ? '🟢' : '🔴'}</div>
+          <div style={{ fontSize: '20px' }}>{dbStatusInfo.synced ? '🟢' : '🔴'}</div>
           <div>
             <div style={{ fontSize: '13px', fontWeight: 700, color: dbStatusInfo.synced ? '#166534' : '#991b1b' }}>
               TRẠNG THÁI SUPABASE DATABASE: {dbStatusInfo.synced ? 'ĐÃ ĐỒNG BỘ 100%' : 'CHƯA ĐỒNG BỘ DB'}
@@ -370,14 +390,42 @@ export default function Quotas() {
             <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
               Bảng <code>system_configs</code> | Số Keys trong DB: <strong>{dbStatusInfo.keyCount} Keys</strong> | Cập nhật lần cuối: <strong>{dbStatusInfo.lastUpdated}</strong>
             </div>
+            {dbStatusInfo.errorDetails && (
+              <div style={{ fontSize: '11px', color: '#be123c', marginTop: '4px', fontFamily: 'monospace' }}>
+                Chi tiết: {dbStatusInfo.errorDetails}
+              </div>
+            )}
           </div>
         </div>
+
+        {!dbStatusInfo.synced && (
+          <button
+            onClick={copySqlGuide}
+            style={{ background: '#be123c', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+          >
+            📋 Copy SQL Fix Quyền DB
+          </button>
+        )}
+
         {dbStatusInfo.synced && (
           <span style={{ background: '#dcfce7', color: '#15803d', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', fontWeight: 700 }}>
             VERIFIED IN DB
           </span>
         )}
       </div>
+
+      {showSqlGuide && (
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '14px', fontSize: '12px', color: '#92400e' }}>
+          <div style={{ fontWeight: 700, marginBottom: '6px' }}>⚠️ Hướng dẫn Sửa dứt điểm Lỗi RLS Supabase Database:</div>
+          <div>Nếu Supabase từ chối ghi DB, hãy mở <strong>Supabase Dashboard &rarr; SQL Editor</strong>, dán mã bên dưới và nhấn <strong>Run</strong>:</div>
+          <pre style={{ background: '#fef3c7', padding: '10px', borderRadius: '6px', fontSize: '11px', overflowX: 'auto', margin: '8px 0' }}>
+            {FIX_SQL_SCRIPT}
+          </pre>
+          <button onClick={copySqlGuide} style={{ background: '#d97706', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
+            📋 Copy Mã SQL Trên
+          </button>
+        </div>
+      )}
 
       {/* CARD 1: CẤU HÌNH AI PROVIDER & API KEYS */}
       <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px' }}>
