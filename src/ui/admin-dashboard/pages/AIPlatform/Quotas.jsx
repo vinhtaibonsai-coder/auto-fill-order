@@ -17,7 +17,8 @@ export default function Quotas() {
     }
   });
 
-  // Master Admin AI Keys state
+  // Multi-Provider AI State (Groq, ChatGPT, Gemini)
+  const [aiProvider, setAiProvider] = useState('groq'); // 'groq', 'openai', 'gemini'
   const [groqKeysInput, setGroqKeysInput] = useState('');
   const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
   const [keySaveStatus, setKeySaveStatus] = useState({ text: '', type: '' });
@@ -27,7 +28,15 @@ export default function Quotas() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  // Load danh sách Shops & AI Key hiện tại từ DB
+  // Switch default model when provider changes
+  const handleProviderChange = (provider) => {
+    setAiProvider(provider);
+    if (provider === 'openai') setSelectedModel('gpt-4o-mini');
+    else if (provider === 'gemini') setSelectedModel('gemini-1.5-flash');
+    else setSelectedModel('llama-3.3-70b-versatile');
+  };
+
+  // Load Shops & AI Key hiện tại từ DB
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -57,7 +66,7 @@ export default function Quotas() {
           if (result.length > 0) setSelectedShopId(result[0].id);
         }
 
-        // 2. Fetch system_configs (groq_api_keys)
+        // 2. Fetch system_configs (groq_api_keys hoặc ai_provider_config)
         const keyRes = await fetch(`${configRes.url}/rest/v1/system_configs?select=value&key=eq.groq_api_keys`, {
           headers: {
             'apikey': configRes.anonKey,
@@ -69,6 +78,7 @@ export default function Quotas() {
           const keyData = await keyRes.json();
           if (keyData && keyData.length > 0 && keyData[0].value) {
             const val = keyData[0].value;
+            if (val.provider) setAiProvider(val.provider);
             if (Array.isArray(val.keys)) {
               setGroqKeysInput(val.keys.join('\n'));
             } else if (typeof val.keys === 'string') {
@@ -86,7 +96,7 @@ export default function Quotas() {
     fetchData();
   }, []);
 
-  // Khi selectedShopId thay đổi, load Quota của Shop đó
+  // Load Quota của Shop
   useEffect(() => {
     if (!selectedShopId) return;
 
@@ -114,11 +124,7 @@ export default function Quotas() {
               planName: q.plan_name || 'FREE',
               dailyQuota: q.ai_quota_limit || 100,
               usedQuota: q.ai_quota_used || 0,
-              features: {
-                addressEngine: true,
-                aiParsing: true,
-                autoSync: false
-              }
+              features: { addressEngine: true, aiParsing: true, autoSync: false }
             });
           } else {
             setQuota({
@@ -126,11 +132,7 @@ export default function Quotas() {
               planName: 'FREE',
               dailyQuota: 100,
               usedQuota: 0,
-              features: {
-                addressEngine: true,
-                aiParsing: true,
-                autoSync: false
-              }
+              features: { addressEngine: true, aiParsing: true, autoSync: false }
             });
           }
         }
@@ -143,14 +145,12 @@ export default function Quotas() {
     fetchShopQuota();
   }, [selectedShopId]);
 
-  // Lưu Quota của Shop
+  // Lưu Quota Shop
   const handleSaveQuota = async () => {
     setSaving(true);
     setMessage({ text: '', type: '' });
     try {
       const configRes = await globalThis.SupabaseCloud.loadConfig();
-      if (!configRes.url) throw new Error('Chưa cấu hình Supabase URL');
-
       const sess = await AuthSession.getSession();
       const token = sess ? sess.access_token : configRes.anonKey;
 
@@ -173,11 +173,7 @@ export default function Quotas() {
         body: JSON.stringify(upsertData)
       });
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || 'Lỗi khi lưu dữ liệu');
-      }
-
+      if (!response.ok) throw new Error('Lỗi khi lưu dữ liệu');
       setMessage({ text: 'Lưu thông tin hạn mức thành công!', type: 'success' });
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err) {
@@ -186,13 +182,13 @@ export default function Quotas() {
     setSaving(false);
   };
 
-  // Lưu AI Provider Keys lên Database (system_configs)
+  // Lưu AI Provider Keys (Groq / OpenAI / Gemini) lên Supabase DB
   const handleSaveAIKeys = async () => {
     setKeySaveStatus({ text: 'Đang đồng bộ DB...', type: 'info' });
     const keysArray = groqKeysInput.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
 
     if (keysArray.length === 0) {
-      setKeySaveStatus({ text: 'Vui lòng nhập ít nhất 1 Groq API Key!', type: 'error' });
+      setKeySaveStatus({ text: `Vui lòng nhập ít nhất 1 API Key cho ${aiProvider.toUpperCase()}!`, type: 'error' });
       return;
     }
 
@@ -203,102 +199,111 @@ export default function Quotas() {
 
       const payload = {
         key: 'groq_api_keys',
-        value: { keys: keysArray, model: selectedModel },
-        description: 'Groq API Keys do Master Admin cấu hình',
+        value: { provider: aiProvider, keys: keysArray, model: selectedModel },
+        description: `API Keys (${aiProvider.toUpperCase()}) do Master Admin cấu hình`,
         updated_at: new Date().toISOString()
       };
 
-      // Thử dùng RPC trước
-      const rpcRes = await fetch(`${configRes.url}/rest/v1/rpc/upsert_system_config`, {
+      await fetch(`${configRes.url}/rest/v1/system_configs?on_conflict=key`, {
         method: 'POST',
         headers: {
           'apikey': configRes.anonKey,
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
         },
-        body: JSON.stringify({
-          p_key: 'groq_api_keys',
-          p_value: { keys: keysArray, model: selectedModel },
-          p_description: 'Groq API Keys do Master Admin cấu hình'
-        })
+        body: JSON.stringify(payload)
       });
 
-      if (!rpcRes.ok) {
-        // Fallback sang REST system_configs trực tiếp
-        await fetch(`${configRes.url}/rest/v1/system_configs?on_conflict=key`, {
-          method: 'POST',
-          headers: {
-            'apikey': configRes.anonKey,
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify(payload)
-        });
-      }
-
-      // Lưu đồng thời vào storage local nếu chạy trong Chrome Extension
       if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
-        chrome.storage.local.set({ groq_keys: keysArray, ai_model: selectedModel });
+        chrome.storage.local.set({ ai_provider: aiProvider, groq_keys: keysArray, ai_model: selectedModel });
       }
 
-      setKeySaveStatus({ text: `✅ Đã lưu và đồng bộ ${keysArray.length} AI Keys lên Database thành công!`, type: 'success' });
+      setKeySaveStatus({ text: `✅ Đã chuyển đổi AI sang [${aiProvider.toUpperCase()}] và lưu ${keysArray.length} Keys lên Database!`, type: 'success' });
       setTimeout(() => setKeySaveStatus({ text: '', type: '' }), 4000);
     } catch (e) {
       setKeySaveStatus({ text: 'Lỗi đồng bộ DB: ' + e.message, type: 'error' });
     }
   };
 
-  // Thử kết nối API Key trực tiếp tới Server Groq
-  const handleTestGroq = async () => {
+  // Thử kết nối API Key trực tiếp theo từng Provider (Groq / OpenAI ChatGPT / Google Gemini)
+  const handleTestConnection = async () => {
     setTestingKey(true);
-    setKeySaveStatus({ text: '⏳ Đang gửi request test tới Groq AI...', type: 'info' });
+    setKeySaveStatus({ text: `⏳ Đang thử kết nối tới ${aiProvider.toUpperCase()}...`, type: 'info' });
     const keysArray = groqKeysInput.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
     const testKey = keysArray[0];
 
     if (!testKey) {
-      setKeySaveStatus({ text: 'Vui lòng nhập Groq Key để thử nghiệm!', type: 'error' });
+      setKeySaveStatus({ text: 'Vui lòng nhập API Key để thử nghiệm!', type: 'error' });
       setTestingKey(false);
       return;
     }
 
     try {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${testKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: selectedModel,
-          messages: [{ role: 'user', content: 'Ping test connection. Respond with OK.' }],
-          max_tokens: 10
-        })
-      });
+      let res;
+      if (aiProvider === 'openai') {
+        // OpenAI ChatGPT API test
+        res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${testKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: selectedModel || 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'Ping test' }],
+            max_tokens: 5
+          })
+        });
+      } else if (aiProvider === 'gemini') {
+        // Google Gemini API test
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel || 'gemini-1.5-flash'}:generateContent?key=${testKey}`;
+        res = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Ping test' }] }]
+          })
+        });
+      } else {
+        // Groq API test
+        res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${testKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: selectedModel || 'llama-3.3-70b-versatile',
+            messages: [{ role: 'user', content: 'Ping test' }],
+            max_tokens: 5
+          })
+        });
+      }
 
       if (res.ok) {
-        setKeySaveStatus({ text: '🟢 Kết nối Groq AI THÀNH CÔNG! Key hoạt động bình thường.', type: 'success' });
+        setKeySaveStatus({ text: `🟢 Kết nối ${aiProvider.toUpperCase()} (${selectedModel}) THÀNH CÔNG! Key hoạt động bình thường.`, type: 'success' });
       } else {
         const errJson = await res.json().catch(() => ({}));
         const errMsg = errJson.error?.message || `HTTP ${res.status}`;
-        setKeySaveStatus({ text: `🔴 Lỗi kết nối Groq (${res.status}): ${errMsg}`, type: 'error' });
+        setKeySaveStatus({ text: `🔴 Lỗi kết nối ${aiProvider.toUpperCase()} (${res.status}): ${errMsg}`, type: 'error' });
       }
     } catch (e) {
-      setKeySaveStatus({ text: '🔴 Lỗi mạng khi kết nối Groq: ' + e.message, type: 'error' });
+      setKeySaveStatus({ text: `🔴 Lỗi mạng khi kết nối ${aiProvider.toUpperCase()}: ` + e.message, type: 'error' });
     }
     setTestingKey(false);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <h2 className="page-title" style={{ margin: 0 }}>🤖 AI Platform, Groq Keys & Quota Management</h2>
+      <h2 className="page-title" style={{ margin: 0 }}>🤖 Multi-Provider AI Platform (Groq / ChatGPT / Gemini)</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        {/* CARD 1: CẤU HÌNH GROQ API KEYS (MASTER ADMIN ONLY) */}
+        {/* CARD 1: CẤU HÌNH NHÀ CUNG CẤP AI (GROQ / OPENAI CHATGPT / GOOGLE GEMINI) */}
         <div className="card" style={{ borderTop: '4px solid #2563eb' }}>
-          <h3 style={{ marginTop: 0, color: '#2563eb' }}>🔑 Quản lý AI Provider Keys (Groq)</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
-            Nhập danh sách Groq API Keys để bóc tách đơn hàng. Keys sẽ được mã hóa và lưu vào bảng <code>system_configs</code> trên Supabase.
+          <h3 style={{ marginTop: 0, color: '#2563eb' }}>🤖 Chọn Nhà Cung Cấp AI (AI Provider)</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '14px' }}>
+            Lựa chọn Engine AI để bóc tách đơn hàng. Hỗ trợ <strong>Groq AI</strong>, <strong>OpenAI ChatGPT</strong> và <strong>Google Gemini</strong>.
           </p>
 
           {keySaveStatus.text && (
@@ -312,35 +317,75 @@ export default function Quotas() {
             </div>
           )}
 
+          {/* Selector chọn Provider */}
           <div style={{ marginBottom: '14px' }}>
             <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: 600 }}>
-              Danh sách Groq API Keys (Nhập mỗi key một dòng <code>gsk_...</code>):
+              Nhà cung cấp AI Engine:
             </label>
-            <textarea
-              rows={4}
-              value={groqKeysInput}
-              onChange={(e) => setGroqKeysInput(e.target.value)}
-              placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx&#10;gsk_yyyyyyyyyyyyyyyyyyyyyyyyyy"
-              style={{
-                width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1',
-                fontFamily: 'monospace', fontSize: '12px', boxSizing: 'border-box'
-              }}
-            />
+            <select
+              value={aiProvider}
+              onChange={(e) => handleProviderChange(e.target.value)}
+              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '2px solid #2563eb', fontWeight: 700, fontSize: '13px' }}
+            >
+              <option value="groq">⚡ Groq AI (Llama-3.3-70b — Siêu tốc, Miễn phí)</option>
+              <option value="openai">🟢 OpenAI ChatGPT (GPT-4o-mini / GPT-4o — Độ chính xác cao)</option>
+              <option value="gemini">🔵 Google Gemini AI (Gemini 1.5/2.0 Flash — Bóc tách ảnh/bill mạnh)</option>
+            </select>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          {/* Selector chọn Model theo Provider */}
+          <div style={{ marginBottom: '14px' }}>
             <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: 600 }}>
-              Mô hình AI Model mặc định:
+              Mô hình Model cho {aiProvider.toUpperCase()}:
             </label>
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
             >
-              <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Khuyên dùng - Nhanh & Chính xác)</option>
-              <option value="llama3-8b-8192">llama3-8b-8192 (Siêu tốc)</option>
-              <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+              {aiProvider === 'openai' && (
+                <>
+                  <option value="gpt-4o-mini">gpt-4o-mini (Khuyên dùng - Nhanh & Rẻ)</option>
+                  <option value="gpt-4o">gpt-4o (Thông minh nhất)</option>
+                  <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                </>
+              )}
+              {aiProvider === 'gemini' && (
+                <>
+                  <option value="gemini-1.5-flash">gemini-1.5-flash (Khuyên dùng - Siêu nhanh)</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash (Thế hệ mới)</option>
+                  <option value="gemini-1.5-pro">gemini-1.5-pro (Chính xác cao)</option>
+                </>
+              )}
+              {aiProvider === 'groq' && (
+                <>
+                  <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Khuyên dùng)</option>
+                  <option value="llama3-8b-8192">llama3-8b-8192</option>
+                  <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+                </>
+              )}
             </select>
+          </div>
+
+          {/* Textarea nhập Keys */}
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: 600 }}>
+              Danh sách API Key {aiProvider.toUpperCase()} (Mỗi key một dòng):
+            </label>
+            <textarea
+              rows={3}
+              value={groqKeysInput}
+              onChange={(e) => setGroqKeysInput(e.target.value)}
+              placeholder={
+                aiProvider === 'openai' ? "sk-proj-xxxxxxxxxxxxxxxxxxxxxxxx" :
+                aiProvider === 'gemini' ? "AIzaSyxxxxxxxxxxxxxxxxxxxxxxx" :
+                "gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx"
+              }
+              style={{
+                width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1',
+                fontFamily: 'monospace', fontSize: '12px', boxSizing: 'border-box'
+              }}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -351,10 +396,10 @@ export default function Quotas() {
                 borderRadius: '6px', fontWeight: 600, fontSize: '12px', cursor: 'pointer'
               }}
             >
-              💾 Lưu & Đồng bộ DB
+              💾 Lưu & Chuyển AI ({aiProvider.toUpperCase()})
             </button>
             <button
-              onClick={handleTestGroq}
+              onClick={handleTestConnection}
               disabled={testingKey}
               style={{
                 padding: '10px 14px', background: '#16a34a', color: '#fff', border: 'none',
