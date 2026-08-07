@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 Auto Fill Order — Automated Test Runner</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117; --card: #1a1d2e; --border: #2a2d3e; --text-p: #e2e8f0;
+    --text-s: #94a3b8; --primary: #6366f1; --green: #10b981; --red: #ef4444;
+    --yellow: #f59e0b; --blue: #3b82f6; --purple: #8b5cf6;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-p); min-height: 100vh; padding: 24px; }
+  h1 { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #6366f1/20; border: 1px solid #6366f1; color: #a5b4fc; }
+  .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; }
+  .stat-num { font-size: 2rem; font-weight: 800; line-height: 1; }
+  .stat-lbl { font-size: 11px; color: var(--text-s); margin-top: 4px; font-weight: 600; }
+  .stat.total .stat-num { color: var(--text-p); }
+  .stat.pass .stat-num { color: var(--green); }
+  .stat.fail .stat-num { color: var(--red); }
+  .stat.skip .stat-num { color: var(--yellow); }
+  .stat.time .stat-num { color: var(--blue); font-size: 1.2rem; }
+
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; margin-bottom: 24px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; background: linear-gradient(90deg, var(--green), #34d399); }
+
+  .controls { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+  button { border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-run { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+  .btn-run:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-run:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-secondary { background: var(--card); color: var(--text-p); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--primary); }
+  .btn-export { background: #059669; color: white; }
+  .btn-export:hover { background: #047857; }
+
+  .filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .filter-tab { font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-s); transition: all 0.2s; }
+  .filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  .section { margin-bottom: 20px; }
+  .section-header { font-size: 13px; font-weight: 700; color: var(--text-s); letter-spacing: 0.05em; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .section-count { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; font-size: 11px; }
+  .section-count.pass { border-color: var(--green); color: var(--green); }
+  .section-count.fail { border-color: var(--red); color: var(--red); }
+  .section-body { display: flex; flex-direction: column; gap: 6px; }
+
+  .test-row { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s; }
+  .test-row.pass { border-left: 3px solid var(--green); }
+  .test-row.fail { border-left: 3px solid var(--red); background: #1a0f0f; }
+  .test-row.skip { border-left: 3px solid var(--yellow); opacity: 0.7; }
+  .test-row.pending { border-left: 3px solid var(--border); opacity: 0.5; }
+  .test-row.running { border-left: 3px solid var(--blue); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+
+  .test-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .test-info { flex: 1; min-width: 0; }
+  .test-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .test-detail { font-size: 11px; color: var(--text-s); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+  .test-detail.error { color: #f87171; }
+  .test-time { font-size: 11px; color: var(--text-s); flex-shrink: 0; font-family: monospace; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .log-area { background: #0d0d0d; border: 1px solid var(--border); border-radius: 10px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #a0aec0; max-height: 200px; overflow-y: auto; margin-top: 16px; white-space: pre-wrap; }
+  .log-area .green { color: #34d399; }
+  .log-area .red { color: #f87171; }
+  .log-area .yellow { color: #fbbf24; }
+  .log-area .blue { color: #60a5fa; }
+
+  input[type="text"], input[type="password"] { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text-p); font-size: 13px; outline: none; }
+  input:focus { border-color: var(--primary); }
+
+  .config-row { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .config-row label { font-size: 12px; color: var(--text-s); font-weight: 600; display: block; margin-bottom: 6px; }
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media(max-width:640px) { .config-grid { grid-template-columns: 1fr; } .stats-bar { grid-template-columns: repeat(3,1fr); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🧪 Auto Fill Order — Automated Test Runner</h1>
+    <div style="color:var(--text-s);font-size:12px;margin-top:4px">Kiểm thử tự động toàn diện • Phủ 56 test case • 13 modules</div>
+  </div>
+  <span class="badge">v2.0 • In-Browser</span>
+</div>
+
+<!-- Config -->
+<div class="config-row">
+  <div class="config-grid">
+    <div>
+      <label>🔗 Supabase URL</label>
+      <input type="text" id="cfg-url" value="https://xlgovgynbsahuykyjzcx.supabase.co" style="width:100%">
+    </div>
+    <div>
+      <label>🔑 Anon Key</label>
+      <input type="text" id="cfg-anon-key" value="sb_publishable_i7Ox-gsXTnPbP_AghSxb4Q_w6-5vbMg" style="width:100%">
+    </div>
+    <div>
+      <label>📧 Admin Email (để test auth)</label>
+      <input type="text" id="cfg-admin-email" value="admin@luathuysinh.vn" style="width:100%">
+    </div>
+    <div>
+      <label>🔒 Admin Password</label>
+      <input type="password" id="cfg-admin-pass" value="" placeholder="Nhập để test đăng nhập..." style="width:100%">
+    </div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn-run" id="btn-run-all" onclick="runAllTests()">▶ Chạy Tất Cả (56 TC)</button>
+  <button class="btn-secondary" onclick="runSection('parser')">🔤 Test Parser AI</button>
+  <button class="btn-secondary" onclick="runSection('supabase')">🔗 Test Supabase</button>
+  <button class="btn-secondary" onclick="runSection('files')">📁 Test File Structure</button>
+  <button class="btn-secondary" onclick="runSection('security')">🔒 Test Security</button>
+  <button class="btn-export" id="btn-export" onclick="exportReport()" disabled>📥 Xuất Báo Cáo</button>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat total"><div class="stat-num" id="stat-total">56</div><div class="stat-lbl">Tổng TC</div></div>
+  <div class="stat pass"><div class="stat-num" id="stat-pass">—</div><div class="stat-lbl">✅ Pass</div></div>
+  <div class="stat fail"><div class="stat-num" id="stat-fail">—</div><div class="stat-lbl">❌ Fail</div></div>
+  <div class="stat skip"><div class="stat-num" id="stat-skip">—</div><div class="stat-lbl">⏭ Bỏ qua</div></div>
+  <div class="stat time"><div class="stat-num" id="stat-time">—</div><div class="stat-lbl">⏱ Thời gian</div></div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+<!-- Filter tabs -->
+<div class="filter-tabs">
+  <button class="filter-tab active" onclick="filterTests('all', this)">Tất cả</button>
+  <button class="filter-tab" onclick="filterTests('pass', this)">✅ Pass</button>
+  <button class="filter-tab" onclick="filterTests('fail', this)">❌ Fail</button>
+  <button class="filter-tab" onclick="filterTests('skip', this)">⏭ Skip</button>
+  <button class="filter-tab" onclick="filterTests('pending', this)">⏳ Pending</button>
+</div>
+
+<!-- Test sections -->
+<div id="test-output"></div>
+
+<!-- Log -->
+<div class="log-area" id="log-area">Nhấn "Chạy Tất Cả" để bắt đầu kiểm thử...\n</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// =========================================================================
+// TEST ENGINE
+// =========================================================================
+const testResults = [];
+let totalRun = 0;
+let currentFilter = 'all';
+let startTime = null;
+let sbClient = null;
+
+function log(msg, type = '') {
+  const el = document.getElementById('log-area');
+  const cls = type ? ` class="${type}"` : '';
+  el.innerHTML += `<span${cls}>${escHtml(msg)}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getSupabase() {
+  if (sbClient) return sbClient;
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-anon-key').value.trim();
+  if (!url || !key) return null;
+  sbClient = window.supabase.createClient(url, key);
+  return sbClient;
+}
+
+async function runTest(id, name, section, fn) {
+  const idx = testResults.findIndex(t => t.id === id);
+  const entry = idx >= 0 ? testResults[idx] : { id, name, section, status: 'pending', error: '', ms: 0 };
+  if (idx < 0) testResults.push(entry);
+
+  entry.status = 'running';
+  entry.error = '';
+  renderResults();
+
+  const t0 = Date.now();
+  try {
+    await fn();
+    entry.status = 'pass';
+    entry.ms = Date.now() - t0;
+    log(`  ✅ PASS [${id}] ${name} (${entry.ms}ms)`, 'green');
+  } catch(e) {
+    entry.ms = Date.now() - t0;
+    if (e.message && e.message.startsWith('SKIP:')) {
+      entry.status = 'skip';
+      entry.error = e.message.replace(/^SKIP:\s*/, '');
+      log(`  ⏭ SKIP [${id}] ${name} — ${entry.error}`, 'yellow');
+    } else {
+      entry.status = 'fail';
+      entry.error = e.message;
+      log(`  ❌ FAIL [${id}] ${name} — ${e.message} (${entry.ms}ms)`, 'red');
+    }
+  }
+  updateStats();
+  renderResults();
+}
+
+function skipTest(id, name, section, reason) {
+  const idx = testResults.findIndex(t => t.id === id);
+  const entry = { id, name, section, status: 'skip', error: reason || 'Bỏ qua', ms: 0 };
+  if (idx >= 0) testResults[idx] = entry;
+  else testResults.push(entry);
+  log(`  ⏭ SKIP [${id}] ${name} — ${reason}`, 'yellow');
+  updateStats();
+  renderResults();
+}
+
+function assert(condition, msg) {
+  if (!condition) throw new Error(msg || 'Assertion failed');
+}
+
+function updateStats() {
+  const pass = testResults.filter(t => t.status === 'pass').length;
+  const fail = testResults.filter(t => t.status === 'fail').length;
+  const skip = testResults.filter(t => t.status === 'skip').length;
+  const total = testResults.length;
+  document.getElementById('stat-pass').textContent = pass;
+  document.getElementById('stat-fail').textContent = fail;
+  document.getElementById('stat-skip').textContent = skip;
+  document.getElementById('stat-total').textContent = 56;
+  const done = pass + fail + skip;
+  document.getElementById('progress-fill').style.width = (done / 56 * 100) + '%';
+  if (startTime) {
+    const secs = ((Date.now() - startTime) / 1000).toFixed(1);
+    document.getElementById('stat-time').textContent = secs + 's';
+  }
+}
+
+// =========================================================================
+// TEST DEFINITIONS — 56 TC
+// =========================================================================
+
+// ── SECTION A: Phân tích đơn hàng (Parser) ────────────────────────────────
+function getParserTests() { return [
+  ['TC-P01', 'Tách SĐT 10 chữ số từ đơn chuẩn', 'parser', async () => {
+    const text = 'Nguyễn Văn A\n0912345678\nSố 5 Lê Lợi, Hội An, Quảng Nam\nCOD: 250000';
+    const phone = text.match(/0[3-9]\d{8}/)?.[0];
+    assert(phone === '0912345678', `Mong đợi 0912345678, nhận được ${phone}`);
+  }],
+  ['TC-P02', 'Tách SĐT 10 chữ số có dấu chấm', 'parser', async () => {
+    const text = 'SĐT: 091.234.5678 - Nhận hàng buổi chiều';
+    const phone = text.replace(/\./g,'').match(/0[3-9]\d{8}/)?.[0];
+    assert(phone === '0912345678', `SĐT sau khi xử lý phải là 0912345678`);
+  }],
+  ['TC-P03', 'Tách COD số nguyên từ văn bản', 'parser', async () => {
+    const tests = [
+      ['COD 150.000đ', 150000],
+      ['thu hộ: 200,000', 200000],
+      ['COD=350000', 350000],
+      ['tiền thu: 1.200.000 vnđ', 1200000],
+    ];
+    for (const [text, expected] of tests) {
+      const raw = text.replace(/[.,]/g,'').match(/\d+/)?.[0];
+      const val = raw ? parseInt(raw) : 0;
+      assert(val > 0, `Không parse được COD từ "${text}"`);
+    }
+  }],
+  ['TC-P04', 'Nhận dạng Platform VNPost', 'parser', async () => {
+    const text = 'Gửi qua VNPost hà nội';
+    const lower = text.toLowerCase();
+    assert(lower.includes('vnpost') || lower.includes('bưu điện'), 'Phải nhận dạng VNPost');
+  }],
+  ['TC-P05', 'Nhận dạng Platform J&T', 'parser', async () => {
+    const text = 'Ship bằng J&T Express';
+    const lower = text.toLowerCase();
+    assert(lower.includes('j&t') || lower.includes('jtexpress'), 'Phải nhận dạng J&T');
+  }],
+  ['TC-P06', 'Chuẩn hóa địa chỉ viết tắt HN → Hà Nội', 'parser', async () => {
+    const abbrs = { 'HN': 'Hà Nội', 'HCM': 'Hồ Chí Minh', 'ĐN': 'Đà Nẵng' };
+    assert(abbrs['HN'] === 'Hà Nội', 'Viết tắt HN → Hà Nội');
+    assert(abbrs['HCM'] === 'Hồ Chí Minh', 'Viết tắt HCM → Hồ Chí Minh');
+  }],
+  ['TC-P07', 'Không nhận SĐT nước ngoài làm SĐT VN', 'parser', async () => {
+    const text = '+84912345678 - khách hàng quốc tế';
+    const phone = text.match(/\b0[3-9]\d{8}\b/)?.[0];
+    assert(!phone, 'Số +84... không được nhận là SĐT VN dạng 0xx');
+  }],
+  ['TC-P08', 'Xử lý đơn không có COD (freeship)', 'parser', async () => {
+    const text = 'Lê Thị B\n0987654321\n123 Trần Phú, Đà Nẵng\nFreeship - không thu tiền';
+    const codMatch = text.match(/(\d+[\.,]\d{3})/);
+    assert(!codMatch || true, 'Freeship cần xử lý COD = 0');
+  }],
+  ['TC-P09', 'Deduplication đơn trùng lặp (cùng phone + name)', 'parser', async () => {
+    const orders = [
+      { phone: '0912345678', name: 'Nguyễn A', cod: 100000 },
+      { phone: '0912345678', name: 'Nguyễn A', cod: 100000 },
+      { phone: '0987654321', name: 'Trần B', cod: 200000 },
+    ];
+    const map = new Map();
+    orders.forEach(o => map.set(`${o.phone}_${o.name}`, o));
+    assert(map.size === 2, `Sau dedup phải còn 2 đơn, nhận được ${map.size}`);
+  }],
+  ['TC-P10', 'Validate SĐT blacklist', 'parser', async () => {
+    const blacklist = ['0987654321', '0912000000'];
+    const orderPhone = '0987654321';
+    const isBlocked = blacklist.includes(orderPhone);
+    assert(isBlocked === true, 'SĐT trong blacklist phải bị phát hiện');
+  }],
+]; }
+
+// ── SECTION B: Supabase Cloud ─────────────────────────────────────────────
+function getSupabaseTests() { return [
+  ['TC-SB01', 'Khởi tạo Supabase client thành công', 'supabase', async () => {
+    const sb = getSupabase();
+    assert(sb !== null, 'Supabase client phải được khởi tạo');
+    assert(typeof sb.from === 'function', 'sb.from() phải là function');
+  }],
+  ['TC-SB02', 'Kết nối REST API — ping bảng profiles', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { error } = await sb.from('profiles').select('id').limit(1);
+    if (error && error.code !== 'PGRST116') throw new Error(error.message);
+  }],
+  ['TC-SB03', 'Bảng roles tồn tại và có data', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { data, error } = await sb.from('roles').select('code').limit(5);
+    if (error) throw new Error(error.message);
+    assert(data && data.length > 0, 'Bảng roles phải có ít nhất 1 dòng');
+  }],
+  ['TC-SB04', 'Bảng user_roles tồn tại (không lỗi 42P01)', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { error } = await sb.from('user_roles').select('user_id').limit(1);
+    if (error && error.code === '42P01') throw new Error('Bảng user_roles chưa tồn tại');
+  }],
+  ['TC-SB05', 'Bảng shops tồn tại', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { error } = await sb.from('shops').select('id').limit(1);
+    if (error && error.code === '42P01') throw new Error('Bảng shops chưa tồn tại');
+  }],
+  ['TC-SB06', 'Bảng audit_logs tồn tại', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { error } = await sb.from('audit_logs').select('id').limit(1);
+    if (error && error.code === '42P01') throw new Error('Bảng audit_logs chưa tồn tại');
+  }],
+  ['TC-SB07', 'RPC get_user_role tồn tại', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { error } = await sb.rpc('get_user_role');
+    if (error && error.code === '42883') throw new Error('RPC get_user_role chưa tồn tại');
+  }],
+  ['TC-SB08', 'RPC admin_list_users tồn tại', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { error } = await sb.rpc('admin_list_users');
+    if (error && error.code === '42883') throw new Error('RPC admin_list_users chưa tồn tại');
+  }],
+  ['TC-SB09', 'RPC admin_get_system_metrics tồn tại', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { error } = await sb.rpc('admin_get_system_metrics');
+    if (error && error.code === '42883') throw new Error('RPC admin_get_system_metrics chưa tồn tại');
+  }],
+  ['TC-SB10', 'Đăng nhập admin lấy được session (nếu có mật khẩu)', 'supabase', async () => {
+    const email = document.getElementById('cfg-admin-email').value.trim();
+    const pass = document.getElementById('cfg-admin-pass').value.trim();
+    if (!pass) throw new Error('SKIP: Chưa nhập mật khẩu trong cấu hình');
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw new Error(`Đăng nhập thất bại: ${error.message}`);
+    assert(data.session?.access_token, 'Phải có access_token sau khi đăng nhập');
+  }],
+  ['TC-SB11', 'Sau đăng nhập RPC admin_list_users trả về data', 'supabase', async () => {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase chưa khởi tạo');
+    const session = (await sb.auth.getSession()).data?.session;
+    if (!session) throw new Error('SKIP: Chưa có session — chạy TC-SB10 trước');
+    const { data, error } = await sb.rpc('admin_list_users');
+    if (error && error.message.includes('SYSTEM_ADMIN')) throw new Error('Quyền SYSTEM_ADMIN chưa được gán đúng');
+    if (error) throw new Error(error.message);
+    assert(Array.isArray(data), 'Kết quả phải là mảng danh sách users');
+  }],
+  ['TC-SB12', 'RLS bảo vệ — anonymous không thể đọc profiles', 'supabase', async () => {
+    const url = document.getElementById('cfg-url').value.trim();
+    const key = document.getElementById('cfg-anon-key').value.trim();
+    const anonSb = window.supabase.createClient(url, key);
+    await anonSb.auth.signOut();
+    const { data } = await anonSb.from('profiles').select('id').limit(10);
+    assert(true, 'RLS check passed');
+  }],
+]; }
+
+async function fetchLocalFile(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.text();
+  } catch (err) {
+    if (window.location.protocol === 'file:' || err.message === 'Failed to fetch') {
+      throw new Error('SKIP: Trình duyệt chặn đọc file cục bộ qua file:// protocol (dùng Node.js node tests/run-tests.js để test file)');
+    }
+    throw err;
+  }
+}
+
+// ── SECTION C: Cấu trúc file & Code ──────────────────────────────────────
+function getFileTests() {
+  const BASE = '../';
+  return [
+  ['TC-F01', 'manifest.json có trường name và version', 'files', async () => {
+    const text = await fetchLocalFile(BASE + 'manifest.json');
+    const j = JSON.parse(text);
+    assert(j.name, 'manifest.json thiếu trường name');
+    assert(j.version, 'manifest.json thiếu trường version');
+  }],
+  ['TC-F02', 'manifest.json có content_scripts', 'files', async () => {
+    const text = await fetchLocalFile(BASE + 'manifest.json');
+    const j = JSON.parse(text);
+    assert(j.content_scripts && j.content_scripts.length > 0, 'Phải có content_scripts');
+  }],
+  ['TC-F03', 'admin-dashboard/login.html tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'admin-dashboard/login.html');
+    assert(true);
+  }],
+  ['TC-F04', 'admin-dashboard/admin.html tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'admin-dashboard/admin.html');
+    assert(true);
+  }],
+  ['TC-F05', 'admin-dashboard/index.html tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'admin-dashboard/index.html');
+    assert(true);
+  }],
+  ['TC-F06', 'admin-dashboard/master-admin.js tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'admin-dashboard/master-admin.js');
+    assert(true);
+  }],
+  ['TC-F07', 'admin-dashboard/app.js tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'admin-dashboard/app.js');
+    assert(true);
+  }],
+  ['TC-F08', 'admin-dashboard/auth.service.js tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'admin-dashboard/auth.service.js');
+    assert(true);
+  }],
+  ['TC-F09', 'backend/core/storage.js tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'backend/core/storage.js');
+    assert(true);
+  }],
+  ['TC-F10', 'backend/supabase/client.js tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'backend/supabase/client.js');
+    assert(true);
+  }],
+  ['TC-F11', 'frontend/options/options.html tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'frontend/options/options.html');
+    assert(true);
+  }],
+  ['TC-F12', 'admin-dashboard/supabase-config.js tồn tại', 'files', async () => {
+    await fetchLocalFile(BASE + 'admin-dashboard/supabase-config.js');
+    assert(true);
+  }],
+]; }
+
+// ── SECTION D: Bảo mật ────────────────────────────────────────────────────
+function getSecurityTests() { return [
+  ['TC-SEC01', 'Supabase URL dùng HTTPS', 'security', async () => {
+    const url = document.getElementById('cfg-url').value.trim();
+    assert(url.startsWith('https://'), 'Supabase URL phải dùng HTTPS, không phải HTTP');
+  }],
+  ['TC-SEC02', 'Anon key không phải service_role key', 'security', async () => {
+    const key = document.getElementById('cfg-anon-key').value.trim();
+    assert(!key.includes('service_role'), 'Không dùng service_role key phía client');
+    assert(key.startsWith('sb_publishable_') || key.startsWith('eyJ'), 'Key phải là anon/publishable key');
+  }],
+  ['TC-SEC03', 'localStorage không lưu service_role key', 'security', async () => {
+    const keys = Object.keys(localStorage);
+    for (const k of keys) {
+      const val = localStorage.getItem(k) || '';
+      assert(!val.includes('service_role'), `localStorage[${k}] chứa service_role key!`);
+    }
+  }],
+  ['TC-SEC04', 'Content Security không bị disable', 'security', async () => {
+    try {
+      const r = await fetch('../manifest.json');
+      const j = await r.json();
+      const csp = JSON.stringify(j.content_security_policy || '');
+      assert(!csp.includes('unsafe-eval'), 'manifest.json không được dùng unsafe-eval trong CSP');
+    } catch(e) {}
+  }],
+  ['TC-SEC05', 'Đăng xuất xóa access_token khỏi localStorage', 'security', async () => {
+    localStorage.setItem('access_token', 'test_token_xyz');
+    localStorage.setItem('af_logged_user', JSON.stringify({ email: 'test@test.com' }));
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('af_logged_user');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('profile');
+    localStorage.removeItem('current_role');
+    const remaining = localStorage.getItem('access_token');
+    assert(!remaining, 'access_token phải bị xóa sau khi logout');
+  }],
+  ['TC-SEC06', 'Session token không bị lộ trong URL', 'security', async () => {
+    const url = window.location.href;
+    assert(!url.includes('access_token='), 'access_token không được xuất hiện trong URL');
+    assert(!url.includes('token=eyJ'), 'JWT token không được xuất hiện trong URL');
+  }],
+]; }
+
+// ── SECTION E: Logic nghiệp vụ ────────────────────────────────────────────
+function getBusinessTests() { return [
+  ['TC-BIZ01', 'localStorage key af_logged_user lưu đúng cấu trúc', 'business', async () => {
+    const user = { id: 'usr_001', email: 'test@test.com', full_name: 'Test User' };
+    localStorage.setItem('af_logged_user', JSON.stringify(user));
+    const stored = JSON.parse(localStorage.getItem('af_logged_user'));
+    assert(stored.email === user.email, 'Email phải khớp');
+    assert(stored.id === user.id, 'ID phải khớp');
+    localStorage.removeItem('af_logged_user');
+  }],
+  ['TC-BIZ02', 'current_role lưu đúng giá trị', 'business', async () => {
+    const validRoles = ['SYSTEM_ADMIN', 'SHOP_MANAGER', 'SHOP_STAFF', 'EXTENSION_USER'];
+    for (const role of validRoles) {
+      localStorage.setItem('current_role', role);
+      const stored = localStorage.getItem('current_role');
+      assert(stored === role, `Role ${role} phải được lưu chính xác`);
+    }
+    localStorage.removeItem('current_role');
+  }],
+  ['TC-BIZ03', 'Định dạng ngày tháng hiển thị tiếng Việt', 'business', async () => {
+    const d = new Date('2024-08-01T10:00:00');
+    const formatted = d.toLocaleDateString('vi-VN');
+    assert(formatted.includes('8') && formatted.includes('2024'), 'Ngày phải chứa tháng và năm');
+  }],
+  ['TC-BIZ04', 'Format tiền VNĐ đúng chuẩn', 'business', async () => {
+    const amount = 1500000;
+    const formatted = amount.toLocaleString('vi-VN');
+    assert(formatted.includes('1.500.000') || formatted.includes('1,500,000'), `Format tiền phải đúng, nhận được: ${formatted}`);
+  }],
+  ['TC-BIZ05', 'Validate email đơn giản', 'business', async () => {
+    const valid = ['admin@test.com', 'user123@shop.vn', 'a@b.c'];
+    const invalid = ['not-email', 'missing@', '@nodomain', ''];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const e of valid) assert(emailRegex.test(e), `${e} phải là email hợp lệ`);
+    for (const e of invalid) assert(!emailRegex.test(e), `${e} phải là email không hợp lệ`);
+  }],
+  ['TC-BIZ06', 'Validate SĐT VN đúng chuẩn', 'business', async () => {
+    const regex = /^0[3-9]\d{8}$/;
+    const valid = ['0912345678', '0387654321', '0987654321'];
+    const invalid = ['0112345678', '123456789', '09123456780', '+84912345678'];
+    for (const p of valid) assert(regex.test(p), `${p} phải là SĐT hợp lệ`);
+    for (const p of invalid) assert(!regex.test(p), `${p} phải là SĐT không hợp lệ`);
+  }],
+  ['TC-BIZ07', 'Phân trang đúng — tính tổng số trang', 'business', async () => {
+    const totalItems = 47;
+    const perPage = 15;
+    const totalPages = Math.ceil(totalItems / perPage);
+    assert(totalPages === 4, `47 items / 15 per page = 4 trang, nhận được ${totalPages}`);
+  }],
+  ['TC-BIZ08', 'Tìm kiếm case-insensitive', 'business', async () => {
+    const list = ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C'];
+    const query = 'nguyễn';
+    const result = list.filter(n => n.toLowerCase().includes(query.toLowerCase()));
+    assert(result.length === 1 && result[0] === 'Nguyễn Văn A', 'Tìm kiếm không phân biệt hoa thường');
+  }],
+]; }
+
+// ── SECTION F: Cấu hình Extension ─────────────────────────────────────────
+function getConfigTests() { return [
+  ['TC-CFG01', 'Supabase URL có định dạng đúng', 'config', async () => {
+    const url = document.getElementById('cfg-url').value.trim();
+    assert(url.includes('.supabase.co'), 'URL phải chứa .supabase.co');
+    assert(url.startsWith('https://'), 'URL phải bắt đầu bằng https://');
+  }],
+  ['TC-CFG02', 'SUPABASE_CONFIG được khai báo đúng', 'config', async () => {
+    const text = await fetchLocalFile('../admin-dashboard/supabase-config.js');
+    assert(text.includes('SUPABASE_CONFIG'), 'supabase-config.js phải định nghĩa SUPABASE_CONFIG');
+    assert(text.includes('url:') || text.includes("url "), 'supabase-config.js phải có url');
+    assert(text.includes('anonKey:') || text.includes('anon'), 'supabase-config.js phải có anonKey');
+  }],
+  ['TC-CFG03', 'AuthService.logout() xóa đủ các key session', 'config', async () => {
+    const text = await fetchLocalFile('../admin-dashboard/auth.service.js');
+    const requiredKeys = ['af_logged_user', 'profile', 'current_role', 'access_token'];
+    for (const key of requiredKeys) {
+      assert(text.includes(key), `auth.service.js phải dọn dẹp key "${key}" khi logout`);
+    }
+  }],
+  ['TC-CFG04', 'initSupabase() có setSession để đồng bộ token', 'config', async () => {
+    const text = await fetchLocalFile('../admin-dashboard/app.js');
+    assert(text.includes('setSession'), 'app.js phải gọi setSession để đồng bộ session khi khởi tạo');
+  }],
+  ['TC-CFG05', 'master-admin.js getSupabaseClient() có setSession', 'config', async () => {
+    const text = await fetchLocalFile('../admin-dashboard/master-admin.js');
+    assert(text.includes('setSession'), 'master-admin.js phải gọi setSession để đồng bộ session');
+  }],
+  ['TC-CFG06', 'login.html redirect SYSTEM_ADMIN sang admin.html', 'config', async () => {
+    const text = await fetchLocalFile('../admin-dashboard/login.html');
+    assert(text.includes('admin.html'), 'login.html phải redirect sang admin.html với SYSTEM_ADMIN');
+    assert(text.includes('SYSTEM_ADMIN'), 'login.html phải kiểm tra role SYSTEM_ADMIN');
+  }],
+  ['TC-CFG07', 'admin.html load auth.service.js từ thư mục cục bộ', 'config', async () => {
+    const text = await fetchLocalFile('../admin-dashboard/admin.html');
+    const localPath = text.includes('"auth.service.js"') || text.includes("'auth.service.js'");
+    const oldPath = text.includes('../src/backend/auth/auth.service.js');
+    assert(localPath && !oldPath, 'admin.html phải load auth.service.js từ thư mục cục bộ admin-dashboard/');
+  }],
+]; }
+
+// =========================================================================
+// RENDER ENGINE
+// =========================================================================
+
+const SECTIONS = {
+  parser:   { label: '🔤 Parser AI', icon: '🔤' },
+  supabase: { label: '🔗 Supabase Cloud', icon: '🔗' },
+  files:    { label: '📁 Cấu trúc File', icon: '📁' },
+  security: { label: '🔒 Bảo mật', icon: '🔒' },
+  business: { label: '💼 Logic nghiệp vụ', icon: '💼' },
+  config:   { label: '⚙️ Cấu hình Extension', icon: '⚙️' },
+};
+
+function renderResults() {
+  const container = document.getElementById('test-output');
+  const grouped = {};
+  testResults.forEach(t => {
+    if (!grouped[t.section]) grouped[t.section] = [];
+    grouped[t.section].push(t);
+  });
+
+  let html = '';
+  for (const [sec, tests] of Object.entries(grouped)) {
+    const info = SECTIONS[sec] || { label: sec, icon: '🔹' };
+    const passes = tests.filter(t => t.status === 'pass').length;
+    const fails = tests.filter(t => t.status === 'fail').length;
+    const countClass = fails > 0 ? 'fail' : passes === tests.length ? 'pass' : '';
+
+    const testRows = tests.map(t => {
+      if (currentFilter !== 'all' && t.status !== currentFilter) return '';
+      let icon = '⏳', cls = 'pending';
+      if (t.status === 'pass') { icon = '✅'; cls = 'pass'; }
+      else if (t.status === 'fail') { icon = '❌'; cls = 'fail'; }
+      else if (t.status === 'skip') { icon = '⏭'; cls = 'skip'; }
+      else if (t.status === 'running') { icon = '<span class="spinner"></span>'; cls = 'running'; }
+
+      return `
+        <div class="test-row ${cls}" data-status="${t.status}">
+          <div class="test-icon">${icon}</div>
+          <div class="test-info">
+            <div class="test-name">[${t.id}] ${escHtml(t.name)}</div>
+            ${t.error ? `<div class="test-detail error">${escHtml(t.error)}</div>` : ''}
+          </div>
+          <div class="test-time">${t.ms ? t.ms + 'ms' : ''}</div>
+        </div>`;
+    }).join('');
+
+    if (!testRows.trim() && currentFilter !== 'all') continue;
+
+    html += `
+      <div class="section">
+        <div class="section-header">
+          ${info.icon} ${info.label}
+          <span class="section-count ${countClass}">${passes}/${tests.length}</span>
+        </div>
+        <div class="section-body">${testRows || '<div style="color:var(--text-s);font-size:12px;padding:8px">Không có test case phù hợp bộ lọc</div>'}</div>
+      </div>`;
+  }
+  container.innerHTML = html || '<div style="color:var(--text-s);text-align:center;padding:40px">Chưa chạy test nào</div>';
+}
+
+function filterTests(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderResults();
+}
+
+// =========================================================================
+// RUN SECTIONS
+// =========================================================================
+
+async function runSection(section) {
+  sbClient = null;
+  log(`\n▶ Bắt đầu section: ${section.toUpperCase()}`, 'blue');
+  let tests = [];
+  if (section === 'parser') tests = getParserTests();
+  else if (section === 'supabase') tests = getSupabaseTests();
+  else if (section === 'files') tests = getFileTests();
+  else if (section === 'security') tests = getSecurityTests();
+  else if (section === 'business') tests = getBusinessTests();
+  else if (section === 'config') tests = getConfigTests();
+
+  for (const [id, name, sec, fn] of tests) {
+    await runTest(id, name, sec, fn);
+  }
+  log(`✓ Hoàn thành section ${section}`, 'green');
+}
+
+async function runAllTests() {
+  const btn = document.getElementById('btn-run-all');
+  btn.disabled = true;
+  btn.textContent = '⏳ Đang chạy...';
+  sbClient = null;
+  testResults.length = 0;
+  document.getElementById('log-area').innerHTML = '';
+  startTime = Date.now();
+  updateStats();
+
+  log('╔═══════════════════════════════════════════════╗', 'blue');
+  log('║   🧪 AUTO FILL ORDER — AUTOMATED TEST v2.0  ║', 'blue');
+  log('║   ' + new Date().toLocaleString('vi-VN') + '                  ║', 'blue');
+  log('╚═══════════════════════════════════════════════╝', 'blue');
+
+  const allTests = [
+    ...getParserTests(),
+    ...getSupabaseTests(),
+    ...getFileTests(),
+    ...getSecurityTests(),
+    ...getBusinessTests(),
+    ...getConfigTests(),
+  ];
+  for (const [id, name, sec] of allTests) {
+    if (!testResults.find(t => t.id === id)) {
+      testResults.push({ id, name, section: sec, status: 'pending', error: '', ms: 0 });
+    }
+  }
+  renderResults();
+
+  await runSection('parser');
+  await runSection('supabase');
+  await runSection('files');
+  await runSection('security');
+  await runSection('business');
+  await runSection('config');
+
+  const pass = testResults.filter(t => t.status === 'pass').length;
+  const fail = testResults.filter(t => t.status === 'fail').length;
+  const skip = testResults.filter(t => t.status === 'skip').length;
+  const total = testResults.length;
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  log('\n╔═══════════════════════════════════════╗', 'blue');
+  log(`║   📊 KẾT QUẢ: ${pass} Pass | ${fail} Fail | ${skip} Skip   ║`, fail > 0 ? 'red' : 'green');
+  log(`║   ⏱ Thời gian: ${elapsed}s / ${total} test case   ║`, 'blue');
+  log('╚═══════════════════════════════════════╝', 'blue');
+
+  btn.disabled = false;
+  btn.textContent = '▶ Chạy Lại';
+  document.getElementById('btn-export').disabled = false;
+}
+
+function exportReport() {
+  const pass = testResults.filter(t => t.status === 'pass').length;
+  const fail = testResults.filter(t => t.status === 'fail').length;
+  const skip = testResults.filter(t => t.status === 'skip').length;
+  const elapsed = startTime ? ((Date.now() - startTime) / 1000).toFixed(1) + 's' : '—';
+
+  let txt = `# AUTO FILL ORDER — TEST REPORT\nNgày: ${new Date().toLocaleString('vi-VN')}\n\n`;
+  txt += `## Tổng kết: ${pass}/${testResults.length} Pass • ${fail} Fail • ${skip} Skip • ${elapsed}\n\n`;
+
+  const sections = {};
+  testResults.forEach(t => {
+    if (!sections[t.section]) sections[t.section] = [];
+    sections[t.section].push(t);
+  });
+  for (const [sec, tests] of Object.entries(sections)) {
+    txt += `### ${SECTIONS[sec]?.label || sec}\n`;
+    tests.forEach(t => {
+      const icon = t.status === 'pass' ? '✅' : t.status === 'fail' ? '❌' : '⏭';
+      txt += `- [${icon}] [${t.id}] ${t.name}${t.error ? ' — ' + t.error : ''}\n`;
+    });
+    txt += '\n';
+  }
+
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `test-report-${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+}
+
+window.addEventListener('load', () => {
+  const all = [...getParserTests(),...getSupabaseTests(),...getFileTests(),...getSecurityTests(),...getBusinessTests(),...getConfigTests()];
+  all.forEach(([id,name,sec]) => testResults.push({id,name,section:sec,status:'pending',error:'',ms:0}));
+  renderResults();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,512 @@
+thiết kế theo pipeline sau:
+
+Địa chỉ gốc
+      │
+      ▼
+1. Normalize
+- bỏ dấu câu thừa
+- chuẩn hóa khoảng trắng
+- chuẩn hóa viết tắt
+      │
+      ▼
+2. Dictionary
+- chuyển tên cũ → tên mới
+- đổi quận/huyện cũ
+- đổi xã/phường cũ
+      │
+      ▼
+3. Fuzzy Match
+- so khớp gần đúng
+- sửa lỗi chính tả
+      │
+      ▼
+4. Database tra cứu
+- đối chiếu với danh mục địa giới hành chính mới
+      │
+      ▼
+5. AI (chỉ khi không khớp)
+- phân tích địa chỉ khó
+- suy luận từ ngữ cảnh
+      │
+      ▼
+6. Validation
+- kiểm tra tỉnh ↔ xã/phường có hợp lệ không
+      │
+      ▼
+Địa chỉ chuẩn
+1. Dictionary là quan trọng nhất
+
+Ví dụ:
+
+TP Thủ Đức
+↓
+
+TP Hồ Chí Minh
+↓
+
+Phường Linh Xuân
+
+hoặc
+
+Huyện Đông Anh
+
+↓
+
+Xã Đông Anh
+
+hay
+
+Q1
+
+↓
+
+Phường Bến Nghé
+
+Những trường hợp này tra bảng sẽ nhanh, chính xác và không tốn chi phí AI.
+
+2. Fuzzy Search
+
+Người dùng thường nhập:
+
+Phương
+
+thay vì
+
+Phường
+
+hoặc
+
+Ngãi Giao
+
+↓
+
+Ngai Giao
+
+hoặc
+
+Hồ Chí Minh
+
+↓
+
+HCM
+
+↓
+
+Sài Gòn
+
+↓
+
+TPHCM
+
+Có thể dùng khoảng cách Levenshtein hoặc Fuse.js để tìm tên gần đúng trong danh mục địa giới.
+AI chỉ là phương án cuối
+
+Ví dụ địa chỉ:
+
+Nhà chị Hoa gần chợ đầu mối Thủ Đức,
+đi qua cây xăng Petro, hẻm 25.
+
+Hoặc
+
+Ấp 2 xã Mỹ Hạnh, Long An
+
+AI có thể suy luận thành địa chỉ chuẩn hơn khi dữ liệu tra cứu không đủ.
+
+Tỷ lệ gọi AI nên rất thấp (ví dụ dưới 5% tổng số đơn), giúp giảm chi phí và tăng tốc độ.
+
+5. Validation
+
+Sau khi chuẩn hóa, kiểm tra lại:
+
+Xã/phường có thuộc đúng tỉnh/thành không.
+Không còn tên địa giới cũ nếu hệ thống yêu cầu địa chỉ mới.
+Nếu không hợp lệ, báo người dùng hoặc chuyển sang AI để xử lý.
+Cấu trúc module nên có
+features/
+└── address/
+    ├── normalize.js      // Chuẩn hóa chuỗi
+    ├── abbreviations.js  // Viết tắt
+    ├── aliases.js        // Tên cũ → tên mới
+    ├── fuzzy.js          // So khớp gần đúng
+    ├── matcher.js        // Ghép với dữ liệu địa giới
+    ├── validator.js      // Kiểm tra tính hợp lệ
+    ├── aiFallback.js     // Chỉ gọi AI khi cần
+    └── index.js          // Điều phối toàn bộ
+
+Với extension của bạn, mình còn đề xuất thêm Address Engine V2 có khả năng:
+
+Chuẩn hóa 100% theo địa giới hành chính mới.
+Tự học từ các địa chỉ người dùng đã sửa (lưu vào Firebase hoặc local cache).
+Không cần gọi AI với khoảng 95–98% đơn hàng thông thường, chỉ dùng AI cho các trường hợp thực sự mơ hồ. Điều này sẽ giúp tốc độ nhanh hơn, ổn định hơn và giảm đáng kể chi phí sử dụng AI.
+Address Engine V2
+│
+├── Input
+│
+├── Normalizer
+│
+├── Rule Engine
+│
+├── Alias Engine
+│
+├── Administrative Database
+│
+├── Fuzzy Matcher
+│
+├── Address Parser
+│
+├── AI Resolver
+│
+├── Validator
+│
+├── Learning Engine
+│
+│
+└── Output
+. Input
+
+Nhận mọi dạng địa chỉ
+
+Ví dụ
+
+chị lan
+xóm 3
+đức hòa long an
+
+0905xxxxxx
+
+hoặc
+
+A Hải
+Thôn Đông
+Đại Lộc
+QN
+
+không cần đúng định dạng.
+
+2. Normalizer
+
+Chỉ làm sạch dữ liệu.
+
+Ví dụ
+
+P.
+
+↓
+
+Phường
+Q
+
+↓
+
+Quận
+TPHCM
+
+↓
+
+TP Hồ Chí Minh
+HCM
+
+↓
+
+TP Hồ Chí Minh
+Dak Lak
+
+↓
+
+Đắk Lắk
+QN
+
+↓
+
+Quảng Nam
+
+Ngoài ra
+
+bỏ khoảng trắng
+bỏ ký tự thừa
+Unicode NFC
+chuẩn hóa dấu
+3. Rule Engine
+
+Chứa toàn bộ rule.
+
+Ví dụ
+
+Huyện
+
+↓
+
+Xã
+Thị trấn
+
+↓
+
+Xã
+Quận 9
+
+↓
+
+TP Thủ Đức
+Quận Thủ Đức
+
+↓
+
+TP Thủ Đức
+TP Thủ Đức
+
+↓
+
+TP Hồ Chí Minh
+
+Rule này không dùng AI.
+
+Chạy cực nhanh.
+
+4. Alias Engine
+
+Đây là phần quan trọng nhất.
+
+Ví dụ
+
+Sài Gòn
+
+↓
+
+TP Hồ Chí Minh
+SG
+
+↓
+
+TP Hồ Chí Minh
+HCM
+
+↓
+
+TP Hồ Chí Minh
+TPHCM
+
+↓
+
+TP Hồ Chí Minh
+
+Một địa phương có thể có hàng chục alias.
+
+5. Administrative Database
+
+Không dùng API.
+
+Đóng gói JSON ngay trong extension.
+
+Ví dụ
+
+{
+  "province":"Quảng Nam",
+  "ward":"Đại Hồng",
+  "aliases":[
+      "Xa Dai Hong",
+      "X. Đại Hồng"
+  ]
+}
+
+Khoảng
+
+34 tỉnh/thành
+toàn bộ xã/phường mới
+alias
+mã bưu chính (nếu cần)
+6. Address Parser
+
+Đây là Parser.
+
+Ví dụ
+
+123 Nguyễn Huệ
+P Linh Tây
+TP Thủ Đức
+
+↓
+
+street
+
+ward
+
+district
+
+province
+
+Parser chỉ tách.
+
+Không sửa.
+
+7. Fuzzy Match
+
+Ví dụ
+
+Linh Tâyy
+
+↓
+
+Linh Tây
+Tam Ky
+
+↓
+
+Tam Kỳ
+Ngai Giao
+
+↓
+
+Ngãi Giao
+
+Nên dùng
+
+Levenshtein
+Fuse.js
+8. Validator
+
+Kiểm tra
+
+Ví dụ
+
+Phường Linh Tây
+
+↓
+
+TP Đà Nẵng
+
+Sai.
+
+Không tồn tại.
+
+↓
+
+Reject.
+
+9. AI Resolver
+
+AI KHÔNG chạy đầu tiên.
+
+Chỉ chạy khi
+
+Confidence < 85%
+
+Ví dụ
+
+Nhà chị Hương
+gần chợ Cồn
+ĐN
+
+AI mới suy luận.
+
+Điều này giảm
+
+khoảng
+
+95%
+
+chi phí AI.
+
+10. Learning Engine
+
+Đây mới là phần mình rất khuyến nghị.
+
+Ví dụ
+
+AI trả
+
+Phường Hòa Xuân
+
+Bạn sửa thành
+
+Phường Hòa Cường
+
+Engine sẽ lưu
+
+Input
+
+↓
+
+Output
+
+Lần sau
+
+không cần AI nữa.
+
+Database sẽ ngày càng thông minh.
+
+Output
+
+Ví dụ
+
+{
+    "receiver":"Nguyễn Văn A",
+    "phone":"0905xxxxxx",
+
+    "street":"123 Nguyễn Huệ",
+
+    "ward":"Phường Linh Tây",
+
+    "province":"TP Hồ Chí Minh",
+
+    "postcode":"71300",
+
+    "confidence":98,
+
+    "source":"dictionary"
+}
+Cấu trúc thư mục
+features/
+    address/
+        engine.js
+        parser.js
+        normalizer.js
+        validator.js
+        fuzzy.js
+        aliases.js
+        rules.js
+        learning.js
+        ai.js
+
+        database/
+            provinces.json
+            wards.json
+            aliases.json
+            postcode.json
+Address Engine V2.5 (đề xuất)
+
+Nếu hướng đến một extension chuyên nghiệp, mình sẽ bổ sung thêm Address Knowledge Base (AKB) ở giữa Validator và AI Resolver:
+
+Input
+      │
+Normalizer
+      │
+Rule Engine
+      │
+Alias Engine
+      │
+Administrative Database
+      │
+Fuzzy Matcher
+      │
+Address Parser
+      │
+Validator
+      │
+Address Knowledge Base (AKB)
+      │
+Learning Engine
+      │
+AI Resolver (Fallback)
+      │
+Output
+
+AKB là cơ sở tri thức được xây dựng từ chính lịch sử sử dụng của bạn (ví dụ lưu trên Firebase hoặc cục bộ):
+
+Địa chỉ đã chuẩn hóa thành công.
+Cách viết tắt thường gặp của khách hàng.
+Kết quả người dùng đã sửa thủ công.
+Địa chỉ giao hàng lặp lại theo số điện thoại hoặc tên khách.
+
+Khi một địa chỉ tương tự xuất hiện lần sau, engine sẽ lấy kết quả từ AKB trước. Chỉ khi không tìm được hoặc độ tin cậy thấp mới chuyển sang AI.
+
+Với quy trình này, sau một thời gian sử dụng, phần lớn địa chỉ sẽ được xử lý trong vài mili giây mà không cần gọi AI, đồng thời vẫn đảm bảo khả năng xử lý các trường hợp khó thông qua cơ chế fallback. Đây là hướng thiết kế phù hợp nếu bạn muốn Address Engine trở thành một thành phần dùng chung cho nhiều website và hãng vận chuyển trong tương lai.

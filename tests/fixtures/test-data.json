@@ -1,0 +1,97 @@
+{
+    "_description": "Dữ liệu test cho kiểm thử hệ thống. Dùng prefix test_ để tránh ảnh hưởng production.",
+    "_note": "KHÔNG dùng dữ liệu này trong production. Xóa sạch sau khi test xong.",
+    "master_admin": {
+        "email": "admin@vietautofill.com",
+        "password": "Admin@123456",
+        "role": "master_admin"
+    },
+    "test_shops": [
+        {
+            "name": "test_shop_alpha",
+            "owner_email": "test_owner_alpha@test.com",
+            "owner_password": "Test@123456",
+            "owner_name": "Nguyễn Văn Alpha",
+            "expected_status": "active"
+        },
+        {
+            "name": "test_shop_beta",
+            "owner_email": "test_owner_beta@test.com",
+            "owner_password": "Test@123456",
+            "owner_name": "Trần Thị Beta",
+            "expected_status": "active"
+        },
+        {
+            "name": "test_shop_gamma",
+            "owner_email": "test_owner_gamma@test.com",
+            "owner_password": "Test@123456",
+            "owner_name": "Lê Văn Gamma",
+            "expected_status": "active"
+        }
+    ],
+    "test_quotas": {
+        "daily_quota": 100,
+        "max_devices": 3,
+        "updated_daily_quota": 200,
+        "updated_max_devices": 5,
+        "invalid_quota_negative": -1,
+        "invalid_quota_zero": 0
+    },
+    "test_feature_flags": {
+        "ai_parsing": true,
+        "vnpost": true,
+        "jt_express": false
+    },
+    "test_configs": {
+        "groq_keys": [
+            "gsk_test_key_001",
+            "gsk_test_key_002"
+        ],
+        "groq_keys_invalid": "not_a_json_array",
+        "ai_prompt": "Bạn là trợ lý AI giúp phân tích địa chỉ giao hàng. Hãy trích xuất: tên, số điện thoại, địa chỉ đầy đủ.",
+        "blacklist_phones": [
+            "0987654321",
+            "0912345678"
+        ],
+        "blacklist_phones_invalid": "not_a_json_array"
+    },
+    "test_members": [
+        {
+            "email": "test_member_1@test.com",
+            "password": "Member@123",
+            "name": "Member One"
+        },
+        {
+            "email": "test_member_2@test.com",
+            "password": "Member@123",
+            "name": "Member Two"
+        }
+    ],
+    "test_invites": {
+        "role": "staff",
+        "message": "Mời bạn tham gia shop test"
+    },
+    "test_audit_actions": [
+        "shop.create",
+        "shop.delete",
+        "shop.lock",
+        "shop.unlock",
+        "quota.update",
+        "config.update",
+        "user.password_reset",
+        "invite.create",
+        "member.join"
+    ],
+    "expected_error_messages": {
+        "invalid_email": "Email không hợp lệ",
+        "invalid_password_short": "Mật khẩu phải có ít nhất 6 ký tự",
+        "shop_name_empty": "Tên shop không được để trống",
+        "quota_negative": "Hạn ngạch phải là số dương",
+        "invalid_json": "Định dạng JSON không hợp lệ"
+    },
+    "urls": {
+        "login_page": "admin-dashboard/login.html",
+        "admin_page": "admin-dashboard/admin.html",
+        "index_page": "admin-dashboard/index.html"
+    }
+}

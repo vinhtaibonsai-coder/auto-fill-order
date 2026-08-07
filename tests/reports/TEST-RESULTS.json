@@ -1,0 +1,255 @@
+{
+  "total": 45,
+  "passed": 45,
+  "failed": 0,
+  "skipped": 4,
+  "tests": [
+    {
+      "name": "test-data.json is valid JSON",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "master_admin config exists",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "test_shops has 3 entries",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "test_shops have required fields",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "test_quotas has valid values",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "test_configs has groq_keys as array",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "test_configs has blacklist_phones as array",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "urls config exists",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "Supabase connection test",
+      "status": "⏭️ SKIP",
+      "reason": "Supabase client not initialized"
+    },
+    {
+      "name": "Ping Supabase REST API",
+      "status": "⏭️ SKIP",
+      "reason": "Supabase client not initialized"
+    },
+    {
+      "name": "Check Supabase auth service",
+      "status": "⏭️ SKIP",
+      "reason": "Supabase client not initialized"
+    },
+    {
+      "name": "Schema validation",
+      "status": "⏭️ SKIP",
+      "reason": "Supabase client not initialized"
+    },
+    {
+      "name": "File exists: admin-dashboard/login.html",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: admin-dashboard/admin.html",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "File exists: admin-dashboard/index.html",
+      "status": "✅ PASS",
+      "duration": "2ms"
+    },
+    {
+      "name": "File exists: admin-dashboard/master-admin.js",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "File exists: admin-dashboard/shops.js",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: admin-dashboard/app.js",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "File exists: admin-dashboard/supabase-config.js",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "File exists: manifest.json",
+      "status": "✅ PASS",
+      "duration": "2ms"
+    },
+    {
+      "name": "File exists: backend/content/index.js",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: src/backend/auth/auth.service.js",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "File exists: src/backend/auth/auth.session.js",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: src/backend/permission/permission.service.js",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: src/backend/audit/audit.service.js",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: src/backend/shop/shop.service.js",
+      "status": "✅ PASS",
+      "duration": "2ms"
+    },
+    {
+      "name": "File exists: src/backend/shop/invite.service.js",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: src/backend/member/member.service.js",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "File exists: src/backend/realtime/realtime.service.js",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: database/migrations/v3_enterprise_schema.sql",
+      "status": "✅ PASS",
+      "duration": "2ms"
+    },
+    {
+      "name": "File exists: database/migrations/v3_1_rbac_schema.sql",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "File exists: database/migrations/v4_saas_architecture.sql",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "File exists: database/migrations/v5_master_admin_schema.sql",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "File exists: database/migrations/v6_DEPRECATED_panel_accounts.sql",
+      "status": "✅ PASS",
+      "duration": "0ms"
+    },
+    {
+      "name": "Migration database/migrations/v3_enterprise_schema.sql contains required keywords",
+      "status": "✅ PASS",
+      "duration": "3ms"
+    },
+    {
+      "name": "Migration database/migrations/v3_1_rbac_schema.sql contains required keywords",
+      "status": "✅ PASS",
+      "duration": "2ms"
+    },
+    {
+      "name": "Migration database/migrations/v4_saas_architecture.sql contains required keywords",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "Migration database/migrations/v5_master_admin_schema.sql contains required keywords",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "Migration database/migrations/v6_DEPRECATED_panel_accounts.sql contains required keywords",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "auth.service.js exports required functions",
+      "status": "✅ PASS",
+      "duration": "2ms"
+    },
+    {
+      "name": "auth.session.js handles session management",
+      "status": "✅ PASS",
+      "duration": "2ms"
+    },
+    {
+      "name": "permission.service.js exports RBAC logic",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "shop.service.js has CRUD operations",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "audit.service.js logs actions",
+      "status": "✅ PASS",
+      "duration": "1ms"
+    },
+    {
+      "name": "admin-dashboard/master-admin.js is non-empty",
+      "status": "✅ PASS",
+      "duration": "8ms"
+    },
+    {
+      "name": "admin-dashboard/login.html has login form",
+      "status": "✅ PASS",
+      "duration": "2ms"
+    },
+    {
+      "name": "No hardcoded Supabase service_role key in source",
+      "status": "✅ PASS",
+      "duration": "3ms"
+    },
+    {
+      "name": "No hardcoded passwords in source code",
+      "status": "✅ PASS",
+      "duration": "6ms"
+    },
+    {
+      "name": "manifest.json has minimum permissions",
+      "status": "✅ PASS",
+      "duration": "3ms"
+    }
+  ],
+  "startTime": "2026-08-01T09:51:19.261Z",
+  "endTime": "2026-08-01T09:51:19.419Z"
+}

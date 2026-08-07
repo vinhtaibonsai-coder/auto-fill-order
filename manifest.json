@@ -1,0 +1,89 @@
+{
+  "manifest_version": 3,
+  "name": "Auto Fill Order",
+  "version": "1.0",
+  "author": "Stomsa, 0935011695",
+  "description": "Bóc tách đơn hàng siêu tốc offline tại máy, tối ưu sửa lỗi địa chỉ bằng Groq. Tác giả: Stomsa, 0935011695.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.supabase.co/*",
+    "https://khachhang.jtexpress.vn/*",
+    "https://*.jtexpress.vn/*",
+    "https://my.vnpost.vn/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "options_ui": {
+    "page": "frontend/options/options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "src/runtime/service-worker/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://my.vnpost.vn/*",
+        "https://shop.jtexpress.vn/*",
+        "https://khachhang.jtexpress.vn/*"
+      ],
+      "js": [
+        "src/application/config.js",
+        "src/infrastructure/supabase/supabase-config.js",
+        "src/infrastructure/supabase/client.js",
+        "src/application/logger.js",
+        "src/application/storage.js",
+        "src/application/api.js",
+        "src/application/mutex.js",
+        "src/application/queue.js",
+        "src/application/waitElement.js",
+        "src/application/dom.js",
+        "src/domain/auth/auth.events.js",
+        "src/domain/auth/auth.session.js",
+        "src/domain/auth/auth.service.js",
+        "src/domain/permission/permission.service.js",
+        "src/application/address/database/data.js",
+        "src/application/address/database/ward_merger.js",
+        "src/application/address/normalizer.js",
+        "src/application/address/aliases.js",
+        "src/application/address/rules.js",
+        "src/application/address/fuzzy.js",
+        "src/application/address/parser.js",
+        "src/application/address/validator.js",
+        "src/application/address/learning.js",
+        "src/application/address/ai.js",
+        "src/application/address/engine.js",
+        "src/domain/carrier/vnpost/selectors.js",
+        "src/domain/carrier/vnpost/autofill.js",
+        "src/domain/carrier/jt/selectors.js",
+        "src/domain/carrier/jt/autofill.js",
+        "src/application/order-parser/parser.js",
+
+        "src/application/history/history.js",
+        "src/infrastructure/utils/debounce.js",
+        "frontend/panel/styling/styles.js",
+        "frontend/panel/toast/toast.js",
+        "src/ui/panel/index.jsx",
+        "src/runtime/content/index.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "admin-dashboard/admin.html",
+        "frontend/options/options.html",
+        "assets/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

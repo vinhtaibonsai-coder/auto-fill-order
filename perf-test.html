@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Auto Fill Order — Benchmark Hiệu Năng</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1e2d4a;
+      --text: #e2e8f0;
+      --text-muted: #8892a4;
+      --accent: #38bdf8;
+      --accent2: #818cf8;
+      --green: #34d399;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --orange: #fb923c;
+      --font: 'Inter', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'Consolas', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -20%;
+      width: 60%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(56,189,248,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+      position: relative;
+    }
+    .header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      position: relative;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 40px 60px; }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      align-items: center;
+    }
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      color: #0f172a;
+      box-shadow: 0 0 20px rgba(56,189,248,.2);
+    }
+    .btn-primary:hover { box-shadow: 0 0 30px rgba(56,189,248,.35); }
+    .btn-primary:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #243049; }
+
+    .iter-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      width: 80px;
+      text-align: center;
+    }
+    .iter-input:focus { outline: none; border-color: var(--accent); }
+    .iter-label { color: var(--text-muted); font-size: 13px; }
+
+    /* ── Status ── */
+    .status-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      font-family: var(--mono);
+      color: var(--text-muted);
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-bar .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Summary Cards ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 12px 12px 0 0;
+    }
+    .summary-card.fast::before { background: linear-gradient(90deg, var(--green), #22d3ee); }
+    .summary-card.medium::before { background: linear-gradient(90deg, var(--yellow), var(--orange)); }
+    .summary-card.slow::before { background: linear-gradient(90deg, var(--orange), var(--red)); }
+    .summary-card .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .summary-card .value {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: var(--mono);
+    }
+    .summary-card .unit {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-left: 2px;
+    }
+
+    /* ── Result Table ── */
+    .results-section { margin-bottom: 32px; }
+    .results-section h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .results-section h2 .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .results-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .results-table th {
+      background: var(--surface2);
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .results-table td {
+      padding: 11px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(30,45,74,.5);
+      vertical-align: top;
+    }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr:hover td { background: rgba(56,189,248,.03); }
+    .results-table .mono { font-family: var(--mono); font-size: 13px; }
+    .results-table .test-name { font-weight: 600; color: var(--text); }
+    .results-table .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--mono);
+    }
+    .badge-fast { background: rgba(52,211,153,.15); color: var(--green); }
+    .badge-medium { background: rgba(251,191,36,.12); color: var(--yellow); }
+    .badge-slow { background: rgba(248,113,113,.12); color: var(--red); }
+
+    /* ── Latency Bar ── */
+    .latency-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .latency-bar {
+      height: 6px;
+      border-radius: 3px;
+      min-width: 4px;
+      max-width: 200px;
+      transition: width .4s ease;
+    }
+    .latency-bar.fast { background: linear-gradient(90deg, var(--green), #22d3ee); }
+    .latency-bar.medium { background: linear-gradient(90deg, var(--yellow), var(--orange)); }
+    .latency-bar.slow { background: linear-gradient(90deg, var(--orange), var(--red)); }
+
+    /* ── Detail Panel ── */
+    .detail-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 24px;
+    }
+    .detail-panel h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+    .detail-panel pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ── Loading overlay ── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: opacity .4s;
+    }
+    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    #loading-overlay .big-spinner {
+      width: 48px; height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    #loading-overlay p { color: var(--text-muted); font-size: 14px; }
+
+    /* ── Memory info ── */
+    .memory-info {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .mem-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mem-item .mem-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--text-muted);
+    }
+    .mem-item .mem-value {
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="big-spinner"></div>
+  <p>Đang nạp modules extension...</p>
+</div>
+
+<div class="header">
+  <h1>⚡ Auto Fill Order — Benchmark Hiệu Năng</h1>
+  <p>Đo lường tốc độ xử lý các pipeline cốt lõi: Parser, Normalizer, Fuzzy, Validator, Rules, Engine</p>
+</div>
+
+<div class="container">
+  <div class="controls">
+    <button id="btnRun" class="btn btn-primary" disabled>
+      <span>▶</span> Chạy Benchmark
+    </button>
+    <button id="btnRunQuick" class="btn btn-secondary" disabled>
+      ⚡ Quick (50 lần)
+    </button>
+    <label class="iter-label">Số vòng lặp:</label>
+    <input id="iterCount" type="number" class="iter-input" value="200" min="10" max="5000">
+    <button id="btnExport" class="btn btn-secondary" disabled>
+      📋 Xuất JSON
+    </button>
+  </div>
+
+  <div id="statusBar" class="status-bar">
+    ⏳ Đang nạp modules...
+  </div>
+
+  <div id="summaryGrid" class="summary-grid" style="display:none;"></div>
+
+  <div id="resultsContainer"></div>
+
+  <div id="detailPanel" class="detail-panel" style="display:none;">
+    <h3>📊 Chi tiết kết quả (JSON)</h3>
+    <pre id="detailJson"></pre>
+  </div>
+</div>
+
+<!-- Load extension modules in order (same order as manifest.json content_scripts) -->
+<script src="backend/core/config.js"></script>
+<script src="backend/core/logger.js"></script>
+<!-- Skip storage.js (needs chrome.storage), api.js, mutex.js, queue.js, waitElement.js, dom.js -->
+<!-- Skip firebase modules -->
+<script src="backend/features/address/database/data.js"></script>
+<script src="backend/features/address/database/ward_merger.js"></script>
+<script src="backend/features/address/normalizer.js"></script>
+<script src="backend/features/address/aliases.js"></script>
+<script src="backend/features/address/rules.js"></script>
+<script src="backend/features/address/fuzzy.js"></script>
+<script src="backend/features/address/parser.js"></script>
+<script src="backend/features/address/validator.js"></script>
+<script src="backend/features/address/learning.js"></script>
+<script src="backend/features/address/engine.js"></script>
+<script src="backend/features/order-parser/parser.js"></script>
+
+<script>
+(() => {
+  // ─── TEST DATA ───────────────────────────────────────────────────────
+  const TEST_ORDERS = [
+    // 1. Đơn đầy đủ chuẩn
+    `Nguyễn Văn An
+0912345678
+123 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM
+COD 350k`,
+
+    // 2. Đơn viết tắt
+    `Trần Thị Bích 0987654321
+45 Nguyễn Huệ, P.5, Q.Gò Vấp, HCM
+cod 1tr2`,
+
+    // 3. Đơn không dấu phẩy
+    `Lê Hoàng Nam
+0356789012
+78 Trần Phú Phường Hải Châu 1 Quận Hải Châu Đà Nẵng`,
+
+    // 4. Đơn nhiều dòng phức tạp
+    `Phạm Minh Tuấn (giao buổi sáng)
+sđt: 0901234567
+Đ/c: 234 Nguyễn Trãi, Phường Nguyễn Cư Trinh, Q.1, TP Hồ Chí Minh
+Mã đơn: DH12345
+COD: 2tr5 + cước`,
+
+    // 5. Đơn Hà Nội
+    `Vũ Đức Minh 0388901234
+Số 12 ngõ 45 Hoàng Hoa Thám, Ba Đình, Hà Nội
+150k`,
+
+    // 6. Đơn tỉnh lẻ
+    `Đỗ Thị Hồng
+0976543210
+Thôn 3, Xã Ea Kly, Huyện Krông Pắk, Đắk Lắk
+cod 500000`,
+
+    // 7. Đơn SĐT dính liền
+    `Ngô Thanh Tùng 09123456780934567890
+12 Phan Đình Phùng, Phường 2, TP Đà Lạt, Lâm Đồng`,
+
+    // 8. Đơn viết tắt huyện / xã
+    `Mai Lan
+0369876543
+Xóm 5, X. Đông Thọ, H. Đông Sơn, Thanh Hóa
+cod 80k`,
+
+    // 9. Đơn J&T style (1 dòng)
+    `Hoàng Anh; 0945678901; 67 Lý Thường Kiệt, P.14, Q.10, HCM; cod 120k`,
+
+    // 10. Đơn có nhiều thông tin thừa
+    `acc facebook: Lan Anh
+Người nhận: Trịnh Thanh Lan
+Liên hệ: 0912000111
+Ship cho mình về 456 Nguyễn Văn Cừ, Phường An Hải Bắc, Quận Sơn Trà, Đà Nẵng
+Tiền thu hộ 300k nhé`,
+
+    // 11. Đơn miền Tây
+    `Bùi Văn Tám 0939111222
+Ấp Phú Hòa, Xã Tân Hòa, Huyện Châu Thành A, Hậu Giang
+COD 1.5tr`,
+
+    // 12. Đơn sáp nhập 2025 (Phường cũ Q.10 HCM)
+    `Lê Minh Khoa
+0888777666
+15 Đường 3/2, Phường 12, Quận 10, HCM
+cod 200k`,
+
+    // 13. Đơn viết thiếu tỉnh
+    `Nguyễn Hữu Dũng
+0377888999
+23 Trần Hưng Đạo, Phường 1, TP. Quy Nhơn`,
+
+    // 14. Đơn Hải Phòng
+    `Đặng Thùy Linh
+0356222333
+89 Lạch Tray, An Biên, Lê Chân, Hải Phòng
+cod 450000`,
+
+    // 15. Đơn cực ngắn
+    `Hoa 0911222333 Q9 HCM`,
+
+    // 16. Đơn có note dài
+    `Phan Thị Ngọc Ánh (bạn gái anh Tùng, gọi trước khi giao, ko nghe máy thì gọi 0912345678)
+0967111444
+Tòa S2.05, Vinhomes Grand Park, P. Long Thạnh Mỹ, TP. Thủ Đức, HCM
+cod 1tr`,
+
+    // 17. Đơn Cần Thơ
+    `Trương Minh Đạt
+0399555666
+12 Đường 30/4, P. Xuân Khánh, Q. Ninh Kiều, Cần Thơ`,
+
+    // 18. Đơn có unicode lạ
+    `Lý  Hải　 Đăng
+０９５５１１１２２２
+Số 7, đường Phạm Văn Đồng, P.Linh Trung, Q.Thủ Đức, TP HCM`,
+
+    // 19. Đơn Nghệ An (tỉnh)
+    `Nguyễn Thị Thảo
+0365444555
+Xóm 8, Xã Nghi Liên, TP Vinh, Nghệ An
+cod 75k`,
+
+    // 20. Đơn đa mã đơn
+    `Hoàng Minh
+0911333555
+145 Lê Duẩn, P. Hải Châu 2, Q. Hải Châu, Đà Nẵng
+Mã đơn: AB123
+DH456
+COD 2tr`,
+  ];
+
+  const TEST_ADDRESSES = [
+    "123 Đường Lê Lợi, Phường Bến Thành, Quận 1, Thành phố Hồ Chí Minh",
+    "45 Nguyễn Huệ, P.5, Q.Gò Vấp, HCM",
+    "78 Trần Phú Phường Hải Châu 1 Quận Hải Châu Đà Nẵng",
+    "234 Nguyễn Trãi, Phường Nguyễn Cư Trinh, Q.1, TP Hồ Chí Minh",
+    "Số 12 ngõ 45 Hoàng Hoa Thám, Ba Đình, Hà Nội",
+    "Thôn 3, Xã Ea Kly, Huyện Krông Pắk, Đắk Lắk",
+    "12 Phan Đình Phùng, Phường 2, TP Đà Lạt, Lâm Đồng",
+    "Xóm 5, Xã Đông Thọ, Huyện Đông Sơn, Thanh Hóa",
+    "67 Lý Thường Kiệt, P.14, Q.10, HCM",
+    "456 Nguyễn Văn Cừ, Phường An Hải Bắc, Quận Sơn Trà, Đà Nẵng",
+    "Ấp Phú Hòa, Xã Tân Hòa, Huyện Châu Thành A, Hậu Giang",
+    "15 Đường 3/2, Phường 12, Quận 10, HCM",
+    "23 Trần Hưng Đạo, Phường 1, TP. Quy Nhơn",
+    "89 Lạch Tray, An Biên, Lê Chân, Hải Phòng",
+    "Tòa S2.05, Vinhomes Grand Park, P. Long Thạnh Mỹ, TP. Thủ Đức, HCM",
+    "12 Đường 30/4, P. Xuân Khánh, Q. Ninh Kiều, Cần Thơ",
+    "Số 7, đường Phạm Văn Đồng, P.Linh Trung, Q.Thủ Đức, TP HCM",
+    "Xóm 8, Xã Nghi Liên, TP Vinh, Nghệ An",
+    "145 Lê Duẩn, P. Hải Châu 2, Q. Hải Châu, Đà Nẵng",
+    "Thị trấn Phước An, Huyện Krông Pắk, Đắk Lắk",
+  ];
+
+  const TEST_FUZZY_PAIRS = [
+    { query: "Bến Thanh", candidates: ["Bến Thành", "Bến Nghé", "Bến Cát", "Bình Thạnh"] },
+    { query: "Gò Vắp", candidates: ["Gò Vấp", "Gò Công", "Gò Đen"] },
+    { query: "Thủ Đưc", candidates: ["Thủ Đức", "Thủ Dầu Một", "Thủ Thừa"] },
+    { query: "Hải Chau", candidates: ["Hải Châu", "Hải Dương", "Hải Hậu", "Hải An"] },
+    { query: "Đà Lạc", candidates: ["Đà Lạt", "Đà Nẵng", "Đà Bắc"] },
+    { query: "Krong Pak", candidates: ["Krông Pắk", "Krông Ana", "Krông Năng", "Krông Bông"] },
+    { query: "Ninh Kieu", candidates: ["Ninh Kiều", "Ninh Bình", "Ninh Hải", "Ninh Thuận"] },
+    { query: "Ba Đinh", candidates: ["Ba Đình", "Ba Vì", "Ba Tri"] },
+    { query: "Long Thanh My", candidates: ["Long Thạnh Mỹ", "Long Thành", "Long Hồ"] },
+    { query: "Nguyen Cu Trinh", candidates: ["Nguyễn Cư Trinh", "Nguyễn Trãi", "Nguyễn Huệ"] },
+  ];
+
+  // ─── UTILITY FUNCTIONS ───────────────────────────────────────────────
+  function percentile(arr, p) {
+    const sorted = [...arr].sort((a, b) => a - b);
+    const idx = Math.ceil(p / 100 * sorted.length) - 1;
+    return sorted[Math.max(0, idx)];
+  }
+
+  function avg(arr) {
+    return arr.reduce((s, v) => s + v, 0) / arr.length;
+  }
+
+  function formatMs(ms) {
+    if (ms < 0.01) return '<0.01';
+    if (ms < 1) return ms.toFixed(3);
+    if (ms < 10) return ms.toFixed(2);
+    if (ms < 100) return ms.toFixed(1);
+    return ms.toFixed(0);
+  }
+
+  function getSpeedClass(ms) {
+    if (ms < 1) return 'fast';
+    if (ms < 10) return 'medium';
+    return 'slow';
+  }
+
+  function getSpeedBadge(ms) {
+    const cls = getSpeedClass(ms);
+    const labels = { fast: '⚡ Fast', medium: '⏱ Medium', slow: '🐢 Slow' };
+    return `<span class="badge badge-${cls}">${labels[cls]}</span>`;
+  }
+
+  // ─── BENCHMARK RUNNER ────────────────────────────────────────────────
+  function benchmark(name, fn, iterations) {
+    const times = [];
+    // Warm up (5 runs)
+    for (let i = 0; i < 5; i++) fn();
+
+    for (let i = 0; i < iterations; i++) {
+      const start = performance.now();
+      fn();
+      const end = performance.now();
+      times.push(end - start);
+    }
+
+    return {
+      name,
+      iterations,
+      times,
+      avg: avg(times),
+      min: Math.min(...times),
+      max: Math.max(...times),
+      p50: percentile(times, 50),
+      p95: percentile(times, 95),
+      p99: percentile(times, 99),
+      total: times.reduce((s, v) => s + v, 0),
+      opsPerSec: Math.round(1000 / avg(times)),
+    };
+  }
+
+  async function benchmarkAsync(name, fn, iterations) {
+    const times = [];
+    // Warm up
+    for (let i = 0; i < 3; i++) await fn();
+
+    for (let i = 0; i < iterations; i++) {
+      const start = performance.now();
+      await fn();
+      const end = performance.now();
+      times.push(end - start);
+    }
+
+    return {
+      name,
+      iterations,
+      times,
+      avg: avg(times),
+      min: Math.min(...times),
+      max: Math.max(...times),
+      p50: percentile(times, 50),
+      p95: percentile(times, 95),
+      p99: percentile(times, 99),
+      total: times.reduce((s, v) => s + v, 0),
+      opsPerSec: Math.round(1000 / avg(times)),
+    };
+  }
+
+  // ─── TEST SUITES ─────────────────────────────────────────────────────
+  function defineTests(iters) {
+    const suites = [];
+
+    // ══════════════════════════════════════════════════════════════════
+    // 1. ORDER PARSER
+    // ══════════════════════════════════════════════════════════════════
+    const orderParserTests = [];
+
+    // Per-order tests
+    TEST_ORDERS.forEach((order, idx) => {
+      const shortName = order.split('\n')[0].substring(0, 30);
+      orderParserTests.push(benchmark(
+        `Đơn #${idx + 1}: ${shortName}...`,
+        () => OrderProcessor.parse(order),
+        iters
+      ));
+    });
+
+    // Batch: all 20 orders
+    orderParserTests.push(benchmark(
+      '📦 Batch: 20 đơn cùng lúc',
+      () => { TEST_ORDERS.forEach(o => OrderProcessor.parse(o)); },
+      Math.max(10, Math.floor(iters / 5))
+    ));
+
+    suites.push({ name: '📝 Order Parser (runLocalComputerParser)', icon: '📝', results: orderParserTests });
+
+    // ══════════════════════════════════════════════════════════════════
+    // 2. ADDRESS NORMALIZER
+    // ══════════════════════════════════════════════════════════════════
+    const normalizerTests = [];
+    TEST_ADDRESSES.forEach((addr, idx) => {
+      normalizerTests.push(benchmark(
+        `Addr #${idx + 1}: ${addr.substring(0, 40)}...`,
+        () => AddressNormalizer.normalize(addr),
+        iters
+      ));
+    });
+    normalizerTests.push(benchmark(
+      '📦 Batch: 20 địa chỉ normalize',
+      () => { TEST_ADDRESSES.forEach(a => AddressNormalizer.normalize(a)); },
+      Math.max(10, Math.floor(iters / 5))
+    ));
+
+    suites.push({ name: '🔤 Address Normalizer', icon: '🔤', results: normalizerTests });
+
+    // ══════════════════════════════════════════════════════════════════
+    // 3. FUZZY MATCHING
+    // ══════════════════════════════════════════════════════════════════
+    const fuzzyTests = [];
+    TEST_FUZZY_PAIRS.forEach((pair, idx) => {
+      fuzzyTests.push(benchmark(
+        `Fuzzy: "${pair.query}" → [${pair.candidates.length} ứng viên]`,
+        () => AddressFuzzy.findBestMatch(pair.query, pair.candidates),
+        iters
+      ));
+    });
+
+    // Fuzzy with large candidate list (tất cả tỉnh)
+    if (typeof ADM_DB !== 'undefined') {
+      const allProvNames = ADM_DB.provinces.map(p => p.name);
+      fuzzyTests.push(benchmark(
+        `Fuzzy: "${TEST_FUZZY_PAIRS[0].query}" → [${allProvNames.length} tỉnh]`,
+        () => AddressFuzzy.findBestMatch(TEST_FUZZY_PAIRS[0].query, allProvNames),
+        iters
+      ));
+    }
+
+    // Levenshtein raw
+    fuzzyTests.push(benchmark(
+      'Levenshtein: "Nguyễn Cư Trinh" vs "Nguyễn Cư Trinh"',
+      () => AddressFuzzy.levenshtein('Nguyễn Cư Trinh', 'Nguyễn Cư Trinh'),
+      iters
+    ));
+    fuzzyTests.push(benchmark(
+      'Levenshtein: "Bến Thanh" vs "Bến Thành"',
+      () => AddressFuzzy.levenshtein('Bến Thanh', 'Bến Thành'),
+      iters
+    ));
+
+    suites.push({ name: '🔍 Fuzzy Matching (Levenshtein)', icon: '🔍', results: fuzzyTests });
+
+    // ══════════════════════════════════════════════════════════════════
+    // 4. ADDRESS PARSER
+    // ══════════════════════════════════════════════════════════════════
+    const addrParserTests = [];
+    TEST_ADDRESSES.forEach((addr, idx) => {
+      const normalized = AddressNormalizer.normalize(addr);
+      addrParserTests.push(benchmark(
+        `Parse #${idx + 1}: ${addr.substring(0, 40)}...`,
+        () => AddressParser.parse(normalized),
+        iters
+      ));
+    });
+    addrParserTests.push(benchmark(
+      '📦 Batch: 20 địa chỉ parse',
+      () => {
+        TEST_ADDRESSES.forEach(a => {
+          const n = AddressNormalizer.normalize(a);
+          AddressParser.parse(n);
+        });
+      },
+      Math.max(10, Math.floor(iters / 5))
+    ));
+
+    suites.push({ name: '📍 Address Parser', icon: '📍', results: addrParserTests });
+
+    // ══════════════════════════════════════════════════════════════════
+    // 5. ADDRESS VALIDATOR
+    // ══════════════════════════════════════════════════════════════════
+    const validatorTests = [];
+    const sampleParsed = [
+      { province: "Thành phố Hồ Chí Minh", district: "Quận 1", ward: "Phường Bến Thành", street: "123 Lê Lợi" },
+      { province: "Thành phố Hà Nội", district: "Quận Ba Đình", ward: "Phường Trúc Bạch", street: "15 Nguyễn Trường Tộ" },
+      { province: "Thành phố Đà Nẵng", district: "Quận Hải Châu", ward: "Phường Hải Châu 1", street: "78 Trần Phú" },
+      { province: "Tỉnh Đắk Lắk", district: "Huyện Krông Pắk", ward: "Xã Ea Kly", street: "Thôn 3" },
+      { province: "Invalid Province", district: "Invalid District", ward: "Invalid Ward", street: "test" },
+    ];
+    sampleParsed.forEach((parsed, idx) => {
+      validatorTests.push(benchmark(
+        `Validate: ${parsed.province.substring(0, 25)}...`,
+        () => AddressValidator.validate(parsed),
+        iters
+      ));
+    });
+
+    suites.push({ name: '✅ Address Validator', icon: '✅', results: validatorTests });
+
+    // ══════════════════════════════════════════════════════════════════
+    // 6. ADDRESS RULES
+    // ══════════════════════════════════════════════════════════════════
+    const rulesTests = [];
+    const sampleForRules = [
+      { province: "Thành phố Hồ Chí Minh", district: "Quận 9", ward: "Phường Long Thạnh Mỹ", street: "123 Đỗ Xuân Hợp" },
+      { province: "Thành phố Hồ Chí Minh", district: "Quận 2", ward: "Phường Thảo Điền", street: "45 Nguyễn Văn Hưởng" },
+      { province: "HCM", district: "Q.10", ward: "Phường 12", street: "15 Đường 3/2" },
+      { province: "Tỉnh Lâm Đồng", district: "Thành phố Đà Lạt", ward: "", street: "Tô Vĩnh Diện" },
+      { province: "Hậu Giang", district: "Huyện Châu Thành A", ward: "Xã Tân Hòa", street: "Ấp Phú Hòa" },
+    ];
+    sampleForRules.forEach((parsed, idx) => {
+      rulesTests.push(benchmark(
+        `Rules: ${parsed.province.substring(0, 20)} / ${parsed.district}`,
+        () => AddressRules.applyRules({ ...parsed }),
+        iters
+      ));
+    });
+
+    suites.push({ name: '📐 Address Rules (sáp nhập 2025)', icon: '📐', results: rulesTests });
+
+    return suites;
+  }
+
+  async function defineAsyncTests(iters) {
+    const suites = [];
+
+    // ══════════════════════════════════════════════════════════════════
+    // 7. FULL ENGINE PIPELINE (async)
+    // ══════════════════════════════════════════════════════════════════
+    const engineTests = [];
+    const selectedAddresses = TEST_ADDRESSES.slice(0, 10); // first 10 for speed
+
+    for (let idx = 0; idx < selectedAddresses.length; idx++) {
+      const addr = selectedAddresses[idx];
+      const result = await benchmarkAsync(
+        `Engine #${idx + 1}: ${addr.substring(0, 40)}...`,
+        async () => await AddressEngine.process(addr),
+        Math.max(10, Math.floor(iters / 10))
+      );
+      engineTests.push(result);
+    }
+
+    // Full pipeline: order parse → address engine
+    const fullPipeTest = await benchmarkAsync(
+      '🔥 Full Pipeline: parse đơn → engine',
+      async () => {
+        const order = TEST_ORDERS[Math.floor(Math.random() * TEST_ORDERS.length)];
+        const parsed = OrderProcessor.parse(order);
+        if (parsed.address && parsed.address !== "không tìm thấy") {
+          await AddressEngine.process(parsed.address, parsed.phone);
+        }
+      },
+      Math.max(10, Math.floor(iters / 10))
+    );
+    engineTests.push(fullPipeTest);
+
+    suites.push({ name: '🚀 Full Address Engine Pipeline', icon: '🚀', results: engineTests });
+    return suites;
+  }
+
+  // ─── RENDERING ───────────────────────────────────────────────────────
+  function renderSummary(allResults) {
+    const grid = document.getElementById('summaryGrid');
+    grid.style.display = 'grid';
+
+    const allAvgs = allResults.map(r => r.avg);
+    const totalMs = allResults.reduce((s, r) => s + r.total, 0);
+    const fastest = Math.min(...allAvgs);
+    const slowest = Math.max(...allAvgs);
+    const overallAvg = avg(allAvgs);
+    const totalOps = allResults.reduce((s, r) => s + r.opsPerSec, 0);
+
+    const cards = [
+      { label: 'Trung bình chung', value: formatMs(overallAvg), unit: 'ms', cls: getSpeedClass(overallAvg) },
+      { label: 'Nhanh nhất', value: formatMs(fastest), unit: 'ms', cls: 'fast' },
+      { label: 'Chậm nhất', value: formatMs(slowest), unit: 'ms', cls: getSpeedClass(slowest) },
+      { label: 'Tổng thời gian', value: totalMs < 1000 ? formatMs(totalMs) : (totalMs / 1000).toFixed(2), unit: totalMs < 1000 ? 'ms' : 's', cls: getSpeedClass(totalMs / allResults.length) },
+      { label: 'Số test', value: allResults.length, unit: 'tests', cls: 'fast' },
+    ];
+
+    grid.innerHTML = cards.map(c => `
+      <div class="summary-card ${c.cls}">
+        <div class="label">${c.label}</div>
+        <div class="value">${c.value}<span class="unit">${c.unit}</span></div>
+      </div>
+    `).join('');
+
+    // Memory info
+    if (performance.memory) {
+      const m = performance.memory;
+      const mb = (bytes) => (bytes / 1048576).toFixed(1);
+      grid.innerHTML += `
+        <div class="summary-card fast">
+          <div class="label">Heap Used</div>
+          <div class="value">${mb(m.usedJSHeapSize)}<span class="unit">MB</span></div>
+        </div>
+        <div class="summary-card fast">
+          <div class="label">Heap Total</div>
+          <div class="value">${mb(m.totalJSHeapSize)}<span class="unit">MB</span></div>
+        </div>
+      `;
+    }
+  }
+
+  function renderSuite(suite) {
+    const maxAvg = Math.max(...suite.results.map(r => r.avg), 0.1);
+
+    let html = `
+      <div class="results-section">
+        <h2><span class="dot" style="background:var(--accent)"></span>${suite.name}</h2>
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th style="width:35%">Test</th>
+              <th>Avg</th>
+              <th>P50</th>
+              <th>P95</th>
+              <th>P99</th>
+              <th>Min</th>
+              <th>Max</th>
+              <th>Ops/s</th>
+              <th style="width:12%">Hiệu suất</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    suite.results.forEach(r => {
+      const barWidth = Math.max(4, (r.avg / maxAvg) * 180);
+      const cls = getSpeedClass(r.p95);
+      html += `
+        <tr>
+          <td class="test-name">${r.name}</td>
+          <td class="mono">${formatMs(r.avg)}ms</td>
+          <td class="mono">${formatMs(r.p50)}ms</td>
+          <td class="mono">${formatMs(r.p95)}ms</td>
+          <td class="mono">${formatMs(r.p99)}ms</td>
+          <td class="mono" style="color:var(--green)">${formatMs(r.min)}ms</td>
+          <td class="mono" style="color:var(--red)">${formatMs(r.max)}ms</td>
+          <td class="mono" style="color:var(--accent)">${r.opsPerSec.toLocaleString()}</td>
+          <td>
+            <div class="latency-bar-wrap">
+              <div class="latency-bar ${cls}" style="width:${barWidth}px"></div>
+              ${getSpeedBadge(r.p95)}
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  // ─── MAIN ────────────────────────────────────────────────────────────
+  let lastResults = null;
+
+  async function runBenchmark(iterations) {
+    const statusBar = document.getElementById('statusBar');
+    const container = document.getElementById('resultsContainer');
+    const detailPanel = document.getElementById('detailPanel');
+    const detailJson = document.getElementById('detailJson');
+    const btnRun = document.getElementById('btnRun');
+    const btnRunQuick = document.getElementById('btnRunQuick');
+    const btnExport = document.getElementById('btnExport');
+
+    btnRun.disabled = true;
+    btnRunQuick.disabled = true;
+    container.innerHTML = '';
+    detailPanel.style.display = 'none';
+
+    const allSuites = [];
+    const allResults = [];
+
+    // ── Sync tests ──
+    statusBar.innerHTML = '<div class="spinner"></div> Đang chạy sync benchmarks...';
+    await new Promise(r => setTimeout(r, 50)); // let UI update
+
+    const syncSuites = defineTests(iterations);
+    for (const suite of syncSuites) {
+      allSuites.push(suite);
+      suite.results.forEach(r => allResults.push(r));
+      container.innerHTML += renderSuite(suite);
+      statusBar.innerHTML = `<div class="spinner"></div> Hoàn thành: ${suite.name}`;
+      await new Promise(r => setTimeout(r, 20));
+    }
+
+    // ── Async tests ──
+    statusBar.innerHTML = '<div class="spinner"></div> Đang chạy async engine benchmarks...';
+    await new Promise(r => setTimeout(r, 50));
+
+    const asyncSuites = await defineAsyncTests(iterations);
+    for (const suite of asyncSuites) {
+      allSuites.push(suite);
+      suite.results.forEach(r => allResults.push(r));
+      container.innerHTML += renderSuite(suite);
+    }
+
+    // ── Render summary ──
+    renderSummary(allResults);
+
+    // ── Detail JSON ──
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      iterations,
+      userAgent: navigator.userAgent,
+      memory: performance.memory ? {
+        usedJSHeapSize: performance.memory.usedJSHeapSize,
+        totalJSHeapSize: performance.memory.totalJSHeapSize,
+        jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
+      } : null,
+      dbStats: {
+        provinces: typeof ADM_DB !== 'undefined' ? ADM_DB.provinces.length : 0,
+        wardMergerEntries: typeof WARD_MERGER_MAP !== 'undefined' ? Object.keys(WARD_MERGER_MAP).length : 0,
+      },
+      suites: allSuites.map(s => ({
+        name: s.name,
+        results: s.results.map(r => ({
+          name: r.name,
+          iterations: r.iterations,
+          avg: +r.avg.toFixed(4),
+          p50: +r.p50.toFixed(4),
+          p95: +r.p95.toFixed(4),
+          p99: +r.p99.toFixed(4),
+          min: +r.min.toFixed(4),
+          max: +r.max.toFixed(4),
+          opsPerSec: r.opsPerSec,
+        }))
+      }))
+    };
+
+    lastResults = exportData;
+    detailJson.textContent = JSON.stringify(exportData, null, 2);
+    detailPanel.style.display = 'block';
+
+    const totalTimeMs = allResults.reduce((s, r) => s + r.total, 0);
+    statusBar.innerHTML = `✅ Hoàn thành! ${allResults.length} tests × ${iterations} lần = ${(totalTimeMs / 1000).toFixed(2)}s tổng. DB: ${exportData.dbStats.provinces} tỉnh, ${exportData.dbStats.wardMergerEntries.toLocaleString()} ward mergers.`;
+
+    btnRun.disabled = false;
+    btnRunQuick.disabled = false;
+    btnExport.disabled = false;
+  }
+
+  // ─── INIT ────────────────────────────────────────────────────────────
+  function init() {
+    const overlay = document.getElementById('loading-overlay');
+    const statusBar = document.getElementById('statusBar');
+    const btnRun = document.getElementById('btnRun');
+    const btnRunQuick = document.getElementById('btnRunQuick');
+    const btnExport = document.getElementById('btnExport');
+    const iterInput = document.getElementById('iterCount');
+
+    // Check modules loaded
+    const modules = [
+      { name: 'OrderProcessor', ref: globalThis.OrderProcessor },
+      { name: 'AddressNormalizer', ref: globalThis.AddressNormalizer },
+      { name: 'AddressFuzzy', ref: globalThis.AddressFuzzy },
+      { name: 'AddressParser', ref: globalThis.AddressParser },
+      { name: 'AddressValidator', ref: globalThis.AddressValidator },
+      { name: 'AddressRules', ref: globalThis.AddressRules },
+      { name: 'AddressEngine', ref: globalThis.AddressEngine },
+      { name: 'ADM_DB', ref: globalThis.ADM_DB },
+    ];
+
+    const missing = modules.filter(m => !m.ref).map(m => m.name);
+
+    if (missing.length > 0) {
+      overlay.innerHTML = `
+        <p style="color:var(--red);font-size:16px;font-weight:600;">❌ Thiếu modules: ${missing.join(', ')}</p>
+        <p style="margin-top:8px;color:var(--text-muted);">Mở file này từ thư mục gốc extension (cùng cấp manifest.json)</p>
+      `;
+      return;
+    }
+
+    // DB stats
+    const provCount = ADM_DB.provinces.length;
+    const wardMergerCount = typeof WARD_MERGER_MAP !== 'undefined' ? Object.keys(WARD_MERGER_MAP).length : 0;
+
+    setTimeout(() => {
+      overlay.classList.add('hidden');
+    }, 300);
+
+    statusBar.innerHTML = `✅ Đã nạp ${modules.length} modules. DB: ${provCount} tỉnh, ${wardMergerCount.toLocaleString()} ward mergers. Bấm <strong>Chạy Benchmark</strong> để bắt đầu.`;
+
+    btnRun.disabled = false;
+    btnRunQuick.disabled = false;
+
+    btnRun.addEventListener('click', () => {
+      const iters = Math.max(10, Math.min(5000, parseInt(iterInput.value) || 200));
+      iterInput.value = iters;
+      runBenchmark(iters);
+    });
+
+    btnRunQuick.addEventListener('click', () => {
+      runBenchmark(50);
+    });
+
+    btnExport.addEventListener('click', () => {
+      if (!lastResults) return;
+      const blob = new Blob([JSON.stringify(lastResults, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `perf-benchmark-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  // Wait for all scripts to load
+  if (document.readyState === 'complete') {
+    init();
+  } else {
+    window.addEventListener('load', init);
+  }
+})();
+</script>
+</body>
+</html>
