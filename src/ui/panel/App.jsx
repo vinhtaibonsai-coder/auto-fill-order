@@ -10,51 +10,66 @@ export default function App() {
   const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
-    if (window.AuthService && typeof window.AuthService.isAuthenticated === 'function') {
-      window.AuthService.isAuthenticated().then(setIsAuth);
+    try {
+      if (window.AuthService && typeof window.AuthService.isAuthenticated === 'function') {
+        window.AuthService.isAuthenticated().then(setIsAuth).catch(() => setIsAuth(false));
+      }
+    } catch (e) {
+      console.warn("Auth check error:", e);
     }
   }, []);
 
   const handleParse = (text) => {
     setState('LOADING');
-    if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-      chrome.runtime.sendMessage({ action: 'runGroq', text: text }, (response) => {
-        if (chrome.runtime.lastError || !response || !response.ok) {
-          const errMsg = chrome.runtime.lastError?.message || response?.error || '';
-          console.error("AI Error:", errMsg);
-          
-          if (errMsg === 'QUOTA_EXCEEDED' || errMsg.includes('hết hạn mức AI') || errMsg.includes('QUOTA')) {
-            setParsedData({ errorMsg: errMsg });
-            setState('UPGRADE_REQUIRED');
+    try {
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.id && typeof chrome.runtime.sendMessage === 'function') {
+        chrome.runtime.sendMessage({ action: 'runGroq', text: text }, (response) => {
+          if (chrome.runtime.lastError || !response || !response.ok) {
+            const errMsg = chrome.runtime.lastError?.message || response?.error || '';
+            console.error("AI Error:", errMsg);
+            
+            if (errMsg.includes('context invalidated')) {
+              setParsedData({ errorMsg: 'Extension đã được cập nhật. Vui lòng nhấn F5 để tải lại trang.' });
+              setState('ERROR');
+              return;
+            }
+
+            if (errMsg === 'QUOTA_EXCEEDED' || errMsg.includes('hết hạn mức AI') || errMsg.includes('QUOTA')) {
+              setParsedData({ errorMsg: errMsg });
+              setState('UPGRADE_REQUIRED');
+              return;
+            }
+
+            setParsedData({ errorMsg: errMsg || 'Lỗi mạng hoặc Server AI không phản hồi.' });
+            setState('ERROR');
             return;
           }
-
-          setParsedData({ errorMsg: errMsg || 'Lỗi mạng hoặc Server AI không phản hồi.' });
-          setState('ERROR');
-          return;
-        }
-        
-        const data = response.result || {};
-        setParsedData({
-          name: data.name || '',
-          phone: data.phone || '',
-          address: data.correctAddress || data.address || '',
-          ward: data.ward || '',
-          province: data.province || ''
+          
+          const data = response.result || {};
+          setParsedData({
+            name: data.name || '',
+            phone: data.phone || '',
+            address: data.correctAddress || data.address || '',
+            ward: data.ward || '',
+            province: data.province || ''
+          });
+          setState('REVIEW');
         });
-        setState('REVIEW');
-      });
-    } else {
-      setTimeout(() => {
-        setParsedData({ 
-          name: 'Nguyễn Văn An', 
-          phone: '0901234567', 
-          address: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1',
-          ward: 'Phường Bến Nghé',
-          province: 'TP. Hồ Chí Minh'
-        }); 
-        setState('REVIEW');
-      }, 1000);
+      } else {
+        setTimeout(() => {
+          setParsedData({ 
+            name: 'Nguyễn Văn An', 
+            phone: '0901234567', 
+            address: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1',
+            ward: 'Phường Bến Nghé',
+            province: 'TP. Hồ Chí Minh'
+          }); 
+          setState('REVIEW');
+        }, 1000);
+      }
+    } catch (err) {
+      setParsedData({ errorMsg: 'Extension đã được cập nhật. Vui lòng nhấn F5 để tải lại trang web.' });
+      setState('ERROR');
     }
   };
 
@@ -111,7 +126,7 @@ export default function App() {
 
       {state === 'ERROR' && (
         <div style={{ textAlign: 'center', padding: '14px', color: '#be123c', background: '#fff1f2', borderRadius: '6px', fontSize: '12px' }}>
-          ⚠️ Lỗi bóc tách AI: {parsedData?.errorMsg}
+          ⚠️ Lỗi: {parsedData?.errorMsg}
           <div style={{ marginTop: '10px' }}>
             <button className="af-btn-primary" style={{ background: '#be123c', fontSize: '12px', padding: '6px 12px' }} onClick={() => setState('IDLE')}>
               Thử lại

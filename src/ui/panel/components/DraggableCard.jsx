@@ -41,14 +41,26 @@ export default function DraggableCard({ children, onClose, title, isAuth = false
   }, [isDragging]);
 
   const openAdmin = () => {
-    if (chrome && chrome.runtime && chrome.runtime.getURL) {
-      window.open(chrome.runtime.getURL('admin-dashboard/admin.html'));
+    try {
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.id && typeof chrome.runtime.getURL === 'function') {
+        window.open(chrome.runtime.getURL('admin-dashboard/admin.html'));
+      } else {
+        alert("Extension context đã được cập nhật. Vui lòng tải lại trang (F5).");
+      }
+    } catch (e) {
+      alert("Extension context đã được cập nhật. Vui lòng tải lại trang (F5).");
     }
   };
 
   const openOptions = () => {
-    if (chrome && chrome.runtime && chrome.runtime.getURL) {
-      window.open(chrome.runtime.getURL('frontend/options/options.html'));
+    try {
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.id && typeof chrome.runtime.getURL === 'function') {
+        window.open(chrome.runtime.getURL('frontend/options/options.html'));
+      } else {
+        alert("Extension context đã được cập nhật. Vui lòng tải lại trang (F5).");
+      }
+    } catch (e) {
+      alert("Extension context đã được cập nhật. Vui lòng tải lại trang (F5).");
     }
   };
 

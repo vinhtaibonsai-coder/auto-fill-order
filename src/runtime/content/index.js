@@ -47,6 +47,16 @@ import { OrderStorage } from '../../application/storage.js';
     }
   }
 
+  function getCurrentPlatform() {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    if (url.includes('vnpost.vn')) return 'vnpost';
+    if (url.includes('jtexpress.vn')) return 'jt';
+    if (url.includes('ghn.vn')) return 'ghn';
+    if (url.includes('ghtk.vn')) return 'ghtk';
+    if (url.includes('viettelpost.vn')) return 'viettel';
+    return null;
+  }
+
   async function checkUrlAndInject() {
     const platform = getCurrentPlatform();
     if (platform) {
