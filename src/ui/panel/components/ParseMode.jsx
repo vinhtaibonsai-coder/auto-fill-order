@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Zap, ClipboardPaste, Trash2, ArrowDownToLine, Save, Printer } from 'lucide-react';
 
 export default function ParseMode({ onParse, isLoading }) {
   const [text, setText] = useState('');
@@ -44,7 +45,7 @@ export default function ParseMode({ onParse, isLoading }) {
           onClick={() => onParse(text)}
           disabled={!text.trim() || isLoading}
         >
-          <span>⚡</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Zap size={14} /></span>
           Tách Đơn
         </button>
         <button 
@@ -60,14 +61,14 @@ export default function ParseMode({ onParse, isLoading }) {
           }}
           disabled={isLoading}
         >
-          <span>📋</span> Dán
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><ClipboardPaste size={14} /></span> Dán
         </button>
         <button 
           className="af-btn-delete" 
           onClick={() => setText('')}
           disabled={isLoading}
         >
-          <span>🗑️</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Trash2 size={14} /></span>
           Xóa
         </button>
       </div>
@@ -75,14 +76,14 @@ export default function ParseMode({ onParse, isLoading }) {
       {/* Buttons bottom row for idle state */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
         <button className="af-btn-fill" disabled={isLoading}>
-          <span>↓</span> Nhập đơn
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowDownToLine size={14} /></span> Nhập đơn
         </button>
         <button className="af-btn-save" disabled={isLoading}>
-          <span>💾</span> Lưu đơn
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Save size={14} /></span> Lưu đơn
         </button>
       </div>
       <button className="af-btn-print" style={{ marginTop: '0px' }} disabled={isLoading}>
-        <span>🖨️</span> In đơn
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}><Printer size={14} /></span> In đơn
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Zap, ClipboardPaste, Trash2, ArrowDownToLine, Save, Printer, User, Phone, Hash, FileText, MapPin, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 function formatVND(value) {
   if (value === undefined || value === null || value === '') return '0 đ';
@@ -68,7 +69,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
           onClick={() => onParse(currentText)}
           disabled={!currentText.trim()}
         >
-          <span>⚡</span> Tách Đơn
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Zap size={14} /></span> Tách Đơn
         </button>
         <button 
           className="af-btn-primary" 
@@ -82,10 +83,10 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
             }
           }}
         >
-          <span>📋</span> Dán
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><ClipboardPaste size={14} /></span> Dán
         </button>
         <button className="af-btn-delete" onClick={() => { setCurrentText(''); onCancel(); }}>
-          <span>🗑️</span> Xóa
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Trash2 size={14} /></span> Xóa
         </button>
       </div>
 
@@ -96,7 +97,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
           <div className="af-grid-item">
-            <div className="af-grid-item-label">👤 KHÁCH HÀNG</div>
+            <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><User size={12} /> KHÁCH HÀNG</div>
             <input 
               value={formData.name} 
               onChange={e => handleChange('name', e.target.value)} 
@@ -105,7 +106,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
             />
           </div>
           <div className="af-grid-item">
-            <div className="af-grid-item-label">📞 SỐ ĐIỆN THOẠI</div>
+            <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Phone size={12} /> SỐ ĐIỆN THOẠI</div>
             <input 
               value={formData.phone} 
               onChange={e => handleChange('phone', e.target.value)} 
@@ -117,7 +118,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
           <div className="af-grid-item">
-            <div className="af-grid-item-label">▦ MÃ ĐƠN HÀNG</div>
+            <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Hash size={12} /> MÃ ĐƠN HÀNG</div>
             <input 
               value={formData.orderCode} 
               onChange={e => handleChange('orderCode', e.target.value)} 
@@ -126,7 +127,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
             />
           </div>
           <div className="af-grid-item">
-            <div className="af-grid-item-label">📝 GHI CHÚ</div>
+            <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FileText size={12} /> GHI CHÚ</div>
             <input 
               value={formData.extraNote} 
               onChange={e => handleChange('extraNote', e.target.value)} 
@@ -137,7 +138,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
         </div>
 
         <div className="af-grid-item" style={{ marginBottom: '8px' }}>
-          <div className="af-grid-item-label">📍 ĐỊA CHỈ NHẬN HÀNG</div>
+          <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> ĐỊA CHỈ NHẬN HÀNG</div>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <textarea 
               value={formData.address} 
@@ -150,7 +151,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
               if (typeof globalThis.showVnpostToast === 'function') {
                 globalThis.showVnpostToast('Đã sao chép địa chỉ!', 'success');
               }
-            }}>📋</button>
+            }} style={{ display: 'inline-flex', alignItems: 'center' }}><ClipboardPaste size={14} /></button>
           </div>
         </div>
 
@@ -172,7 +173,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
         {formData.warning && (
           <div style={{ border: '1px solid #fcd34d', background: '#fffbeb', borderRadius: '8px', padding: '10px', marginTop: '8px' }}>
             <div style={{ fontSize: '11px', color: '#b45309', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
-              <span style={{ flexShrink: 0 }}>⚠</span>
+              <span style={{ flexShrink: 0, marginTop: '2px' }}><AlertTriangle size={12} /></span>
               <div style={{ lineHeight: '1.4', color: '#92400e', fontWeight: 600 }}>
                 {formData.warning}
               </div>
@@ -183,18 +184,18 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
         {/* Khối gợi ý địa chỉ (2 cấp) - Luôn hiển thị nếu bóc tách thành công địa chỉ */}
         {formData.suggestedAddress && (
           <div style={{ border: '1px solid #bbf7d0', background: '#f0fdf4', borderRadius: '8px', padding: '10px', marginTop: '8px' }}>
-            <div style={{ fontSize: '11px', color: '#166534', fontWeight: 600, display: 'flex', gap: '4px', marginBottom: '4px' }}>
-              <span>📍</span> GỢI Ý ĐỊA CHỈ BÓC TÁCH:
+            <div style={{ fontSize: '11px', color: '#166534', fontWeight: 600, display: 'flex', gap: '4px', marginBottom: '4px', alignItems: 'center' }}>
+              <MapPin size={12} /> GỢI Ý ĐỊA CHỈ BÓC TÁCH:
             </div>
             <div style={{ background: 'white', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: '10px', color: '#3b82f6' }}>Địa chỉ gợi ý (2 cấp):</div>
                 <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500 }}>{formData.suggestedAddress}</div>
               </div>
-              <button className="af-copy-btn" onClick={() => handleChange('address', formData.suggestedAddress)} title="Áp dụng địa chỉ gợi ý" style={{ cursor: 'pointer' }}>📋</button>
+              <button className="af-copy-btn" onClick={() => handleChange('address', formData.suggestedAddress)} title="Áp dụng địa chỉ gợi ý" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><ClipboardPaste size={14} /></button>
             </div>
             <div style={{ fontSize: '9px', color: '#94a3b8', textAlign: 'right', marginTop: '4px', fontStyle: 'italic' }}>
-              Bấm vào nút 📋 để áp dụng nhanh gợi ý địa chỉ 2 cấp
+              Bấm vào nút copy để áp dụng nhanh gợi ý địa chỉ 2 cấp
             </div>
           </div>
         )}
@@ -202,23 +203,26 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <button className="af-btn-fill" onClick={handleConfirm}>
-          <span>↓</span> Nhập đơn
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowDownToLine size={14} /></span> Nhập đơn
         </button>
         <button className="af-btn-save">
-          <span>💾</span> Lưu đơn
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Save size={14} /></span> Lưu đơn
         </button>
       </div>
       <button className="af-btn-print" style={{ marginTop: '0px' }}>
-        <span>🖨️</span> In đơn
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}><Printer size={14} /></span> In đơn
       </button>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
         <div style={{ 
           fontSize: '11px', 
           color: formData.confidence < (formData.confidenceThreshold || 90) ? '#b45309' : '#0f766e', 
-          fontWeight: 600 
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
         }}>
-          {formData.confidence < (formData.confidenceThreshold || 90) ? '⚠️ Độ tự tin thấp (Cần soát lại)' : '✨ Bóc tách thành công!'}
+          {formData.confidence < (formData.confidenceThreshold || 90) ? <><AlertTriangle size={12} /> Cần soát lại</> : <><CheckCircle2 size={12} /> Bóc tách thành công!</>}
         </div>
         <div style={{ 
           fontSize: '12px', 

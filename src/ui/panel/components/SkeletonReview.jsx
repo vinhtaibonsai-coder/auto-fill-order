@@ -1,4 +1,5 @@
 import React from 'react';
+import { Zap, ClipboardPaste, Trash2, ArrowDownToLine, Save, Printer, User, Phone, Hash, FileText, MapPin } from 'lucide-react';
 
 export default function SkeletonReview({ rawText }) {
   return (
@@ -11,13 +12,13 @@ export default function SkeletonReview({ rawText }) {
       />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: '8px' }}>
         <button className="af-btn-primary" disabled={true} style={{ opacity: 0.8 }}>
-          <span>⚡</span> Tách Đơn
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Zap size={14} /></span> Tách Đơn
         </button>
         <button className="af-btn-primary" disabled={true} style={{ background: '#3b82f6', opacity: 0.8 }}>
-          <span>📋</span> Dán
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><ClipboardPaste size={14} /></span> Dán
         </button>
         <button className="af-btn-delete" disabled={true} style={{ opacity: 0.8 }}>
-          <span>🗑️</span> Xóa
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Trash2 size={14} /></span> Xóa
         </button>
       </div>
 
@@ -28,28 +29,38 @@ export default function SkeletonReview({ rawText }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
           <div className="af-grid-item">
-            <div className="af-grid-item-label">👤 KHÁCH HÀNG</div>
+            <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <User size={12} /> KHÁCH HÀNG
+            </div>
             <div className="skeleton-box skeleton-text" style={{ width: '80%', marginTop: '4px', marginBottom: '0' }}></div>
           </div>
           <div className="af-grid-item">
-            <div className="af-grid-item-label">📞 SỐ ĐIỆN THOẠI</div>
+            <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Phone size={12} /> SỐ ĐIỆN THOẠI
+            </div>
             <div className="skeleton-box skeleton-text" style={{ width: '90%', marginTop: '4px', marginBottom: '0' }}></div>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
           <div className="af-grid-item">
-            <div className="af-grid-item-label">▦ MÃ ĐƠN HÀNG</div>
+            <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Hash size={12} /> MÃ ĐƠN HÀNG
+            </div>
             <div className="skeleton-box skeleton-text" style={{ width: '60%', marginTop: '4px', marginBottom: '0' }}></div>
           </div>
           <div className="af-grid-item">
-            <div className="af-grid-item-label">📝 GHI CHÚ</div>
+            <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <FileText size={12} /> GHI CHÚ
+            </div>
             <div className="skeleton-box skeleton-text" style={{ width: '80%', marginTop: '4px', marginBottom: '0' }}></div>
           </div>
         </div>
 
         <div className="af-grid-item" style={{ marginBottom: '8px' }}>
-          <div className="af-grid-item-label">📍 ĐỊA CHỈ NHẬN HÀNG</div>
+          <div className="af-grid-item-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <MapPin size={12} /> ĐỊA CHỈ NHẬN HÀNG
+          </div>
           <div className="skeleton-box skeleton-text" style={{ width: '100%', marginTop: '4px' }}></div>
           <div className="skeleton-box skeleton-text" style={{ width: '70%', marginBottom: '0' }}></div>
         </div>
@@ -62,14 +73,14 @@ export default function SkeletonReview({ rawText }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <button className="af-btn-fill" disabled={true} style={{ opacity: 0.7 }}>
-          <span>↓</span> Nhập đơn
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowDownToLine size={14} /></span> Nhập đơn
         </button>
         <button className="af-btn-save" disabled={true} style={{ opacity: 0.7 }}>
-          <span>💾</span> Lưu đơn
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Save size={14} /></span> Lưu đơn
         </button>
       </div>
       <button className="af-btn-print" style={{ marginTop: '0px', opacity: 0.7 }} disabled={true}>
-        <span>🖨️</span> In đơn
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}><Printer size={14} /></span> In đơn
       </button>
     </div>
   );
