@@ -250,3 +250,11 @@
   margin-bottom: 12px;
 }
 
+.af-spin {
+  animation: af-spin 1s linear infinite;
+}
+
+@keyframes af-spin {
+  100% { transform: rotate(360deg); }
+}
+

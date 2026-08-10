@@ -3,6 +3,7 @@ import DraggableCard from './components/DraggableCard';
 import ParseMode from './components/ParseMode';
 import ConfidenceReview from './components/ConfidenceReview';
 import SkeletonReview from './components/SkeletonReview';
+import LoginForm from './components/LoginForm';
 
 export default function App() {
   const [isOpen, setIsOpen] = useState(true);
@@ -290,42 +291,12 @@ export default function App() {
       )}
 
       {!isAuth && state === 'IDLE' && (
-        <div style={{ marginTop: '16px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontWeight: 600, marginBottom: '12px', fontSize: '13px' }}>Đăng nhập để dùng AI</div>
-          <input id="af-login-email" type="text" placeholder="Email hoặc Tên đăng nhập" style={{ width: '100%', marginBottom: '8px', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
-          <input id="af-login-password" type="password" placeholder="Mật khẩu" style={{ width: '100%', marginBottom: '12px', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
-          <button className="af-btn-primary" style={{ width: '100%' }} onClick={async (e) => {
-            const btn = e.target;
-            const email = document.getElementById('af-login-email').value;
-            const pass = document.getElementById('af-login-password').value;
-            if (!email || !pass) return alert("Vui lòng nhập đủ thông tin");
-            
-            const originalText = btn.innerText;
-            btn.innerText = "Đang đăng nhập...";
-            btn.disabled = true;
-            
-            try {
-              if (window.AuthService) {
-                const res = await window.AuthService.loginWithUsernameOrEmail(email, pass);
-                if (res) {
-                  setIsAuth(true);
-                  setState('IDLE');
-                }
-              }
-            } catch (err) {
-              alert("Lỗi đăng nhập: " + err.message);
-            } finally {
-              btn.innerText = originalText;
-              btn.disabled = false;
-            }
-          }}>Đăng nhập</button>
-          <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px' }}>
-            <a href="#" onClick={(e) => {
-              e.preventDefault();
-              if (chrome.runtime && chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
-            }} style={{ color: 'var(--primary)' }}>Đăng ký / Quên mật khẩu?</a>
-          </div>
-        </div>
+        <LoginForm 
+          onLoginSuccess={() => {
+            setIsAuth(true);
+            setState('IDLE');
+          }} 
+        />
       )}
     </DraggableCard>
   );
