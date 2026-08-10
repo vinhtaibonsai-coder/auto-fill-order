@@ -5,13 +5,14 @@ import { AdminRepository } from '../../../../domain/admin/admin.repository.js';
 
 const STORAGE_KEY = 'ag_ai_provider_config';
 
-const FIX_SQL_SCRIPT = `-- Copy dòng này dán vào Supabase SQL Editor:
-ALTER TABLE public.system_configs ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "allow_read_system_configs" ON public.system_configs;
-CREATE POLICY "allow_read_system_configs" ON public.system_configs FOR SELECT USING (true);
-DROP POLICY IF EXISTS "allow_write_system_configs" ON public.system_configs;
-CREATE POLICY "allow_write_system_configs" ON public.system_configs FOR ALL USING (true) WITH CHECK (true);
-GRANT ALL ON TABLE public.system_configs TO authenticated, anon, service_role;`;
+const FIX_SQL_SCRIPT = `-- Nếu bị từ chối (ACCESS_DENIED / 401 / 403):
+-- 1. Chạy database/migrations/v34_harden_system_configs.sql trong Supabase SQL Editor.
+-- 2. Đảm bảo tài khoản đang đăng nhập có vai trò SYSTEM_ADMIN:
+SELECT r.code FROM public.user_roles ur
+JOIN public.roles r ON r.id = ur.role_id
+WHERE ur.user_id = auth.uid();
+-- KHÔNG mở policy USING(true) hay GRANT ALL cho anon/authenticated trên
+-- system_configs — bảng này chứa API key của nhà cung cấp AI.`;
 
 export default function Quotas() {
   const [shops, setShops] = useState([]);
@@ -56,7 +57,6 @@ export default function Quotas() {
 
   const verifyAndLoadFromDB = async () => {
     setLoading(true);
-    let loadedFromCache = false;
 
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
@@ -64,10 +64,6 @@ export default function Quotas() {
         const parsed = JSON.parse(cached);
         if (parsed.provider) setAiProvider(parsed.provider);
         if (parsed.model) setSelectedModel(parsed.model);
-        if (Array.isArray(parsed.keys) && parsed.keys.length > 0) {
-          setGroqKeysInput(parsed.keys.join('\n'));
-          loadedFromCache = true;
-        }
       }
     } catch (e) {
       console.warn("Lỗi đọc LocalStorage:", e);
@@ -87,15 +83,17 @@ export default function Quotas() {
 
           if (val.provider) setAiProvider(val.provider);
           if (val.model) setSelectedModel(val.model);
-          
+
           let fetchedKeys = [];
           if (Array.isArray(val.keys)) fetchedKeys = val.keys;
           else if (typeof val.keys === 'string') fetchedKeys = [val.keys];
 
           if (fetchedKeys.length > 0) {
             setGroqKeysInput(fetchedKeys.join('\n'));
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ provider: val.provider || 'groq', keys: fetchedKeys, model: val.model || 'llama-3.3-70b-versatile' }));
           }
+          // KHÔNG cache key nhà cung cấp xuống localStorage/chrome.storage —
+          // chỉ giữ provider/model để UI hiển thị lại nhanh.
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ provider: val.provider || 'groq', model: val.model || 'llama-3.3-70b-versatile' }));
 
           setDbStatusInfo({
             synced: true,
@@ -104,7 +102,7 @@ export default function Quotas() {
             errorDetails: null
           });
         } else {
-          setDbStatusInfo({ synced: false, keyCount: loadedFromCache ? keysList.length : 0, lastUpdated: 'Chưa có bản ghi groq_api_keys trong DB (Vui lòng bấm nút Lưu để tạo)', errorDetails: 'Bảng system_configs chưa có dữ liệu key' });
+          setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Chưa có bản ghi groq_api_keys trong DB (Vui lòng bấm nút Lưu để tạo)', errorDetails: 'Bảng system_configs chưa có dữ liệu key' });
         }
 
         const promptData = await SystemConfigRepository.getSystemConfig('default_custom_prompt_rules').catch(() => null);
@@ -122,7 +120,7 @@ export default function Quotas() {
     } catch (err) {
       console.warn("Lỗi kiểm tra DB:", err);
       setDbStatusInfo({ synced: false, keyCount: 0, lastUpdated: 'Lỗi kết nối DB', errorDetails: err.message });
-      if (err.message.includes('401') || err.message.includes('RLS')) setShowSqlGuide(true);
+      if (err.message.includes('401') || err.message.includes('403') || err.message.includes('ACCESS_DENIED') || err.message.includes('RLS')) setShowSqlGuide(true);
     }
 
     setLoading(false);
@@ -174,10 +172,8 @@ export default function Quotas() {
       model: selectedModel
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payloadObj));
-    if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
-      chrome.storage.local.set({ ai_provider: aiProvider, groq_keys: keysArray, ai_model: selectedModel });
-    }
+    // Chỉ cache provider/model — KHÔNG lưu API key ra localStorage/chrome.storage.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ provider: aiProvider, model: selectedModel }));
 
     try {
       if (!globalThis.SupabaseCloud) throw new Error('Không tìm thấy Supabase Connection');
@@ -210,7 +206,7 @@ export default function Quotas() {
     } catch (e) {
       setDbStatusInfo({ synced: false, keyCount: keysArray.length, lastUpdated: 'Thất bại DB', errorDetails: e.message });
       setKeySaveStatus({ text: `🔴 LỖI ĐỒNG BỘ SUPABASE DATABASE: ${e.message}`, type: 'error' });
-      if (e.message.includes('RLS') || e.message.includes('401')) setShowSqlGuide(true);
+      if (e.message.includes('RLS') || e.message.includes('401') || e.message.includes('403') || e.message.includes('ACCESS_DENIED')) setShowSqlGuide(true);
     }
   };
 
@@ -289,7 +285,7 @@ export default function Quotas() {
 
   const copySqlGuide = () => {
     navigator.clipboard.writeText(FIX_SQL_SCRIPT);
-    alert("Đã coppy SQL Script vào bộ nhớ tạm! Mở Supabase SQL Editor và Dán (Ctrl+V) để chạy.");
+    alert("Đã copy hướng dẫn kiểm tra quyền vào bộ nhớ tạm! Mở Supabase SQL Editor và Dán (Ctrl+V).");
   };
 
   return (
@@ -355,8 +351,8 @@ export default function Quotas() {
 
       {showSqlGuide && (
         <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '14px', fontSize: '12px', color: '#92400e' }}>
-          <div style={{ fontWeight: 700, marginBottom: '6px' }}>⚠️ Hướng dẫn Sửa dứt điểm Lỗi RLS Supabase Database:</div>
-          <div>Nếu Supabase từ chối ghi DB, hãy mở <strong>Supabase Dashboard &rarr; SQL Editor</strong>, dán mã bên dưới và nhấn <strong>Run</strong>:</div>
+          <div style={{ fontWeight: 700, marginBottom: '6px' }}>⚠️ Bị từ chối truy cập cấu hình hệ thống:</div>
+          <div>Bảng <strong>system_configs</strong> chỉ cho phép SYSTEM_ADMIN thao tác qua RPC. Kiểm tra theo hướng dẫn bên dưới trong <strong>Supabase Dashboard &rarr; SQL Editor</strong>:</div>
           <pre style={{ background: '#fef3c7', padding: '10px', borderRadius: '6px', fontSize: '11px', overflowX: 'auto', margin: '8px 0' }}>
             {FIX_SQL_SCRIPT}
           </pre>

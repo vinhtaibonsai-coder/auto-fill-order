@@ -16,6 +16,9 @@ const AuthService = {
 
   // Tạo phiên làm việc Nội bộ khi Supabase dính Rate Limit
   async _createLocalDevSession(email, fullName = 'Chủ Shop', username = null) {
+    if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
+      throw new Error('Local dev session is disabled in production.');
+    }
     const localUserId = 'usr_local_' + Math.floor(Math.random() * 1000000);
     const sessionData = {
       access_token: 'local_dev_token_' + Date.now(),
@@ -23,7 +26,8 @@ const AuthService = {
       expires_at: Date.now() + 30 * 24 * 3600 * 1000,
       user: { id: localUserId, email },
       active_shop_id: 'local_shop_01',
-      permissions: ['*']
+      permissions: ['*'],
+      auth_mode: 'local_dev'
     };
     const userObj = {
       id: localUserId,
@@ -134,6 +138,9 @@ const AuthService = {
     const lowerEmail = (email || '').toLowerCase().trim();
     const pwd = password || '';
     if (!url || !anonKey || anonKey === 'YOUR_SUPABASE_ANON_KEY') {
+      if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
+        throw new Error('Thiếu cấu hình kết nối máy chủ trên bản Production.');
+      }
       if (lowerEmail === 'admin@vietautofill.com' && pwd !== 'Admin@123456') {
         throw new Error('Email hoặc mật khẩu không đúng!');
       }
@@ -227,10 +234,10 @@ const AuthService = {
 
   async signup(email, password, fullName, username = null) {
     const { url, anonKey } = await this._getSupabaseUrlAndKey();
-    if (!url || !anonKey) {
-      return await this._createLocalDevSession(email, fullName, username);
-    }
-    if (anonKey === 'YOUR_SUPABASE_ANON_KEY') {
+    if (!url || !anonKey || anonKey === 'YOUR_SUPABASE_ANON_KEY') {
+      if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
+        throw new Error('Thiếu cấu hình kết nối máy chủ trên bản Production.');
+      }
       return await this._createLocalDevSession(email, fullName, username);
     }
 
@@ -257,6 +264,9 @@ const AuthService = {
       if (!resp.ok) {
         if ((data.msg && data.msg.toLowerCase().includes('rate limit')) ||
             (data.error_description && data.error_description.toLowerCase().includes('rate limit'))) {
+          if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
+            throw new Error('Đăng ký quá nhiều lần. Vui lòng thử lại sau 1 phút!');
+          }
           return await this._createLocalDevSession(email, fullName, username);
         }
         const regRaw = data.msg || data.error_description || '';

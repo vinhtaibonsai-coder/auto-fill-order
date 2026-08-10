@@ -18,6 +18,9 @@ export default defineConfig({
       }
     }
   },
+  define: {
+    '__IS_DEV_EXTENSION__': process.env.NODE_ENV === 'development' || process.env.VITE_DEV_MODE === 'true'
+  },
   server: {
     port: 5173,
     strictPort: true,

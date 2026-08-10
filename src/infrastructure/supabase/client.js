@@ -55,22 +55,24 @@
           k = localStorage.getItem('supabaseAnonKey');
         }
 
-        // Tự động kéo cấu hình từ GitHub nếu người dùng chưa điền thủ công
+        // Tự động kéo cấu hình từ GitHub nếu người dùng chưa điền thủ công (Chỉ dùng trên Dev)
         if (!u || !k) {
-          try {
-            const c = new AbortController();
-            const t = setTimeout(() => c.abort(), 3000);
-            const url = 'https://raw.githubusercontent.com/vinhtaibonsai-coder/supbase/main/configAOF.json';
-            const res = await fetch(url + '?t=' + Date.now(), { signal: c.signal });
-            clearTimeout(t);
-            if (res.ok) {
-              const data = await res.json();
-              if (data.url && data.anonKey && typeof SUPABASE_CONFIG !== 'undefined') {
-                SUPABASE_CONFIG.url = data.url;
-                SUPABASE_CONFIG.anonKey = data.anonKey;
+          if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && __IS_DEV_EXTENSION__) {
+            try {
+              const c = new AbortController();
+              const t = setTimeout(() => c.abort(), 3000);
+              const url = 'https://raw.githubusercontent.com/vinhtaibonsai-coder/supbase/main/configAOF.json';
+              const res = await fetch(url + '?t=' + Date.now(), { signal: c.signal });
+              clearTimeout(t);
+              if (res.ok) {
+                const data = await res.json();
+                if (data.url && data.anonKey && typeof SUPABASE_CONFIG !== 'undefined') {
+                  SUPABASE_CONFIG.url = data.url;
+                  SUPABASE_CONFIG.anonKey = data.anonKey;
+                }
               }
-            }
-          } catch (e) {}
+            } catch (e) {}
+          }
         }
 
         if (u) this._savedUrl = u;
@@ -222,6 +224,10 @@
     try {
       if (typeof AuthSession !== 'undefined' && AuthSession.getSession) {
         const session = await AuthSession.getSession();
+        if (session && session.auth_mode === 'local_dev') {
+          console.warn('[SupabaseCloud] Local dev session cannot be used for cloud operations.');
+          return null;
+        }
         if (session && session.access_token) return session.access_token;
       }
     } catch (_) {}

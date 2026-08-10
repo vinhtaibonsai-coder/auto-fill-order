@@ -117,6 +117,43 @@ Deno.serve(async (req) => {
     }
 
     // ------------------------------------------------------------------
+    // 2b. AUTHORIZE SHOP (fail-closed)
+    // shop_id do client gửi là dữ liệu KHÔNG tin cậy. Mọi truy vấn bên dưới
+    // dùng adminClient (bypass RLS), nên phải xác thực membership tại đây
+    // TRƯỚC khi đọc feature flag / tạo quota / consume quota / ghi usage log.
+    // ------------------------------------------------------------------
+    const { data: membership, error: membershipErr } = await adminClient
+      .from('shop_members')
+      .select('shop_id')
+      .eq('user_id', userId)
+      .eq('shop_id', shopId)
+      .eq('status', 'active')
+      .is('removed_at', null)
+      .maybeSingle();
+
+    if (membershipErr) {
+      console.error('Membership check error:', membershipErr);
+      return json({ error: 'AI_INTERNAL_ERROR', message: 'Cannot verify shop membership.' }, 500);
+    }
+
+    if (!membership) {
+      // Không phải member → chỉ SYSTEM_ADMIN mới được đi tiếp.
+      const { data: adminRole, error: adminErr } = await adminClient
+        .from('user_roles')
+        .select('roles!inner(code)')
+        .eq('user_id', userId)
+        .eq('roles.code', 'SYSTEM_ADMIN')
+        .limit(1);
+      if (adminErr) {
+        console.error('SYSTEM_ADMIN check error:', adminErr);
+        return json({ error: 'AI_INTERNAL_ERROR', message: 'Cannot verify permissions.' }, 500);
+      }
+      if (!adminRole || adminRole.length === 0) {
+        return json({ error: 'AI_SHOP_FORBIDDEN', message: 'You do not have access to this shop.' }, 403);
+      }
+    }
+
+    // ------------------------------------------------------------------
     // 3. CHECK FEATURE FLAG
     // ------------------------------------------------------------------
     const { data: flags } = await adminClient
@@ -130,9 +167,13 @@ Deno.serve(async (req) => {
     }
 
     // ------------------------------------------------------------------
-    // 4. RATE LIMIT (DB sliding window)
+    // 4. RATE LIMIT (DB sliding window) — fail closed nếu RPC lỗi
     // ------------------------------------------------------------------
-    const { data: rateRes } = await userClient.rpc('check_ai_rate_limit', { p_shop_id: shopId });
+    const { data: rateRes, error: rateErr } = await userClient.rpc('check_ai_rate_limit', { p_shop_id: shopId });
+    if (rateErr) {
+      console.error('check_ai_rate_limit error:', rateErr);
+      return json({ error: 'AI_INTERNAL_ERROR', message: 'Cannot verify rate limit.' }, 500);
+    }
     if (rateRes && rateRes.success === false) {
       return json({ error: rateRes.code || 'AI_RATE_LIMITED', message: rateRes.message || 'Too many requests.' }, 429);
     }

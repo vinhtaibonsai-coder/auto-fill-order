@@ -112,7 +112,7 @@ async function _autoSyncConfig() {
         if (result && result.ok && result.data) {
           const settings = result.data;
           const patch = {};
-          if (settings.api_key) patch.apiKey = settings.api_key;
+          // DO NOT SYNC API KEY TO CLIENT (Phase 1.4)
           if (settings.api_model) patch.apiModel = settings.api_model;
           if (settings.ai_prompt) patch.customAiPrompt = settings.ai_prompt;
           if (Object.keys(patch).length > 0) {
@@ -954,3 +954,13 @@ async function autoFetchVnpostWaybillInBackground(order) {
     } catch (_) {}
   }
 }
+
+// DO NOT SYNC API KEY TO CLIENT (Phase 1.4) - WIPE OLD KEY
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.remove(['apiKey'], () => {
+    console.log('[Security] Wiped old provider API key from local storage.');
+  });
+});
+chrome.runtime.onStartup.addListener(() => {
+  chrome.storage.local.remove(['apiKey']);
+});
