@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function ParseMode({ onParse }) {
+export default function ParseMode({ onParse, isLoading }) {
   const [text, setText] = useState('');
   
   useEffect(() => {
@@ -29,10 +29,11 @@ export default function ParseMode({ onParse }) {
         placeholder="Dán thông tin đơn hàng thô vào đây...&#10;(Ctrl+Enter để tách nhanh)"
         value={text}
         onChange={e => setText(e.target.value)}
+        disabled={isLoading}
         onKeyDown={(e) => {
           if (e.ctrlKey && e.key === 'Enter') {
             e.preventDefault();
-            if (text.trim()) onParse(text);
+            if (text.trim() && !isLoading) onParse(text);
           }
         }}
       />
@@ -41,7 +42,7 @@ export default function ParseMode({ onParse }) {
         <button 
           className="af-btn-primary" 
           onClick={() => onParse(text)}
-          disabled={!text.trim()}
+          disabled={!text.trim() || isLoading}
         >
           <span>⚡</span>
           Tách Đơn Tự Động
@@ -49,6 +50,7 @@ export default function ParseMode({ onParse }) {
         <button 
           className="af-btn-delete" 
           onClick={() => setText('')}
+          disabled={isLoading}
         >
           <span>🗑️</span>
           Xóa
@@ -57,14 +59,14 @@ export default function ParseMode({ onParse }) {
 
       {/* Buttons bottom row for idle state */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
-        <button className="af-btn-fill">
+        <button className="af-btn-fill" disabled={isLoading}>
           <span>↓</span> Nhập đơn
         </button>
-        <button className="af-btn-save">
+        <button className="af-btn-save" disabled={isLoading}>
           <span>💾</span> Lưu đơn
         </button>
       </div>
-      <button className="af-btn-print" style={{ marginTop: '0px' }}>
+      <button className="af-btn-print" style={{ marginTop: '0px' }} disabled={isLoading}>
         <span>🖨️</span> In đơn
       </button>
     </div>

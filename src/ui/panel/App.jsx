@@ -22,11 +22,11 @@ const LoadingProgress = () => {
   }, []);
 
   return (
-    <div style={{ padding: '30px 15px', textAlign: 'center' }}>
-      <div style={{ marginBottom: '12px', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+    <div style={{ padding: '12px 5px 0 5px', textAlign: 'center', marginTop: '10px', borderTop: '1px solid #e2e8f0' }}>
+      <div style={{ marginBottom: '8px', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
         Đang phân tích dữ liệu... {Math.min(progress, 99)}%
       </div>
-      <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+      <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
         <div style={{ 
           width: `${Math.min(progress, 99)}%`, 
           height: '100%', 
@@ -259,10 +259,11 @@ export default function App() {
 
   return (
     <DraggableCard title="Auto Fill Order" onClose={() => setIsOpen(false)} isAuth={isAuth} session={session}>
-      {isAuth && state === 'IDLE' && <ParseMode onParse={handleParse} />}
-
-      {state === 'LOADING' && (
-        <LoadingProgress />
+      {isAuth && (state === 'IDLE' || state === 'LOADING') && (
+        <>
+          <ParseMode onParse={handleParse} isLoading={state === 'LOADING'} />
+          {state === 'LOADING' && <LoadingProgress />}
+        </>
       )}
 
       {state === 'REVIEW' && (
