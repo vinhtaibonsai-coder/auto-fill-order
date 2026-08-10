@@ -62,13 +62,27 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
           }
         }}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: '8px' }}>
         <button 
           className="af-btn-primary" 
           onClick={() => onParse(currentText)}
           disabled={!currentText.trim()}
         >
-          <span>⚡</span> Tách Đơn Tự Động
+          <span>⚡</span> Tách Đơn
+        </button>
+        <button 
+          className="af-btn-primary" 
+          style={{ background: '#3b82f6' }}
+          onClick={async () => {
+            try {
+              const clipText = await navigator.clipboard.readText();
+              if (clipText) setCurrentText(clipText);
+            } catch (err) {
+              console.warn("Lỗi dán:", err);
+            }
+          }}
+        >
+          <span>📋</span> Dán
         </button>
         <button className="af-btn-delete" onClick={() => { setCurrentText(''); onCancel(); }}>
           <span>🗑️</span> Xóa
@@ -131,7 +145,12 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
               className="af-grid-item-value" 
               style={{ border: 'none', background: 'transparent', outline: 'none', padding: 0, width: '100%', resize: 'none', minHeight: '40px' }} 
             />
-            <button className="af-copy-btn">📋</button>
+            <button className="af-copy-btn" onClick={() => {
+              navigator.clipboard.writeText(formData.address);
+              if (typeof globalThis.showVnpostToast === 'function') {
+                globalThis.showVnpostToast('Đã sao chép địa chỉ!', 'success');
+              }
+            }}>📋</button>
           </div>
         </div>
 

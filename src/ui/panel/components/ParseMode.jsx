@@ -38,14 +38,29 @@ export default function ParseMode({ onParse, isLoading }) {
         }}
       />
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: '8px' }}>
         <button 
           className="af-btn-primary" 
           onClick={() => onParse(text)}
           disabled={!text.trim() || isLoading}
         >
           <span>⚡</span>
-          Tách Đơn Tự Động
+          Tách Đơn
+        </button>
+        <button 
+          className="af-btn-primary" 
+          style={{ background: '#3b82f6' }}
+          onClick={async () => {
+            try {
+              const clipText = await navigator.clipboard.readText();
+              if (clipText) setText(clipText);
+            } catch (err) {
+              console.warn("Lỗi dán:", err);
+            }
+          }}
+          disabled={isLoading}
+        >
+          <span>📋</span> Dán
         </button>
         <button 
           className="af-btn-delete" 

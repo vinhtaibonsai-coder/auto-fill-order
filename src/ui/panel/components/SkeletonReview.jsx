@@ -9,9 +9,12 @@ export default function SkeletonReview({ rawText }) {
         value={rawText || ''}
         disabled={true}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: '8px' }}>
         <button className="af-btn-primary" disabled={true} style={{ opacity: 0.8 }}>
-          <span>⚡</span> Đang Xử Lý...
+          <span>⚡</span> Tách Đơn
+        </button>
+        <button className="af-btn-primary" disabled={true} style={{ background: '#3b82f6', opacity: 0.8 }}>
+          <span>📋</span> Dán
         </button>
         <button className="af-btn-delete" disabled={true} style={{ opacity: 0.8 }}>
           <span>🗑️</span> Xóa
