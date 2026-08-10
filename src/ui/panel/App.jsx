@@ -22,17 +22,39 @@ export default function App() {
   };
 
   useEffect(() => {
-    try {
-      if (window.AuthSession && typeof window.AuthSession.getSession === 'function') {
-        window.AuthSession.getSession().then(sess => {
-          setSession(sess);
-          setIsAuth(!!sess);
-        }).catch(() => setIsAuth(false));
-      } else if (window.AuthService && typeof window.AuthService.isAuthenticated === 'function') {
-        window.AuthService.isAuthenticated().then(setIsAuth).catch(() => setIsAuth(false));
+    const checkAuth = () => {
+      try {
+        if (window.AuthSession && typeof window.AuthSession.getSession === 'function') {
+          window.AuthSession.getSession().then(sess => {
+            setSession(sess);
+            setIsAuth(!!sess);
+          }).catch(() => setIsAuth(false));
+        } else if (window.AuthService && typeof window.AuthService.isAuthenticated === 'function') {
+          window.AuthService.isAuthenticated().then(setIsAuth).catch(() => setIsAuth(false));
+        }
+      } catch (e) {
+        console.warn("Auth check error:", e);
       }
-    } catch (e) {
-      console.warn("Auth check error:", e);
+    };
+    
+    checkAuth();
+
+    const handleStorageChange = (changes, namespace) => {
+      if (namespace === 'local' && changes['vnpost_session']) {
+        const newSession = changes['vnpost_session'].newValue;
+        setSession(newSession || null);
+        setIsAuth(!!newSession);
+        
+        if (!newSession) {
+          setState('IDLE');
+          setParsedData(null);
+          setRawText('');
+        }
+      }
+    };
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener(handleStorageChange);
     }
 
     const handleOrderSaved = () => {
@@ -45,6 +67,9 @@ export default function App() {
     window.addEventListener('order-saved-db', handleOrderSaved);
     return () => {
       window.removeEventListener('order-saved-db', handleOrderSaved);
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      }
     };
   }, []);
 
