@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SkeletonTableRows } from '../../components/SkeletonTable';
 import { AdminService } from '../../../../domain/admin/admin.service.js';
 
 export default function ShopList() {
@@ -99,7 +100,7 @@ export default function ShopList() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading shops...</td></tr>
+              <SkeletonTableRows columns={7} rows={5} />
             ) : shops.length === 0 ? (
               <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)' }}>No shops found.</td></tr>
             ) : (

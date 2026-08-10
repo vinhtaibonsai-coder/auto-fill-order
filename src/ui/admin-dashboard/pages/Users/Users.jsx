@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SkeletonTableRows } from '../../components/SkeletonTable';
 import { AdminService } from '../../../../domain/admin/admin.service.js';
 
 const formatDate = (dateString) => {
@@ -89,7 +90,7 @@ export default function Users() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>Đang tải dữ liệu...</td></tr>
+              <SkeletonTableRows columns={7} rows={5} />
             ) : filteredUsers.length === 0 ? (
               <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center' }}>Không tìm thấy người dùng</td></tr>
             ) : filteredUsers.map(user => (

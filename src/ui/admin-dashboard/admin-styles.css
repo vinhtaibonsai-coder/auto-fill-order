@@ -142,3 +142,20 @@ body {
 .badge-success { background: #dcfce7; color: var(--success); }
 .badge-danger { background: #fee2e2; color: var(--danger); }
 .badge-warning { background: #fffbeb; color: var(--warning); }
+
+@keyframes shimmer {
+  0% { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+.skeleton-box {
+  animation: shimmer 1.5s infinite linear;
+  background: linear-gradient(to right, #e2e8f0 4%, #cbd5e1 25%, #e2e8f0 36%);
+  background-size: 1000px 100%;
+  border-radius: 4px;
+  display: block;
+}
+.skeleton-text {
+  height: 12px;
+  margin-bottom: 8px;
+}
+

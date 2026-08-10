@@ -2,41 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DraggableCard from './components/DraggableCard';
 import ParseMode from './components/ParseMode';
 import ConfidenceReview from './components/ConfidenceReview';
-
-const LoadingProgress = () => {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    // Simulate progress up to 99%
-    const interval = setInterval(() => {
-      setProgress((old) => {
-        if (old >= 95) {
-          clearInterval(interval);
-          return 99;
-        }
-        return old + Math.floor(Math.random() * 15) + 5;
-      });
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div style={{ padding: '12px 5px 0 5px', textAlign: 'center', marginTop: '10px', borderTop: '1px solid #e2e8f0' }}>
-      <div style={{ marginBottom: '8px', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
-        Đang phân tích dữ liệu... {Math.min(progress, 99)}%
-      </div>
-      <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
-        <div style={{ 
-          width: `${Math.min(progress, 99)}%`, 
-          height: '100%', 
-          background: 'var(--primary, #3b82f6)', 
-          transition: 'width 0.3s ease' 
-        }}></div>
-      </div>
-    </div>
-  );
-};
+import SkeletonReview from './components/SkeletonReview';
 
 export default function App() {
   const [isOpen, setIsOpen] = useState(true);
@@ -259,11 +225,10 @@ export default function App() {
 
   return (
     <DraggableCard title="Auto Fill Order" onClose={() => setIsOpen(false)} isAuth={isAuth} session={session}>
-      {isAuth && (state === 'IDLE' || state === 'LOADING') && (
-        <>
-          <ParseMode onParse={handleParse} isLoading={state === 'LOADING'} />
-          {state === 'LOADING' && <LoadingProgress />}
-        </>
+      {isAuth && state === 'IDLE' && <ParseMode onParse={handleParse} />}
+
+      {state === 'LOADING' && (
+        <SkeletonReview />
       )}
 
       {state === 'REVIEW' && (
