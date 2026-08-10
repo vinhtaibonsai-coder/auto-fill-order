@@ -5,6 +5,8 @@
       let prov = addressObj.province || "";
       let dist = addressObj.district || "";
       let ward = addressObj.ward || "";
+      let warningMsg = "";
+      let suggestedAddr = "";
 
       // === Bước 0: Chuẩn hóa tỉnh trước (luôn cần cho mọi pipeline) ===
       if (typeof AddressAliases !== 'undefined') {
@@ -121,9 +123,12 @@
         }
 
         if (matchedVal) {
+          const oldWard = ward;
           ward = matchedVal.ward;
           if (matchedVal.province) prov = matchedVal.province;
           dist = '';
+          warningMsg = `Địa bàn ${oldWard} đã sáp nhập năm 2025 sang ${ward} (${matchedVal.province || prov}).`;
+          suggestedAddr = `${street ? street + ', ' : ''}${ward}, ${matchedVal.province || prov}`;
         }
       }
 
@@ -164,17 +169,29 @@
 
           const newWards = NEW_ADM_DB.wards[matchProv.name] || [];
           let newWard = newWards.find(w => _pw(w.name) === wardNorm);
+          let viaOldUnit = false;
           if (!newWard) {
             newWard = newWards.find(w => (w.old_units || []).some(o => _pw(o) === wardNorm));
+            viaOldUnit = true;
           }
           if (newWard) {
+            const oldWard = ward;
             ward = newWard.name;
             dist = '';
+            if (viaOldUnit) {
+              warningMsg = `Địa bàn ${oldWard} đã sáp nhập năm 2025 sang ${ward} (${prov}).`;
+              suggestedAddr = `${street ? street + ', ' : ''}${ward}, ${prov}`;
+            }
           }
         }
       }
 
-      return { street: street, province: prov, district: dist, ward: ward };
+      const finalRes = { street: street, province: prov, district: dist, ward: ward };
+      if (warningMsg) {
+        finalRes.warning = warningMsg;
+        finalRes.suggestedAddress = suggestedAddr;
+      }
+      return finalRes;
     }
   };
 

@@ -17,7 +17,9 @@
           province: ruledMatch.province || match.province || "",
           confidence: cached.confidence,
           source: cached.source,
-          fullAddress: this.buildFullAddress(ruledMatch)
+          fullAddress: this.buildFullAddress(ruledMatch),
+          warning: ruledMatch.warning || "",
+          suggestedAddress: ruledMatch.suggestedAddress || ""
         };
       }
 
@@ -48,7 +50,9 @@
         province: ruled.province || "",
         confidence: ruled.confidence,
         source: "local_pipeline",
-        fullAddress: this.buildFullAddress(ruled)
+        fullAddress: this.buildFullAddress(ruled),
+        warning: ruled.warning || "",
+        suggestedAddress: ruled.suggestedAddress || ""
       };
 
       // Tự động lưu địa chỉ phân tích cục bộ thành công có độ tin cậy cao vào AKB

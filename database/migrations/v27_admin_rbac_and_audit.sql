@@ -108,10 +108,10 @@ BEGIN
     SELECT 
         COUNT(*),
         COUNT(*) FILTER (WHERE created_at >= current_date),
-        COALESCE(SUM(used_tokens) FILTER (WHERE created_at >= current_date), 0),
+        COALESCE(SUM(prompt_tokens + completion_tokens) FILTER (WHERE created_at >= current_date), 0),
         COUNT(*) FILTER (WHERE created_at >= current_date AND status = 'error')
     INTO _ai_requests_total, _ai_requests_today, _ai_tokens_today, _ai_errors_today
-    FROM public.ai_usage_logs;
+    FROM public.ai_usage_log;
 
     -- Build JSON Response
     result := jsonb_build_object(

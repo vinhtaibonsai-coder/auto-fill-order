@@ -47,28 +47,22 @@
       await new Promise(r => setTimeout(r, 300));
 
       // 2. Số điện thoại
-      const phoneEl = document.querySelector('input[placeholder="Nhập số điện thoại"]');
+      const phoneEl = findFieldInput(globalThis.JT_SELECTORS.phoneLabels, globalThis.JT_SELECTORS.phoneFallbacks);
       results.phoneField = !!phoneEl;
       if (phoneEl) setInputValue(phoneEl, phone);
 
       // 3. Tên người nhận
-      const nameEl = document.querySelector('input[placeholder="Nhập tên người nhận"]');
+      const nameEl = findFieldInput(globalThis.JT_SELECTORS.nameLabels, globalThis.JT_SELECTORS.nameFallbacks);
       results.nameField = !!nameEl;
       if (nameEl) setInputValue(nameEl, name);
 
-      // 4. Địa chỉ chi tiết (số nhà/đường) — chỉ điền text, không cần dropdown
-      const addrEl =
-        document.querySelector('input[placeholder="Nhập địa chỉ (Số nhà/ đường/ ngõ/ tòa nhà...)"]') ||
-        document.querySelector('input[placeholder*="Số nhà/ đường/ ngõ"]') ||
-        document.querySelector('input[placeholder*="địa chỉ"]');
+      // 4. Địa chỉ (Vui lòng nhập địa chỉ cũ - 3 cấp)
+      const addrEl = findFieldInput(globalThis.JT_SELECTORS.addressLabels, globalThis.JT_SELECTORS.addressFallbacks);
       results.addressField = !!addrEl;
       if (address && address !== 'không tìm thấy' && addrEl) setInputValue(addrEl, address);
 
-      // 5. Mã đơn hàng của Shop (để trống theo yêu cầu — gộp vào Tên sản phẩm)
-      const codeEl =
-        document.querySelector('input[placeholder="Nhập mã đơn hàng riêng của shop"]') ||
-        document.querySelector('input[placeholder*="mã đơn hàng"]') ||
-        document.querySelector('#customerOrderCode');
+      // 5. Mã đơn hàng của Shop
+      const codeEl = findFieldInput(globalThis.JT_SELECTORS.codeLabels, globalThis.JT_SELECTORS.codeFallbacks);
       results.codeField = !!codeEl;
 
       // 6. Tên sản phẩm (gộp mã đơn + ghi chú)
@@ -86,7 +80,8 @@
       }
       results.goodsNameField = !!goodsInp;
       if (goodsInp) {
-        let goodsText = orderCode || 'Hàng hóa';
+        const defaultGoodsName = store.defaultGoodsName || 'Hàng hóa';
+        let goodsText = orderCode || defaultGoodsName;
         const notesParts = [];
         if (store.extraNote)           notesParts.push(store.extraNote);
         if (store.extraPhones?.length) notesParts.push('SDT phụ: ' + store.extraPhones.join(', '));
@@ -107,7 +102,10 @@
         });
       }
       results.weightField = !!weightInp;
-      if (weightInp) setInputValue(weightInp, '5');
+      if (weightInp) {
+        const defaultWeightJt = store.defaultWeightJt !== undefined ? store.defaultWeightJt : 0.2;
+        setInputValue(weightInp, String(defaultWeightJt));
+      }
 
       // 8. Ghi chú / Nội dung
       let noteEl = null;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { OrderStorage } from '../../../../application/storage.js';
+import { AuthService } from '../../../../domain/auth/auth.service.js';
 
 export default function AISettings() {
   const [config, setConfig] = useState({
@@ -14,14 +15,22 @@ export default function AISettings() {
   useEffect(() => {
     async function loadConfig() {
       try {
-        const promptKey = await OrderStorage._getScopedKey('customAiPrompt');
-        const apiKeyKey = await OrderStorage._getScopedKey('groqApiKey');
+        const activeShopId = await OrderStorage.getActiveShop();
         
-        chrome.storage.local.get([promptKey, apiKeyKey], (result) => {
+        let fetchedPromptRules = '';
+        if (activeShopId) {
+          const flags = await AuthService.fetchShopFeatureFlags(activeShopId);
+          if (flags && flags.custom_prompt_rules) {
+            fetchedPromptRules = flags.custom_prompt_rules;
+          }
+        }
+
+        chrome.storage.local.get(['ai_confidence_threshold', 'ai_auto_correct'], (result) => {
           setConfig(prev => ({
             ...prev,
-            promptRules: result[promptKey] || '',
-            groqApiKey: result[apiKeyKey] || ''
+            promptRules: fetchedPromptRules,
+            confidenceThreshold: result.ai_confidence_threshold !== undefined ? result.ai_confidence_threshold : 90,
+            autoCorrect: result.ai_auto_correct !== undefined ? result.ai_auto_correct : true
           }));
           setIsLoading(false);
         });
@@ -36,17 +45,14 @@ export default function AISettings() {
   const handleSave = async () => {
     setSaveStatus('Đang lưu...');
     try {
-      const promptKey = await OrderStorage._getScopedKey('customAiPrompt');
-      const apiKeyKey = await OrderStorage._getScopedKey('groqApiKey');
-      
       await new Promise(resolve => {
         chrome.storage.local.set({
-          [promptKey]: config.promptRules.trim(),
-          [apiKeyKey]: config.groqApiKey.trim()
+          ai_confidence_threshold: Number(config.confidenceThreshold) || 90,
+          ai_auto_correct: config.autoCorrect
         }, resolve);
       });
       
-      setSaveStatus('✅ Đã lưu cấu hình!');
+      setSaveStatus('✅ Đã lưu cấu hình AI thành công!');
       setTimeout(() => setSaveStatus(''), 3000);
     } catch (err) {
       setSaveStatus('❌ Lỗi khi lưu: ' + err.message);
@@ -73,15 +79,16 @@ export default function AISettings() {
         </div>
 
         <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Custom AI Prompt Rules</label>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>Custom AI Prompt Rules <span className="badge badge-warning" style={{fontSize:'10px', marginLeft:'8px'}}>Admin Managed</span></label>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '8px' }}>
-            Thêm các chỉ dẫn đặc biệt để ép AI bóc tách theo ý bạn (VD: "Mặc định tiền thu hộ là 0").
+            Thiết lập này hiện được quản lý tập trung trên Trang Admin Dashboard. Extension sẽ tự động đồng bộ xuống Shop của bạn.
           </div>
           <textarea 
             value={config.promptRules}
-            onChange={(e) => setConfig({...config, promptRules: e.target.value})}
-            style={{ width: '100%', padding: '10px', border: '1px solid var(--border)', borderRadius: '6px', height: '100px', resize: 'vertical' }}
-            placeholder="Ví dụ: Ưu tiên bắt số điện thoại ở cuối câu..."
+            readOnly
+            disabled
+            style={{ width: '100%', padding: '10px', border: '1px solid var(--border)', borderRadius: '6px', height: '100px', resize: 'vertical', backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+            placeholder="Chưa có quy tắc nào được thiết lập từ Admin..."
           />
         </div>
 

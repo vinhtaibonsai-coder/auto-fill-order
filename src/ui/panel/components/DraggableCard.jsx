@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-export default function DraggableCard({ children, onClose, title, isAuth = false }) {
+export default function DraggableCard({ children, onClose, title, isAuth = false, session }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -77,25 +77,36 @@ export default function DraggableCard({ children, onClose, title, isAuth = false
       <div 
         className="af-panel-header" 
         onMouseDown={handleMouseDown}
-        style={{ cursor: 'grab', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        style={{ cursor: 'grab', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px' }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px' }}>⚡</span>
-          <h2>{title}</h2>
-          <span 
-            title={isAuth ? 'Đã kết nối AI Server' : 'Mất kết nối AI (Chưa đăng nhập)'} 
-            style={{ 
-              width: 8, height: 8, borderRadius: '50%', 
-              background: isAuth ? '#10b981' : '#ef4444', 
-              display: 'inline-block', marginLeft: '4px',
-              boxShadow: isAuth ? '0 0 5px #10b981' : 'none'
-            }}
-          ></span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px' }}>📌</span>
+            <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#1e293b', lineHeight: 1.2 }}>
+              {window.location.href.includes('jtexpress.vn') ? 'J&T Auto Fill' : 'VNPost Auto Fill'}
+            </h3>
+            <span 
+              title={isAuth ? 'Đã kết nối AI Server' : 'Mất kết nối AI (Chưa đăng nhập)'} 
+              style={{ 
+                width: 7, height: 7, borderRadius: '50%', 
+                background: isAuth ? '#10b981' : '#ef4444', 
+                display: 'inline-block',
+                boxShadow: isAuth ? '0 0 5px #10b981' : 'none'
+              }}
+            ></span>
+            <span className="af-panel-header-badge" style={{ fontSize: '9px', padding: '1px 3px' }}>V1</span>
+          </div>
+          {isAuth && (
+            <div style={{ fontSize: '9px', color: '#475569', display: 'flex', gap: '8px', fontWeight: 500, lineHeight: 1 }}>
+              <span title="Cửa hàng đang hoạt động">🏪 {session?.shop_name || 'Mặc định'}</span>
+              <span title="Nhân viên đang đăng nhập">👤 {session?.user?.full_name || session?.user?.email || 'Ngoại tuyến'}</span>
+            </div>
+          )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button title="Trang Admin" onClick={openAdmin} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: '16px', padding: 0 }}>🛠️</button>
-          <button title="Cài đặt (Options)" onClick={openOptions} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: '16px', padding: 0 }}>⚙️</button>
-          <button title="Đóng" onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: '18px', padding: 0, marginLeft: '4px' }}>×</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button className="af-panel-header-btn" title="Làm mới" onClick={() => window.location.reload()}>↻</button>
+          <button className="af-panel-header-btn" title="Cài đặt" onClick={openOptions}>⚙</button>
+          <button className="af-panel-header-btn" title="Thu nhỏ" onClick={onClose}>—</button>
         </div>
       </div>
       {children}

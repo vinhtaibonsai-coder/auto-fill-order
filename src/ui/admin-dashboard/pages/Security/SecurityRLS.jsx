@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AdminService } from '../../../../domain/admin/admin.service.js';
 
 export default function SecurityRLS() {
+  const [stats, setStats] = useState({ total: 0, logs: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
   const securityChecks = [
     { name: 'Multi-Tenant RLS Policy (orders)', status: 'PASSED', desc: 'Đảm bảo shop_id cách ly hoàn toàn qua RLS' },
     { name: 'Multi-Tenant RLS Policy (shops)', status: 'PASSED', desc: 'Shop owner chỉ xem được đúng thông tin shop của mình' },
@@ -9,14 +14,44 @@ export default function SecurityRLS() {
     { name: 'API Key Security (No Secrets Leak)', status: 'PASSED', desc: 'Không lộ Groq secret keys ở Frontend Client' },
   ];
 
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    const res = await AdminService.getSecurityStats();
+    if (res.success) {
+      setStats(res.data || { total: 0, logs: [] });
+    } else {
+      setError(res.error || 'Lỗi tải thống kê bảo mật');
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div>
-        <h2 style={{ margin: 0 }}>🛡️ Security Audit & RLS Health Center</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0 0' }}>
-          Giám sát bảo mật phân quyền Row Level Security (RLS) và ngăn ngừa thất thoát dữ liệu giữa các Shop (Multi-tenant isolation).
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ margin: 0 }}>🛡️ Security Audit & RLS Health Center</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0 0' }}>
+            Giám sát bảo mật phân quyền Row Level Security (RLS) và ngăn ngừa thất thoát dữ liệu giữa các Shop (Multi-tenant isolation).
+          </p>
+        </div>
+        <button
+          onClick={fetchStats}
+          style={{ background: 'var(--primary, #2563eb)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
+        >
+          🔄 Refresh
+        </button>
       </div>
+
+      {error && (
+        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '6px', fontSize: '13px' }}>
+          ⚠️ {error}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div className="card" style={{ padding: '16px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
@@ -26,7 +61,9 @@ export default function SecurityRLS() {
         </div>
         <div className="card" style={{ padding: '16px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>AUDIT LOGS TRONG NGÀY</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>1,280 TÁC VỤ</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+            {loading ? '...' : stats.total} TÁC VỤ
+          </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Tất cả các hành động nhạy cảm đều được ghi log.</div>
         </div>
       </div>

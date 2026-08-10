@@ -26,22 +26,47 @@ export default function ParseMode({ onParse }) {
   return (
     <div className="af-panel-content">
       <textarea 
-        placeholder="Dán thông tin người nhận (Tên, SĐT, Địa chỉ) vào đây..."
+        placeholder="Dán thông tin đơn hàng thô vào đây...&#10;(Ctrl+Enter để tách nhanh)"
         value={text}
         onChange={e => setText(e.target.value)}
-        style={{ minHeight: '80px', padding: '10px', fontSize: '13px', lineHeight: '1.4' }}
+        onKeyDown={(e) => {
+          if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            if (text.trim()) onParse(text);
+          }
+        }}
       />
-      <button 
-        className="af-btn-primary" 
-        onClick={() => onParse(text)}
-        disabled={!text.trim()}
-      >
-        <span style={{ marginRight: '6px' }}>⚡</span>
-        Bóc tách AI
-      </button>
-      <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '6px' }}>
-        Nhấn <kbd style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>Ctrl</kbd> + <kbd style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>Shift</kbd> + <kbd style={{ background: '#f1f5f9', padding: '2px 4px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>V</kbd> để dán và bóc tách nhanh
+      
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px' }}>
+        <button 
+          className="af-btn-primary" 
+          onClick={() => onParse(text)}
+          disabled={!text.trim()}
+        >
+          <span>⚡</span>
+          Tách Đơn Tự Động
+        </button>
+        <button 
+          className="af-btn-delete" 
+          onClick={() => setText('')}
+        >
+          <span>🗑️</span>
+          Xóa
+        </button>
       </div>
+
+      {/* Buttons bottom row for idle state */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
+        <button className="af-btn-fill">
+          <span>↓</span> Nhập đơn
+        </button>
+        <button className="af-btn-save">
+          <span>💾</span> Lưu đơn
+        </button>
+      </div>
+      <button className="af-btn-print" style={{ marginTop: '0px' }}>
+        <span>🖨️</span> In đơn
+      </button>
     </div>
   );
 }

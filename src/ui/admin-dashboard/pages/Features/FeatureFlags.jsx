@@ -1,26 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AdminService } from '../../../../domain/admin/admin.service.js';
 
 export default function FeatureFlags() {
-  const [flags, setFlags] = useState([
-    { key: 'address_engine_v2', desc: 'Thuật toán chuẩn hóa địa chỉ HC-VN v2.0 (tốc độ +30%)', enabled: true, rollout: 100 },
-    { key: 'ai_vision_ocr', desc: 'Bóc tách hình ảnh bill / ảnh tin nhắn qua AI Vision', enabled: true, rollout: 50 },
-    { key: 'sync_v2_realtime', desc: 'Đồng bộ đơn hàng Realtime qua Supabase Broadcast', enabled: true, rollout: 25 },
-    { key: 'carrier_ghtk_v2', desc: 'Bộ adapter điền tự động nhà vận chuyển GHTK v2', enabled: false, rollout: 0 },
-    { key: 'auto_submit_safety', desc: 'Tự động Submit đơn hàng sau khi điền thành công', enabled: false, rollout: 0 }
-  ]);
+  const [flags, setFlags] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState(null);
 
-  const toggleFlag = (key) => {
-    setFlags(prev => prev.map(f => f.key === key ? { ...f, enabled: !f.enabled } : f));
+  const fetchFlags = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    const res = await AdminService.getFeatureFlags();
+    if (res.success) {
+      setFlags(res.data || []);
+    } else {
+      setError(res.error || 'Lỗi tải danh sách Feature Flags');
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchFlags();
+  }, [fetchFlags]);
+
+  const toggleFlag = async (flag) => {
+    const newEnabled = !flag.is_enabled;
+    setActionLoading(flag.id);
+    const res = await AdminService.updateFeatureFlag(flag.id, flag, { is_enabled: newEnabled });
+    if (res.success) {
+      setFlags(prev => prev.map(f => f.id === flag.id ? { ...f, is_enabled: newEnabled } : f));
+    } else {
+      alert('Lỗi: ' + res.error);
+    }
+    setActionLoading(null);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div>
-        <h2 style={{ margin: 0 }}>🚩 Feature Flags & Rollout Control</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0 0' }}>
-          Điều phối việc phát hành tính năng mới theo từng % người dùng hoặc theo cấp độ gói cước SaaS.
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ margin: 0 }}>🚩 Feature Flags & Rollout Control</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0 0' }}>
+            Điều phối việc phát hành tính năng mới theo từng % người dùng hoặc theo cấp độ gói cước SaaS.
+          </p>
+        </div>
+        <button
+          onClick={fetchFlags}
+          style={{ background: 'var(--primary, #2563eb)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
+        >
+          🔄 Refresh
+        </button>
       </div>
+
+      {error && (
+        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '6px', fontSize: '13px' }}>
+          ⚠️ {error}
+        </div>
+      )}
 
       <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
@@ -34,30 +70,37 @@ export default function FeatureFlags() {
             </tr>
           </thead>
           <tbody>
-            {flags.map(flag => (
-              <tr key={flag.key} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px 16px', fontWeight: 600, fontFamily: 'monospace', color: '#1e293b' }}>{flag.key}</td>
-                <td style={{ padding: '12px 16px', color: '#475569' }}>{flag.desc}</td>
-                <td style={{ padding: '12px 16px', fontWeight: 600, color: '#2563eb' }}>{flag.rollout}% Rollout</td>
-                <td style={{ padding: '12px 16px' }}>
-                  <span style={{ background: flag.enabled ? '#dcfce7' : '#fee2e2', color: flag.enabled ? '#15803d' : '#991b1b', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
-                    {flag.enabled ? 'ACTIVE' : 'DISABLED'}
-                  </span>
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                  <button
-                    onClick={() => toggleFlag(flag.key)}
-                    style={{
-                      background: flag.enabled ? '#fee2e2' : '#dcfce7',
-                      color: flag.enabled ? '#991b1b' : '#15803d',
-                      border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '11px'
-                    }}
-                  >
-                    {flag.enabled ? 'Tắt tính năng' : 'Kích hoạt'}
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {loading ? (
+              <tr><td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>⏳ Đang tải dữ liệu...</td></tr>
+            ) : flags.length === 0 && !error ? (
+              <tr><td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>Chưa có Feature Flag nào.</td></tr>
+            ) : (
+              flags.map(flag => (
+                <tr key={flag.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '12px 16px', fontWeight: 600, fontFamily: 'monospace', color: '#1e293b' }}>{flag.key}</td>
+                  <td style={{ padding: '12px 16px', color: '#475569' }}>{flag.description || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#2563eb' }}>{flag.rollout_percentage || 0}% Rollout</td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <span style={{ background: flag.is_enabled ? '#dcfce7' : '#fee2e2', color: flag.is_enabled ? '#15803d' : '#991b1b', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+                      {flag.is_enabled ? 'ACTIVE' : 'DISABLED'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                    <button
+                      onClick={() => toggleFlag(flag)}
+                      disabled={actionLoading === flag.id}
+                      style={{
+                        background: flag.is_enabled ? '#fee2e2' : '#dcfce7',
+                        color: flag.is_enabled ? '#991b1b' : '#15803d',
+                        border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: actionLoading === flag.id ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '11px', opacity: actionLoading === flag.id ? 0.6 : 1
+                      }}
+                    >
+                      {actionLoading === flag.id ? '⏳' : (flag.is_enabled ? 'Tắt tính năng' : 'Kích hoạt')}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

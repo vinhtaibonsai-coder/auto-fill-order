@@ -27,7 +27,7 @@ export default function Quotas() {
   // AI Configuration State
   const [aiProvider, setAiProvider] = useState('groq');
   const [groqKeysInput, setGroqKeysInput] = useState('');
-  const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
+  const [selectedModel, setSelectedModel] = useState('llama-3.1-8b-instant');
   
   // Database Live Verification State
   const [dbStatusInfo, setDbStatusInfo] = useState({
@@ -43,6 +43,11 @@ export default function Quotas() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [showSqlGuide, setShowSqlGuide] = useState(false);
+
+  // Default Custom Prompt Rules State
+  const [defaultPromptRules, setDefaultPromptRules] = useState('');
+  const [defaultPromptRulesSaveStatus, setDefaultPromptRulesSaveStatus] = useState({ text: '', type: '' });
+  const [defaultPromptRulesSaving, setDefaultPromptRulesSaving] = useState(false);
 
   const keysList = groqKeysInput
     .split(/[\n,]+/)
@@ -100,6 +105,18 @@ export default function Quotas() {
           });
         } else {
           setDbStatusInfo({ synced: false, keyCount: loadedFromCache ? keysList.length : 0, lastUpdated: 'Chưa có bản ghi groq_api_keys trong DB (Vui lòng bấm nút Lưu để tạo)', errorDetails: 'Bảng system_configs chưa có dữ liệu key' });
+        }
+
+        const promptData = await SystemConfigRepository.getSystemConfig('default_custom_prompt_rules').catch(() => null);
+        if (promptData && promptData.length > 0 && promptData[0].value) {
+          const valObj = promptData[0].value;
+          if (typeof valObj === 'object' && valObj !== null) {
+            setDefaultPromptRules(valObj.rules || valObj.value || JSON.stringify(valObj));
+          } else {
+            setDefaultPromptRules(String(valObj));
+          }
+        } else {
+          setDefaultPromptRules('');
         }
       }
     } catch (err) {
@@ -267,7 +284,7 @@ export default function Quotas() {
     setAiProvider(provider);
     if (provider === 'openai') setSelectedModel('gpt-4o-mini');
     else if (provider === 'gemini') setSelectedModel('gemini-1.5-flash');
-    else setSelectedModel('llama-3.3-70b-versatile');
+    else setSelectedModel('llama-3.1-8b-instant');
   };
 
   const copySqlGuide = () => {
@@ -407,7 +424,8 @@ export default function Quotas() {
               )}
               {aiProvider === 'groq' && (
                 <>
-                  <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Khuyên dùng)</option>
+                  <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Siêu Nhanh - Khuyên dùng)</option>
+                  <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Chính xác hơn - Chậm hơn)</option>
                   <option value="llama3-8b-8192">llama3-8b-8192</option>
                   <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
                 </>
@@ -507,7 +525,66 @@ export default function Quotas() {
         </div>
       </div>
 
-      {/* CARD 2: QUẢN LÝ QUOTA THEO SHOP */}
+      {/* CARD 1.5: CẤU HÌNH LUẬT PROMPT AI DÙNG CHUNG MẶC ĐỊNH */}
+      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 600, marginTop: 0, marginBottom: '16px', color: '#0f172a' }}>
+          2. Cấu Hìn Luật AI Dùng Chung Mặc Định
+        </h3>
+        <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 16px 0' }}>
+          Nhập các quy tắc bóc tách AI tùy chỉnh dùng chung mặc định cho toàn hệ thống. Nếu một Shop không cấu hình luật riêng, hệ thống sẽ sử dụng luật mặc định này.
+        </p>
+
+        {defaultPromptRulesSaveStatus.text && (
+          <div style={{
+            padding: '10px 12px', marginBottom: '16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+            background: defaultPromptRulesSaveStatus.type === 'error' ? '#fee2e2' : defaultPromptRulesSaveStatus.type === 'success' ? '#dcfce7' : '#f1f5f9',
+            color: defaultPromptRulesSaveStatus.type === 'error' ? '#991b1b' : defaultPromptRulesSaveStatus.type === 'success' ? '#166534' : '#334155',
+            border: `1px solid ${defaultPromptRulesSaveStatus.type === 'error' ? '#fca5a5' : defaultPromptRulesSaveStatus.type === 'success' ? '#86efac' : '#cbd5e1'}`
+          }}>
+            {defaultPromptRulesSaveStatus.text}
+          </div>
+        )}
+
+        <div style={{ marginBottom: '16px' }}>
+          <textarea
+            rows={4}
+            value={defaultPromptRules}
+            onChange={(e) => setDefaultPromptRules(e.target.value)}
+            placeholder="Ví dụ: 'Luôn lấy tiền thu hộ là 0 nếu khách hàng đã thanh toán trước', 'Nếu không có tên khách hàng, hãy điền tên người gửi là Nguyễn Văn A'..."
+            style={{
+              width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1',
+              fontSize: '13px', boxSizing: 'border-box', background: '#f8fafc', resize: 'vertical', minHeight: '100px'
+            }}
+          />
+        </div>
+
+        <button
+          onClick={async () => {
+            setDefaultPromptRulesSaving(true);
+            setDefaultPromptRulesSaveStatus({ text: '⏳ Đang lưu cấu hình prompt dùng chung...', type: 'info' });
+            try {
+              if (!globalThis.SupabaseCloud) throw new Error('Không tìm thấy Supabase Connection');
+              const payloadObj = { rules: defaultPromptRules };
+              await SystemConfigRepository.upsertSystemConfig('default_custom_prompt_rules', payloadObj, 'Luật Prompt AI mặc định của hệ thống do Master Admin cấu hình');
+              await AdminRepository.insertAuditLog('ADMIN_UPDATE_DEFAULT_PROMPT_RULES', 'default_custom_prompt_rules', 'config', null, { hasRules: !!defaultPromptRules });
+              setDefaultPromptRulesSaveStatus({ text: '🟢 Đã lưu cấu hình prompt dùng chung mặc định thành công!', type: 'success' });
+              setTimeout(() => setDefaultPromptRulesSaveStatus({ text: '', type: '' }), 3000);
+            } catch (e) {
+              setDefaultPromptRulesSaveStatus({ text: `🔴 Lỗi khi lưu: ${e.message}`, type: 'error' });
+            }
+            setDefaultPromptRulesSaving(false);
+          }}
+          disabled={defaultPromptRulesSaving}
+          style={{
+            padding: '9px 18px', background: '#2563eb', color: '#ffffff', border: 'none',
+            borderRadius: '6px', fontWeight: 600, fontSize: '13px', cursor: defaultPromptRulesSaving ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {defaultPromptRulesSaving ? 'Đang lưu...' : '💾 Lưu Luật Prompt Mặc Định'}
+        </button>
+      </div>
+
+      {/* CARD 3: QUẢN LÝ QUOTA THEO SHOP */}
       <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 600, marginTop: 0, marginBottom: '16px', color: '#0f172a' }}>
           2. Quản Lý Hạn Mức Quota Shop

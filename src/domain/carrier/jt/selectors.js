@@ -16,9 +16,11 @@
     ],
     addressLabels: [/Địa chỉ/i, /Số nhà\/ đường\/ ngõ/i, /địa chỉ cũ/i, /3 cấp/i],
     addressFallbacks: [
-      'input[placeholder="Nhập địa chỉ (Số nhà/ đường/ ngõ/ tòa nhà...)"]',
       'input[placeholder*="địa chỉ cũ" i]',
       'input[placeholder*="3 cấp" i]',
+      'input[placeholder*="địa chỉ cũ - 3 cấp" i]',
+      'input[placeholder*="địa chỉ cũ-3 cấp" i]',
+      'input[placeholder="Nhập địa chỉ (Số nhà/ đường/ ngõ/ tòa nhà...)"]',
       'textarea[placeholder*="địa chỉ cũ" i]',
       'textarea[placeholder*="3 cấp" i]',
       'input[placeholder*="nhập địa chỉ" i]',

@@ -238,11 +238,34 @@
       if (address && address !== "không tìm thấy" && addrEl) setInputValue(addrEl, address);
 
       if (noteEl) {
-        let noteText = orderCode ? "Đơn hàng: " + orderCode : "";
+        const defaultGoodsName = globalThis.parsedDataStore?.defaultGoodsName || 'Hàng hóa';
+        let noteText = orderCode ? "Đơn hàng: " + orderCode : defaultGoodsName;
+        if (globalThis.parsedDataStore?.extraNote) {
+          noteText += (noteText ? " | " : "") + globalThis.parsedDataStore.extraNote;
+        }
         if (globalThis.parsedDataStore?.extraPhones?.length) {
           noteText += (noteText ? " | " : "") + "SDT phụ: " + globalThis.parsedDataStore.extraPhones.join(', ');
         }
         setInputValue(noteEl, noteText);
+      }
+
+      // Điền khối lượng mặc định VNPost
+      let weightEl = document.querySelector('input[placeholder*="khối lượng" i]') || 
+                     document.querySelector('input[placeholder*="Khối lượng" i]') ||
+                     document.querySelector('input[placeholder*="trọng lượng" i]') ||
+                     document.querySelector('input[placeholder*="Trọng lượng" i]');
+      if (!weightEl) {
+        document.querySelectorAll('.ant-form-item, .form-item, div').forEach(item => {
+          const text = (item.innerText || '').trim();
+          if (/Khối lượng|Trọng lượng/i.test(text) && !/thể tích|kích thước/i.test(text)) {
+            const el = item.querySelector('input');
+            if (el) weightEl = el;
+          }
+        });
+      }
+      if (weightEl) {
+        const defaultWeightVnpost = globalThis.parsedDataStore?.defaultWeightVnpost !== undefined ? globalThis.parsedDataStore.defaultWeightVnpost : 200;
+        setInputValue(weightEl, String(defaultWeightVnpost));
       }
 
       if (codAmount && codAmount > 0) {

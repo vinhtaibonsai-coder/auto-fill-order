@@ -195,6 +195,21 @@ async function _callAiGateway(task, text) {
       throw new Error('Chưa đăng nhập. Vui lòng đăng nhập để dùng AI.');
     }
 
+    let shopId = null;
+    try {
+      if (typeof AuthSession !== 'undefined' && AuthSession.getActiveShop) {
+        shopId = await AuthSession.getActiveShop();
+      }
+    } catch (_) {}
+
+    if (!shopId) {
+      shopId = await new Promise(resolve => {
+        chrome.storage.local.get(['vnpost_session'], r => {
+          resolve(r.vnpost_session && r.vnpost_session.active_shop_id ? r.vnpost_session.active_shop_id : null);
+        });
+      });
+    }
+
     const deviceId = await SupabaseCloud._getDeviceId().catch(() => '');
     const gatewayUrl = `${supabaseUrl}/functions/v1/ai-gateway`;
 
@@ -209,7 +224,7 @@ async function _callAiGateway(task, text) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ task, text, deviceId }),
+        body: JSON.stringify({ task, text, deviceId, shop_id: shopId }),
         signal: controller.signal
       });
     } finally {
@@ -218,19 +233,25 @@ async function _callAiGateway(task, text) {
 
     if (!resp.ok) {
       const errData = await resp.json().catch(() => ({}));
+      
+      // Bắt lỗi Auth từ Supabase Kong Gateway (Invalid JWT/Expired JWT)
+      if (resp.status === 401 && errData.message && errData.message.toUpperCase().includes('JWT')) {
+        errData.error = 'AI_AUTH_REQUIRED';
+      }
+
       const code = errData.error || 'AI_UPSTREAM_ERROR';
       const msg = errData.message || `Gateway lỗi HTTP ${resp.status}`;
 
       // Map mã lỗi sang tiếng Việt (Kèm thông điệp thực tế từ Groq nếu có)
       const VI_ERRORS = {
-        'AI_AUTH_REQUIRED': 'Chưa đăng nhập hoặc phiên hết hạn.',
+        'AI_AUTH_REQUIRED': 'Phiên đăng nhập hết hạn. Vui lòng đăng xuất và đăng nhập lại.',
         'AI_SHOP_REQUIRED': 'Tài khoản chưa được gán vào shop.',
         'AI_FEATURE_DISABLED': 'Tính năng AI đang bị tắt cho shop này.',
         'AI_RATE_LIMITED': 'Quá nhiều yêu cầu AI. Vui lòng thử lại sau.',
         'AI_QUOTA_EXCEEDED': 'Shop đã hết hạn mức AI tháng này.',
         'AI_KEY_UNAVAILABLE': 'AI chưa được cấu hình trên server (GROQ_API_KEY).',
         'AI_PROVIDER_UNAVAILABLE': `Dịch vụ AI tạm thời không khả dụng: ${msg}`,
-        'AI_UPSTREAM_ERROR': `Lỗi từ nhà cung cấp AI (Groq): ${msg}`
+        'AI_UPSTREAM_ERROR': `Lỗi từ nhà cung cấp AI: ${msg}`
       };
       throw new Error(VI_ERRORS[code] || msg);
     }
@@ -768,23 +789,63 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Chuẩn hóa kết quả giống logic cũ
       const aiRes = result.result || {};
       const safeAiRes = {};
-      if (aiRes.name && String(aiRes.name).trim()) safeAiRes.name = String(aiRes.name).trim();
+      
+      let rawName = aiRes.name ? String(aiRes.name).trim() : '';
+      let extraNote = aiRes.extraNote || aiRes.note || aiRes.ghiChu || '';
+      if (typeof extraNote === 'string') extraNote = extraNote.trim();
+      else extraNote = '';
+
+      // Tách ghi chú phụ nằm trong ngoặc đơn ở cuối tên khách hàng (ví dụ: "Chính là anh ( Nhựt Lũa)")
+      const parenMatch = rawName.match(/(.+?)\s*\(([^)]+)\)\s*$/);
+      if (parenMatch) {
+        rawName = parenMatch[1].trim();
+        const noteInside = parenMatch[2].trim();
+        extraNote = extraNote ? `${noteInside} | ${extraNote}` : noteInside;
+      }
+
+      safeAiRes.name = rawName;
+      safeAiRes.extraNote = extraNote;
 
       const phoneClean = aiRes.phone ? String(aiRes.phone).replace(/\D/g, '') : '';
       const isValidPhone = phoneClean.length === 10 || phoneClean.length === 11;
-      if (aiRes.phone && isValidPhone) safeAiRes.phone = phoneClean;
+      safeAiRes.phone = isValidPhone ? phoneClean : (aiRes.phone ? String(aiRes.phone).trim() : '');
 
-      if (aiRes.orderCode && String(aiRes.orderCode).trim()) safeAiRes.orderCode = String(aiRes.orderCode).trim();
+      safeAiRes.orderCode = aiRes.orderCode ? String(aiRes.orderCode).trim() : '';
 
-      const aiCod = Number(aiRes.codAmount);
-      if (Number.isFinite(aiCod) && aiCod > 0 && (!localResult || !localResult.codAmount || localResult.codAmount === 0)) {
-        safeAiRes.codAmount = aiCod;
+      // Parse COD robustly (xử lý dấu chấm, dấu phẩy, chữ "k", "đ", hoặc chuyển khoản)
+      let codVal = 0;
+      if (aiRes.codAmount !== undefined && aiRes.codAmount !== null) {
+        if (typeof aiRes.codAmount === 'number') {
+          codVal = aiRes.codAmount;
+        } else {
+          let str = String(aiRes.codAmount).trim().toLowerCase();
+          if (str.includes('ck') || str.includes('chuyển khoản') || str.includes('thanh toán') || str.includes('free') || str === '0') {
+            codVal = 0;
+          } else {
+            // Loại bỏ dấu phân cách phần nghìn (ví dụ: "1.700k" -> "1700k", "1,700k" -> "1700k", "1.700.000" -> "1700000")
+            str = str.replace(/[\.,](\d{3})(?=\D|$)/g, '$1');
+
+            if (str.endsWith('k')) {
+              const num = parseFloat(str.replace('k', '')) * 1000;
+              codVal = Number.isFinite(num) ? Math.round(num) : 0;
+            } else {
+              str = str.replace(/[^\d]/g, '');
+              const parsed = parseInt(str, 10);
+              codVal = Number.isFinite(parsed) ? parsed : 0;
+            }
+          }
+        }
       }
+      safeAiRes.codAmount = codVal;
+
+      const addr = aiRes.correctAddress || aiRes.address || '';
+      safeAiRes.correctAddress = String(addr).trim();
+      safeAiRes.address = String(addr).trim();
 
       return {
         ok: true,
         result: safeAiRes,
-        correctAddress: aiRes.correctAddress
+        correctAddress: safeAiRes.correctAddress
       };
     })
     .then(result => sendResponse(result))

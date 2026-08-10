@@ -79,16 +79,20 @@ import { OrderStorage } from '../../application/storage.js';
           return;
         }
 
-        createInputPanel(
-          platform,
-          handleHybridParsing,
-          triggerFillForm,
-          handleClearOrder,
-          handleAiAddressClick,
-          openSettingsPage,
-          updateParsedField,
-          handleSaveOrder
-        );
+        if (typeof createInputPanel === 'function') {
+          createInputPanel(
+            platform,
+            handleHybridParsing,
+            triggerFillForm,
+            handleClearOrder,
+            handleAiAddressClick,
+            openSettingsPage,
+            updateParsedField,
+            handleSaveOrder
+          );
+        } else {
+          console.log('[checkUrlAndInject] React Panel is taking over. No vanilla UI injected.');
+        }
       }, 50);
     } else {
       stopObserver();
@@ -575,15 +579,21 @@ import { OrderStorage } from '../../application/storage.js';
               showVnpostToast('📬 Đã ghi nhận đơn VNPost! Đang cập nhật mã vận đơn...', 'success');
               startTrackingCodeMonitor(saved.id, platform);
             }
-          }).catch(() => {});
 
-          if (hasParsedData) {
-            const rawEl = getVnpostEl('rawOrderText');
-            if (rawEl) { rawEl.value = ''; rawEl.dispatchEvent(new Event('input', { bubbles: true })); }
-            globalThis.parsedDataStore = null;
-            const reviewPanel = getVnpostEl('review-panel');
-            if (reviewPanel) reviewPanel.style.display = 'none';
-          }
+            // Phát sự kiện báo React panel rằng đơn đã được lưu DB
+            window.dispatchEvent(new CustomEvent('order-saved-db'));
+
+            if (hasParsedData) {
+              const rawEl = getVnpostEl('rawOrderText');
+              if (rawEl) { rawEl.value = ''; rawEl.dispatchEvent(new Event('input', { bubbles: true })); }
+              globalThis.parsedDataStore = null;
+              const reviewPanel = getVnpostEl('review-panel');
+              if (reviewPanel) reviewPanel.style.display = 'none';
+            }
+          }).catch((err) => {
+            console.error('Lỗi khi lưu đơn vào DB:', err);
+            showVnpostToast('❌ Lỗi khi lưu đơn vào Database!', 'error');
+          });
         }).catch(() => {});
       }
 
