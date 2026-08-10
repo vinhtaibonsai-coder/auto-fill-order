@@ -238,7 +238,7 @@
       const activeShop = await this.getActiveShop();
       const activeShopId = activeShop ? String(activeShop.id || activeShop) : null;
       const rawOrders = await this._getOrdersFromLocal();
-      const orders = rawOrders.filter(o => o && String(o.shopId || '') === activeShopId);
+      const orders = rawOrders.filter(o => o && String(o.shopId || '') === (activeShopId || ''));
       this._ordersCache = orders;
       this._ordersCacheTime = Date.now();
       return orders;
@@ -253,7 +253,7 @@
       const activeShopId = activeShop ? String(activeShop.id || activeShop) : null;
       
       const allOrders = await this._getOrdersFromLocal();
-      const orders = allOrders.filter(o => o && String(o.shopId || '') === activeShopId);
+      const orders = allOrders.filter(o => o && String(o.shopId || '') === (activeShopId || ''));
       
       if (!order.deviceName) {
         if (typeof FirebaseCloud !== 'undefined') {
@@ -335,7 +335,7 @@
       }
 
       // Hợp nhất với các shop khác
-      const otherShopsOrders = allOrders.filter(o => o && String(o.shopId || '') !== activeShopId);
+      const otherShopsOrders = allOrders.filter(o => o && String(o.shopId || '') !== (activeShopId || ''));
       const mergedAllOrders = [...updatedOrdersList, ...otherShopsOrders];
 
       try {
@@ -388,7 +388,7 @@
       const allOrders = await this._getOrdersFromLocal();
       
       // Chỉ giữ lại đơn hàng của các Shop khác
-      const filteredOrders = allOrders.filter(o => o && String(o.shopId || '') !== activeShopId);
+      const filteredOrders = allOrders.filter(o => o && String(o.shopId || '') !== (activeShopId || ''));
       
       try {
         await this._saveOrdersToLocal(filteredOrders);
@@ -866,7 +866,7 @@
       const activeShopId = activeShop ? String(activeShop.id || activeShop) : null;
       
       const allSubmitted = await this._getSubmittedOrdersFromLocal();
-      const orders = allSubmitted.filter(o => o && String(o.shopId || '') === activeShopId);
+      const orders = allSubmitted.filter(o => o && String(o.shopId || '') === (activeShopId || ''));
 
       // Gắn device name nếu chưa có
       if (!order.deviceName) {
@@ -958,7 +958,8 @@
         console.warn('Lỗi khi tự động xóa đơn nháp:', e);
       }
 
-      const otherShopsSubmitted = allSubmitted.filter(o => o && String(o.shopId || '') !== activeShopId);
+      // Hợp nhất với các shop khác
+      const otherShopsSubmitted = allSubmitted.filter(o => o && String(o.shopId || '') !== (activeShopId || ''));
       const mergedAllSubmitted = [...updatedOrdersList, ...otherShopsSubmitted];
 
       try {
@@ -1325,7 +1326,7 @@
       const allSubmitted = await this._getSubmittedOrdersFromLocal();
       
       // Chỉ giữ lại đơn của shop khác
-      const filtered = allSubmitted.filter(o => o && String(o.shopId || '') !== activeShopId);
+      const filtered = allSubmitted.filter(o => o && String(o.shopId || '') !== (activeShopId || ''));
       
       try {
         await this._saveSubmittedOrdersToLocal(filtered);

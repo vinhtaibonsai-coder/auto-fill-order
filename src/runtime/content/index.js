@@ -79,10 +79,10 @@ import { OrderStorage } from '../../application/storage.js';
           return;
         }
 
+        globalThis.afTriggerFillForm = triggerFillForm;
+        globalThis.afHandleSaveOrder = handleSaveOrder;
+
         if (typeof createInputPanel === 'function') {
-          globalThis.afTriggerFillForm = triggerFillForm;
-          globalThis.afHandleSaveOrder = handleSaveOrder;
-          
           createInputPanel(
             platform,
             handleHybridParsing,
