@@ -18,9 +18,17 @@
       if (!rawAddress || rawAddress === "không tìm thấy") return null;
       if (!isContextValid()) return null;
 
+      let clientToken = null;
+      try {
+        if (typeof window !== 'undefined' && window.AuthSession && window.AuthSession.getSession) {
+          const sess = await window.AuthSession.getSession();
+          clientToken = sess?.access_token || null;
+        }
+      } catch (_) {}
+
       return new Promise((resolve) => {
         try {
-          chrome.runtime.sendMessage({ action: 'runGroqAddressOnly', addressText: rawAddress }, (response) => {
+          chrome.runtime.sendMessage({ action: 'runGroqAddressOnly', addressText: rawAddress, token: clientToken }, (response) => {
             try {
               const lastErr = chrome.runtime.lastError;
               if (lastErr) {

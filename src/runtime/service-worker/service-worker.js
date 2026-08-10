@@ -163,7 +163,7 @@ chrome.alarms.onAlarm.addListener(alarm => {
 // P0-02: Route mọi AI call qua Supabase Edge Function.
 // Extension không bao giờ biết Groq API key.
 // Gateway tự xử lý: auth → shop → feature flag → rate limit → quota → model selection → Groq
-async function _callAiGateway(task, text) {
+async function _callAiGateway(task, text, clientToken = null, clientShopId = null) {
   try {
     // Lấy Supabase URL từ config
     await SupabaseCloud.loadConfig();
@@ -174,9 +174,9 @@ async function _callAiGateway(task, text) {
     }
 
     // Lấy access_token của user hiện tại
-    let token = null;
+    let token = clientToken;
     try {
-      if (typeof AuthSession !== 'undefined' && AuthSession.getSession) {
+      if (!token && typeof AuthSession !== 'undefined' && AuthSession.getSession) {
         const session = await AuthSession.getSession();
         token = session && session.access_token ? session.access_token : null;
       }
@@ -195,9 +195,9 @@ async function _callAiGateway(task, text) {
       throw new Error('Chưa đăng nhập. Vui lòng đăng nhập để dùng AI.');
     }
 
-    let shopId = null;
+    let shopId = clientShopId;
     try {
-      if (typeof AuthSession !== 'undefined' && AuthSession.getActiveShop) {
+      if (!shopId && typeof AuthSession !== 'undefined' && AuthSession.getActiveShop) {
         shopId = await AuthSession.getActiveShop();
       }
     } catch (_) {}
@@ -781,9 +781,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'runGroq') {
     const text = message.text;
     const localResult = message.localResult;
+    const clientToken = message.token;
+    const clientShopId = message.shopId;
 
     aiQueue.add(async () => {
-      const result = await _callAiGateway('parse', text);
+      const result = await _callAiGateway('parse', text, clientToken, clientShopId);
       if (!result.ok) throw new Error(result.error || 'AI Gateway lỗi');
 
       // Chuẩn hóa kết quả giống logic cũ
@@ -856,8 +858,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'runGroqAddressOnly') {
     const addressText = message.addressText;
+    const clientToken = message.token;
+    const clientShopId = message.shopId;
     aiQueue.add(async () => {
-      const result = await _callAiGateway('address', addressText);
+      const result = await _callAiGateway('address', addressText, clientToken, clientShopId);
       if (!result.ok) throw new Error(result.error || 'AI Gateway lỗi');
       return { ok: true, result: result.result || {} };
     })

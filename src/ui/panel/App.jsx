@@ -78,7 +78,7 @@ export default function App() {
     setState('LOADING');
     try {
       if (typeof chrome !== 'undefined' && chrome?.runtime?.id && typeof chrome.runtime.sendMessage === 'function') {
-        chrome.runtime.sendMessage({ action: 'runGroq', text: text }, async (response) => {
+        chrome.runtime.sendMessage({ action: 'runGroq', text: text, token: session?.access_token }, async (response) => {
           if (chrome.runtime.lastError || !response || !response.ok) {
             const errMsg = chrome.runtime.lastError?.message || response?.error || '';
             console.error("AI Error:", errMsg);
