@@ -228,7 +228,7 @@ export default function App() {
       {isAuth && state === 'IDLE' && <ParseMode onParse={handleParse} />}
 
       {state === 'LOADING' && (
-        <SkeletonReview />
+        <SkeletonReview rawText={rawText} />
       )}
 
       {state === 'REVIEW' && (
