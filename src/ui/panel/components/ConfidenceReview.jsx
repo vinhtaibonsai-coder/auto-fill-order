@@ -9,7 +9,7 @@ function formatVND(value) {
   return num.toLocaleString('vi-VN') + ' đ';
 }
 
-export default function ConfidenceReview({ data, rawText, onParse, onConfirm, onCancel }) {
+export default function ConfidenceReview({ data, rawText, onParse, onConfirm, onCancel, onSave }) {
   const [formData, setFormData] = useState({
     name: data?.name || '',
     phone: data?.phone || '',
@@ -205,7 +205,9 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
         <button className="af-btn-fill" onClick={handleConfirm}>
           <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowDownToLine size={14} /></span> Nhập đơn
         </button>
-        <button className="af-btn-save">
+        <button className="af-btn-save" onClick={() => {
+          if (onSave) onSave();
+        }}>
           <span style={{ display: 'inline-flex', alignItems: 'center' }}><Save size={14} /></span> Lưu đơn
         </button>
       </div>

@@ -71,17 +71,6 @@ export default function SkeletonReview({ rawText }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <button className="af-btn-fill" disabled={true} style={{ opacity: 0.7 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowDownToLine size={14} /></span> Nhập đơn
-        </button>
-        <button className="af-btn-save" disabled={true} style={{ opacity: 0.7 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Save size={14} /></span> Lưu đơn
-        </button>
-      </div>
-      <button className="af-btn-print" style={{ marginTop: '0px', opacity: 0.7 }} disabled={true}>
-        <span style={{ display: 'inline-flex', alignItems: 'center' }}><Printer size={14} /></span> In đơn
-      </button>
     </div>
   );
 }

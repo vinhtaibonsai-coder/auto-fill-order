@@ -195,23 +195,24 @@ export default function App() {
       extraNote: finalData.extraNote || '',
       defaultGoodsName: defaults.defaultGoodsName,
       defaultWeightVnpost: defaults.defaultWeightVnpost,
-      defaultWeightJt: defaults.defaultWeightJt
+      defaultWeightJt: defaults.defaultWeightJt,
+      id: finalData.id
     };
 
-    if (window.VNPostAdapter && typeof window.VNPostAdapter.fill === 'function') {
-      window.VNPostAdapter.fill(finalData.name, finalData.phone, finalData.address, finalData.orderCode || '', finalData.codAmount || 0, false);
-    } else if (window.JtAdapter && typeof window.JtAdapter.fill === 'function') {
-      window.JtAdapter.fill(finalData.name, finalData.phone, finalData.address, finalData.orderCode || '', finalData.codAmount || 0, false);
-    } else if (window.VNPostAutoFill && typeof window.VNPostAutoFill.fillForm === 'function') {
-      // Fallback for old version
-      window.VNPostAutoFill.fillForm(finalData);
+    if (typeof globalThis.afTriggerFillForm === 'function') {
+      const platform = typeof window !== 'undefined' && window.location.href.includes('vnpost') ? 'vnpost' : 'jt';
+      globalThis.afTriggerFillForm(platform);
     } else {
-      console.warn("Không tìm thấy bộ autofill VNPost/J&T trên trang này");
-    }
-
-    // Hiển thị thông báo Toast thay vì đóng/xóa bảng điều khiển ngay lập tức
-    if (typeof globalThis.showVnpostToast === 'function') {
-      globalThis.showVnpostToast('✅ Đã điền thông tin đơn hàng vào biểu mẫu thành công!', 'success');
+      if (window.VNPostAdapter && typeof window.VNPostAdapter.fill === 'function') {
+        window.VNPostAdapter.fill(finalData.name, finalData.phone, finalData.address, finalData.orderCode || '', finalData.codAmount || 0, false);
+      } else if (window.JtAdapter && typeof window.JtAdapter.fill === 'function') {
+        window.JtAdapter.fill(finalData.name, finalData.phone, finalData.address, finalData.orderCode || '', finalData.codAmount || 0, false);
+      } else if (window.VNPostAutoFill && typeof window.VNPostAutoFill.fillForm === 'function') {
+        window.VNPostAutoFill.fillForm(finalData);
+      }
+      if (typeof globalThis.showVnpostToast === 'function') {
+        globalThis.showVnpostToast('✅ Đã điền thông tin đơn hàng vào biểu mẫu thành công!', 'success');
+      }
     }
   };
 
@@ -238,6 +239,14 @@ export default function App() {
           onParse={handleParse}
           onConfirm={handleConfirm} 
           onCancel={() => setState('IDLE')} 
+          onSave={() => {
+            if (parsedData) {
+              globalThis.parsedDataStore = { ...globalThis.parsedDataStore, ...parsedData };
+            }
+            if (typeof globalThis.afHandleSaveOrder === 'function') {
+              globalThis.afHandleSaveOrder();
+            }
+          }}
         />
       )}
 
