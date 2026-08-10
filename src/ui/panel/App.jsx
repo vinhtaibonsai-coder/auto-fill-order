@@ -133,31 +133,14 @@ export default function App() {
                 warning = engResult.warning || '';
                 confidence = engResult.confidence || 95;
 
-                // Tạo gợi ý địa chỉ 2 cấp thực tế: Đường/Số nhà + Phường/Xã + Tỉnh/Thành phố (BỎ Quận/Huyện)
-                const parts2 = [];
-                if (engResult.street) {
-                  parts2.push(engResult.street);
-                } else {
-                  // Fallback: Tìm phần đường từ địa chỉ thô
-                  const rawParts = rawAddress.split(',').map(p => p.trim());
-                  const streetPart = rawParts.find(p => /\d/.test(p) && !/^(phường|xã|quận|huyện|tỉnh|thành phố|p\.|q\.)/i.test(p));
-                  if (streetPart) parts2.push(streetPart);
-                }
-                if (engResult.ward) parts2.push(engResult.ward);
-                if (engResult.province) parts2.push(engResult.province);
-                suggestedAddress = parts2.length > 0 ? parts2.join(', ') : finalAddress;
+                // Đoạn này đã loại bỏ tính năng gợi ý địa chỉ 2 cấp theo yêu cầu của người dùng
               }
             } catch (e) {
               console.warn('[React Panel] Lỗi chạy AddressEngine:', e);
             }
           }
 
-          // Fallback gợi ý địa chỉ 2 cấp nếu chưa được tính toán
-          if (!suggestedAddress && rawAddress) {
-            const rawParts = rawAddress.split(',').map(p => p.trim());
-            const filteredParts = rawParts.filter(p => !/^(quận|huyện|q\.|h\.)/i.test(p));
-            suggestedAddress = filteredParts.length > 0 ? filteredParts.join(', ') : rawAddress;
-          }
+          // Đã loại bỏ logic fallback gợi ý địa chỉ 2 cấp
 
           setParsedData({
             name: data.name || '',
@@ -167,7 +150,6 @@ export default function App() {
             codAmount: data.codAmount || '',
             extraNote: data.extraNote || '',
             warning: warning,
-            suggestedAddress: suggestedAddress,
             confidence: confidence,
             confidenceThreshold: settings.confidenceThreshold
           });

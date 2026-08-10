@@ -181,24 +181,6 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
           </div>
         )}
 
-        {/* Khối gợi ý địa chỉ (2 cấp) - Luôn hiển thị nếu bóc tách thành công địa chỉ */}
-        {formData.suggestedAddress && (
-          <div style={{ border: '1px solid #bbf7d0', background: '#f0fdf4', borderRadius: '8px', padding: '10px', marginTop: '8px' }}>
-            <div style={{ fontSize: '11px', color: '#166534', fontWeight: 600, display: 'flex', gap: '4px', marginBottom: '4px', alignItems: 'center' }}>
-              <MapPin size={12} /> GỢI Ý ĐỊA CHỈ BÓC TÁCH:
-            </div>
-            <div style={{ background: 'white', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '10px', color: '#3b82f6' }}>Địa chỉ gợi ý (2 cấp):</div>
-                <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 500 }}>{formData.suggestedAddress}</div>
-              </div>
-              <button className="af-copy-btn" onClick={() => handleChange('address', formData.suggestedAddress)} title="Áp dụng địa chỉ gợi ý" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><ClipboardPaste size={14} /></button>
-            </div>
-            <div style={{ fontSize: '9px', color: '#94a3b8', textAlign: 'right', marginTop: '4px', fontStyle: 'italic' }}>
-              Bấm vào nút copy để áp dụng nhanh gợi ý địa chỉ 2 cấp
-            </div>
-          </div>
-        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
