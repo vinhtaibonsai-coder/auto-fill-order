@@ -38,19 +38,28 @@
     return root && root.getElementById ? root.getElementById(id) : null;
   }
 
+  function normalizePlatform(p) {
+    if (typeof p === 'string') {
+      const id = p.toLowerCase();
+      if (id.includes('vnpost')) return { id: 'vnpost', title: 'VNPost', themeColor: '#0056b3' };
+      if (id.includes('jt')) return { id: 'jt', title: 'J&T Express', themeColor: '#e11d48' };
+      return { id: id, title: id.toUpperCase(), themeColor: '#4f46e5' };
+    }
+    return p || { id: 'vnpost', title: 'VNPost', themeColor: '#0056b3' };
+  }
+
   function createInputPanel(platform, onParseHandler, onFillHandler, onClearHandler, onAiAddressClickHandler, onSettingsClickHandler, onFieldEditHandler, onSaveHandler) {
     try {
       if (typeof document === 'undefined') return;
+      const platformObj = normalizePlatform(platform);
       let host = document.getElementById('vnpost-autofill-shadow-host');
       const existingPanel = host ? getVnpostEl('vnpost-autofill-panel') : null;
       if (existingPanel) {
         if (existingPanel.dataset && existingPanel.dataset.panelType === 'login') {
           existingPanel.remove();
         } else {
-          const header = getVnpostEl('vnpost-panel-header-text');
-          if (header && header.textContent !== platform.title) {
-            existingPanel.remove();
-          } else { return; }
+          // Panel nhập đơn đã tồn tại trên trang -> Giữ nguyên tuyệt đối để không làm mất dữ liệu người dùng
+          return;
         }
       }
 
@@ -76,18 +85,24 @@
       const panel = document.createElement('div');
       panel.id = 'vnpost-autofill-panel';
       panel.dataset.panelType = 'input';
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.get(['antigravity_ui_theme'], (res) => {
-          // Dark là default (glassmorphism). Chỉ thêm light-mode khi user chọn light.
-          if (res.antigravity_ui_theme === 'light') {
-            panel.classList.add('light-mode');
-          }
-        });
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local) {
+        try {
+          chrome.storage.local.get(['antigravity_ui_theme'], (res) => {
+            if (chrome.runtime.lastError) return;
+            if (!res || res.antigravity_ui_theme !== 'dark') {
+              panel.classList.add('light-mode');
+            } else {
+              panel.classList.remove('light-mode');
+            }
+          });
+        } catch (_) {}
+      } else {
+        panel.classList.add('light-mode');
       }
-      const themeColor = platform.themeColor || (platform.id === "vnpost" ? "#0056b3" : "#4f46e5");
+      const themeColor = platformObj.themeColor || (platformObj.id === "vnpost" ? "#0056b3" : "#4f46e5");
       panel.style.setProperty('--theme-color', themeColor);
 
-      const isVNPost = platform.id === "vnpost";
+      const isVNPost = platformObj.id === "vnpost";
       const vnpostBtnStyle = isVNPost ? `display: inline-flex; background-color: #10b981;` : `display: none;`;
       const jtBtnStyle = !isVNPost ? `display: inline-flex; background-color: #e11d48;` : `display: none;`;
 
@@ -102,12 +117,15 @@
       panel.innerHTML = `
         <div class="minimized-icon">${PANEL_ICONS.parse}</div>
         <div id="vnpost-panel-header">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span id="vnpost-panel-header-text"></span>
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; padding-right: 4px;">
+            <span id="vnpost-panel-header-text" style="font-weight: 700;"></span>
             <span class="badge-version">${_manifestVersion}</span>
-            <span id="panel-device-name" style="font-size:10px;color:var(--text-muted, #94A3B8);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none"></span>
+            <span id="panel-shop-name" class="badge-shop" style="display:none;" title="Shop đang hoạt động"></span>
+            <span id="panel-user-account" class="badge-user" style="display:none;" title="Tài khoản đăng nhập tiện ích"></span>
+            <span id="panel-carrier-account" class="badge-carrier" style="display:none;" title="Tài khoản bưu cục lên đơn"></span>
+            <span id="panel-device-name" style="font-size:10px;color:var(--text-muted, #94A3B8);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none"></span>
           </div>
-          <div style="display: flex; align-items: center; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
             <span id="vnpost-api-status" title="Kiểm tra API key..." style="display: inline-flex; align-items: center; cursor: default;">${PANEL_ICONS.apiWaiting}</span>
             <button id="vnpost-btn-theme" title="Chuyển chế độ Sáng/Tối">${PANEL_ICONS.theme}</button>
             <button id="vnpost-btn-settings" title="Cài đặt API key">${PANEL_ICONS.settings}</button>
@@ -195,7 +213,92 @@
       
       // Gán nội dung tĩnh/đầu đề an toàn
       const _headerTextEl = root.getElementById('vnpost-panel-header-text');
-      if (_headerTextEl) _headerTextEl.textContent = platform.title || '';
+      if (_headerTextEl) _headerTextEl.textContent = platformObj.title || '';
+
+      const updateCarrierAccountInPanel = () => {
+        const acc = typeof globalThis.detectCarrierAccount === 'function' ? globalThis.detectCarrierAccount(platformObj.id) : '';
+        const accEl = root.getElementById('panel-carrier-account');
+        if (accEl) {
+          if (acc) {
+            accEl.textContent = `👤 ${acc}`;
+            accEl.title = `Tài khoản lên đơn trên ${platformObj.title}: ${acc}`;
+            accEl.style.display = 'inline-flex';
+          } else {
+            accEl.style.display = 'none';
+          }
+        }
+      };
+      updateCarrierAccountInPanel();
+      setInterval(updateCarrierAccountInPanel, 2500);
+
+      const updateAuthAndShopInfoInPanel = () => {
+        try {
+          const shopEl = root.getElementById('panel-shop-name');
+          const userEl = root.getElementById('panel-user-account');
+
+          function renderInfo(uName, sName) {
+            if (userEl) {
+              if (uName) {
+                const cleanU = uName.includes('@') ? uName.split('@')[0] : uName;
+                userEl.textContent = `🔑 ${cleanU}`;
+                userEl.title = `Tài khoản đăng nhập tiện ích: ${uName}`;
+                userEl.style.display = 'inline-flex';
+              } else {
+                userEl.style.display = 'none';
+              }
+            }
+            if (shopEl) {
+              if (sName) {
+                shopEl.textContent = `🏪 ${sName}`;
+                shopEl.title = `Shop đang làm việc: ${sName}`;
+                shopEl.style.display = 'inline-flex';
+              } else {
+                shopEl.style.display = 'none';
+              }
+            }
+          }
+
+          let userName = '';
+          let shopName = '';
+
+          if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSession === 'function') {
+            AuthSession.getSession().then(session => {
+              if (session) {
+                userName = session.user?.full_name || session.user?.username || session.user?.email || '';
+                shopName = session.shop_name || '';
+                if (userName || shopName) renderInfo(userName, shopName);
+              }
+            }).catch(() => {});
+          }
+
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.get(['vnpost_session', 'activeShopName', 'activeShop', 'currentUser'], (res) => {
+              if (chrome.runtime.lastError) return;
+              if (res) {
+                const s = res.vnpost_session;
+                if (!userName && s) {
+                  userName = s.user?.full_name || s.user?.username || s.user?.email || res.currentUser || '';
+                }
+                if (!shopName) {
+                  shopName = s?.shop_name || res.activeShopName || (res.activeShop ? (typeof res.activeShop === 'object' ? res.activeShop.name : 'Shop #' + res.activeShop) : '');
+                }
+                renderInfo(userName, shopName);
+              }
+            });
+          }
+        } catch (_) {}
+      };
+
+      updateAuthAndShopInfoInPanel();
+      setInterval(updateAuthAndShopInfoInPanel, 3000);
+
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, area) => {
+          if (area === 'local' && (changes.vnpost_session || changes.activeShopName || changes.activeShop || changes.currentUser)) {
+            updateAuthAndShopInfoInPanel();
+          }
+        });
+      }
 
       makeElementDraggable(panel, root.getElementById("vnpost-panel-header"));
 
@@ -611,7 +714,12 @@
   function createLoginRequiredPanel(platform, onLoginClickHandler) {
     try {
       if (typeof document === 'undefined') return;
+      const platformObj = normalizePlatform(platform);
       let host = document.getElementById('vnpost-autofill-shadow-host');
+      const existingPanel = host ? getVnpostEl('vnpost-autofill-panel') : null;
+      if (existingPanel && existingPanel.dataset && existingPanel.dataset.panelType === 'login') {
+        return; // Đã có panel login
+      }
       if (!host) {
         host = document.createElement('div');
         host.id = 'vnpost-autofill-shadow-host';
@@ -633,14 +741,21 @@
       panel.id = 'vnpost-autofill-panel';
       panel.dataset.panelType = 'login';
       
-            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.get(['antigravity_ui_theme'], (res) => {
-          if (res.antigravity_ui_theme === 'dark') {
-            panel.classList.add('dark-mode');
-          }
-        });
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local) {
+        try {
+          chrome.storage.local.get(['antigravity_ui_theme'], (res) => {
+            if (chrome.runtime.lastError) return;
+            if (!res || res.antigravity_ui_theme !== 'dark') {
+              panel.classList.add('light-mode');
+            } else {
+              panel.classList.remove('light-mode');
+            }
+          });
+        } catch (_) {}
+      } else {
+        panel.classList.add('light-mode');
       }
-      const themeColor = platform.themeColor || (platform.id === "vnpost" ? "#0056b3" : "#4f46e5");
+      const themeColor = platformObj.themeColor || (platformObj.id === "vnpost" ? "#0056b3" : "#4f46e5");
       panel.style.setProperty('--theme-color', themeColor);
 
       let _loginVersion = 'v1';
@@ -658,6 +773,7 @@
             <span class="badge-version">${_loginVersion} (Xác thực)</span>
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
+            <button id="vnpost-btn-theme" title="Chuyển chế độ Sáng/Tối">${PANEL_ICONS.theme}</button>
             <button id="vnpost-btn-minimize">${PANEL_ICONS.minimize}</button>
           </div>
         </div>
@@ -701,8 +817,21 @@
       root.appendChild(panel);
       // Gán tiêu đề an toàn bằng textContent (tránh XSS)
       const _loginHeaderEl = root.getElementById('vnpost-panel-header-text');
-      if (_loginHeaderEl) _loginHeaderEl.textContent = platform.title || '';
+      if (_loginHeaderEl) _loginHeaderEl.textContent = platformObj.title || '';
       makeElementDraggable(panel, root.getElementById("vnpost-panel-header"));
+
+      // Gắn sự kiện theme toggle
+      const btnTheme = root.getElementById('vnpost-btn-theme');
+      if (btnTheme) {
+        btnTheme.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isNowLight = panel.classList.toggle('light-mode');
+          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ antigravity_ui_theme: isNowLight ? 'light' : 'dark' });
+          }
+          showVnpostToast(isNowLight ? '☀️ Đã chuyển sang giao diện Sáng' : '🌙 Đã chuyển sang giao diện Tối', 'success');
+        });
+      }
 
       // Gắn sự kiện thu nhỏ
       root.getElementById('vnpost-btn-minimize').addEventListener('click', () => {
@@ -728,9 +857,12 @@
       if (adminLoginLink) {
         adminLoginLink.addEventListener('click', (e) => {
           e.preventDefault();
-          const url = typeof chrome !== 'undefined' && chrome.runtime
-            ? chrome.runtime.getURL('admin-dashboard/login.html')
-            : 'https://xlgovgynbsahuykyjzcx.supabase.co/';
+          let url = 'https://xlgovgynbsahuykyjzcx.supabase.co/';
+          try {
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.runtime.getURL) {
+              url = chrome.runtime.getURL('admin-dashboard/login.html');
+            }
+          } catch (_) {}
           window.open(url, '_blank');
         });
       }

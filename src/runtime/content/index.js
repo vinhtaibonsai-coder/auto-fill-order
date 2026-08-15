@@ -1,5 +1,3 @@
-import { OrderStorage } from '../../application/storage.js';
-
 (() => {
   // =========================================================================
   // ENTRY POINT / COORDINATOR - content/index.js
@@ -23,10 +21,13 @@ import { OrderStorage } from '../../application/storage.js';
   }
 
   const observer = new MutationObserver(() => {
-    if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      checkUrlAndInject();
-    }, 250);
+    // Chỉ kích hoạt lại nếu shadow host bị tháo gỡ khỏi DOM
+    if (!document.getElementById('vnpost-autofill-shadow-host')) {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        checkUrlAndInject();
+      }, 300);
+    }
   });
 
   function startObserver() {
@@ -47,15 +48,45 @@ import { OrderStorage } from '../../application/storage.js';
     }
   }
 
+  function getVnpostEl(id) {
+    const host = document.getElementById('vnpost-autofill-shadow-host');
+    if (host && host.shadowRoot) {
+      const el = host.shadowRoot.getElementById(id);
+      if (el) return el;
+    }
+    return document.getElementById(id);
+  }
+
+  const PLATFORMS = {
+    vnpost: { id: 'vnpost', title: 'VNPost', themeColor: '#0056b3' },
+    jt: { id: 'jt', title: 'J&T Express', themeColor: '#e11d48' },
+    ghn: { id: 'ghn', title: 'GHN', themeColor: '#f97316' },
+    ghtk: { id: 'ghtk', title: 'GHTK', themeColor: '#16a34a' },
+    viettel: { id: 'viettel', title: 'ViettelPost', themeColor: '#dc2626' }
+  };
+
   function getCurrentPlatform() {
     const url = typeof window !== 'undefined' ? window.location.href : '';
-    if (url.includes('vnpost.vn')) return 'vnpost';
-    if (url.includes('jtexpress.vn')) return 'jt';
-    if (url.includes('ghn.vn')) return 'ghn';
-    if (url.includes('ghtk.vn')) return 'ghtk';
-    if (url.includes('viettelpost.vn')) return 'viettel';
+    if (url.includes('vnpost.vn')) return PLATFORMS.vnpost;
+    if (url.includes('jtexpress.vn')) return PLATFORMS.jt;
+    if (url.includes('ghn.vn')) return PLATFORMS.ghn;
+    if (url.includes('ghtk.vn')) return PLATFORMS.ghtk;
+    if (url.includes('viettelpost.vn')) return PLATFORMS.viettel;
     return null;
   }
+
+  function detectCarrierAccount(platform) {
+    const plat = platform || getCurrentPlatform();
+    const platId = typeof plat === 'object' && plat ? plat.id : plat;
+    if (platId === 'vnpost' && globalThis.VNPOST_SELECTORS && typeof globalThis.VNPOST_SELECTORS.getAccountName === 'function') {
+      return globalThis.VNPOST_SELECTORS.getAccountName();
+    }
+    if (platId === 'jt' && globalThis.JT_SELECTORS && typeof globalThis.JT_SELECTORS.getAccountName === 'function') {
+      return globalThis.JT_SELECTORS.getAccountName();
+    }
+    return '';
+  }
+  globalThis.detectCarrierAccount = detectCarrierAccount;
 
   async function checkUrlAndInject() {
     const platform = getCurrentPlatform();
@@ -73,8 +104,12 @@ import { OrderStorage } from '../../application/storage.js';
         }
 
         if (!isAuth) {
-          if (typeof createLoginRequiredPanel === 'function') {
-            createLoginRequiredPanel(platform, openSettingsPage);
+          try {
+            if (typeof createLoginRequiredPanel === 'function') {
+              createLoginRequiredPanel(platform, openSettingsPage);
+            }
+          } catch (panelErr) {
+            console.warn('[checkUrlAndInject] Error creating login panel:', panelErr);
           }
           return;
         }
@@ -83,16 +118,23 @@ import { OrderStorage } from '../../application/storage.js';
         globalThis.afHandleSaveOrder = handleSaveOrder;
 
         if (typeof createInputPanel === 'function') {
-          createInputPanel(
-            platform,
-            handleHybridParsing,
-            triggerFillForm,
-            handleClearOrder,
-            handleAiAddressClick,
-            openSettingsPage,
-            updateParsedField,
-            handleSaveOrder
-          );
+          try {
+            createInputPanel(
+              platform,
+              handleHybridParsing,
+              triggerFillForm,
+              handleClearOrder,
+              handleAiAddressClick,
+              openSettingsPage,
+              updateParsedField,
+              handleSaveOrder
+            );
+            if (globalThis.parsedDataStore && typeof displayParsedData === 'function') {
+              displayParsedData(globalThis.parsedDataStore);
+            }
+          } catch (inputPanelErr) {
+            console.warn('[checkUrlAndInject] Error creating input panel:', inputPanelErr);
+          }
         } else {
           console.log('[checkUrlAndInject] React Panel is taking over. No vanilla UI injected.');
         }
@@ -232,15 +274,8 @@ import { OrderStorage } from '../../application/storage.js';
       }
       globalThis.parsedDataStore = localResult;
 
-      // Chạy geo-matching để hiển thị notice sáp nhập (không ghi đè gợi ý)
+      // Cập nhật gợi ý 2 cấp = đường + phường/xã + tỉnh (KHÔNG có quận/huyện)
       if (addrResult) {
-        const stdAddress = addrResult.fullAddress || localResult.address;
-        try {
-          runGeoMatchingAndShow(stdAddress, rawExtractedAddress);
-        } catch (_geoErr) {
-          console.warn('[Parse] runGeoMatchingAndShow crashed:', _geoErr);
-        }
-        // Cập nhật gợi ý 2 cấp = đường + phường/xã + tỉnh (KHÔNG có quận/huyện)
         const suggestEl = getVnpostEl('rev-suggest-2level');
         if (suggestEl) {
           const parts2 = [];
@@ -260,7 +295,7 @@ import { OrderStorage } from '../../application/storage.js';
       // Bỏ qua AI — không gọi runGroq nữa
       if (progBar && txtStatus && txtPercent) {
         progBar.style.width = '100%';
-        txtStatus.textContent = "✨ Bóc tách thành công!";
+        txtStatus.textContent = "✅ Bóc tách thành công!";
         txtPercent.textContent = "100%";
       }
       if (btnParse) {
@@ -268,7 +303,20 @@ import { OrderStorage } from '../../application/storage.js';
         // Xóa inline style để trả về CSS gradient gốc (không dùng .style.backgroundColor)
         btnParse.style.removeProperty('background-color');
         btnParse.style.removeProperty('background');
-        btnParse.innerHTML = (typeof PANEL_ICONS !== 'undefined' && PANEL_ICONS.parse ? PANEL_ICONS.parse + ' ' : '⚡ ') + "Tách Đơn Tự Động";
+        btnParse.innerHTML = (typeof PANEL_ICONS !== 'undefined' && PANEL_ICONS.parse ? PANEL_ICONS.parse + ' ' : '🤖 ') + "Tách Đơn Tự Động";
+      }
+
+      // Lưu lịch sử tách đơn
+      try {
+        if (typeof globalThis.SplitHistory !== 'undefined') {
+          const platform = getCurrentPlatform();
+          const res = await globalThis.SplitHistory.add(text, globalThis.parsedDataStore, platform);
+          if (res && res.isDuplicate) {
+            showVnpostToast('ℹ️ Đơn này đã được tách trước đó — cập nhật thời gian.', 'info');
+          }
+        }
+      } catch (e) {
+        console.warn('Lỗi ghi lịch sử:', e);
       }
     } catch (err) {
       Logger.error("Lỗi phân tích đơn:", err);
@@ -411,53 +459,7 @@ import { OrderStorage } from '../../application/storage.js';
   function setupAutoSaveOnSubmit(platform) {
     const submitKeywords = ['tạo đơn', 'đăng đơn', 'lưu đơn', 'gửi đơn', 'tạo bưu gửi', 'tạo mới', 'xác nhận', 'hoàn tất', 'lưu', 'tạo'];
 
-    function scrapeOrderFromDOM(plat) {
-      let name = '', phone = '', address = '', orderCode = '', codAmount = 0, collectFee = false;
-      try {
-        if (plat === 'vnpost' && globalThis.VNPOST_SELECTORS) {
-          const sel = globalThis.VNPOST_SELECTORS;
-          const phoneEl = globalThis.findFieldInput ? globalThis.findFieldInput(sel.phoneLabels, sel.phoneFallbacks) : document.querySelector('input#receiverPhone') || document.querySelector('input[placeholder*="SĐT" i]');
-          const nameEl = globalThis.findFieldInput ? globalThis.findFieldInput(sel.nameLabels, sel.nameFallbacks) : document.querySelector('input#receiverName') || document.querySelector('input[placeholder*="Tên" i]');
-          const addrEl = globalThis.findFieldInput ? globalThis.findFieldInput(sel.addressLabels, sel.addressFallbacks, true) : document.querySelector('textarea#receiverAddress') || document.querySelector('input[placeholder*="Địa chỉ" i]');
-          const codEl = globalThis.findFieldInput ? globalThis.findFieldInput([/Phát hàng thu tiền COD/i, /Thu tiền COD/i], sel.codInputFallbacks) : document.querySelector('input.ant-input-number-input') || document.querySelector('input[name="PROP0018"]');
-
-          if (phoneEl) phone = phoneEl.value || '';
-          if (nameEl) name = nameEl.value || '';
-          if (addrEl) address = addrEl.value || '';
-          let noteEl = globalThis.findFieldInput ? globalThis.findFieldInput(sel.noteLabels, sel.noteFallbacks, true) : document.querySelector('textarea#receiverNote') || document.querySelector('textarea[placeholder*="Nội dung" i]');
-          if (noteEl && noteEl.value) {
-            const match = noteEl.value.match(/Đơn hàng:\s*([A-Z0-9.\-_]+)/i);
-            if (match) orderCode = match[1];
-          }
-        } else if (plat === 'jt') {
-          const phoneEl = document.querySelector('input[placeholder="Nhập số điện thoại"]');
-          const nameEl = document.querySelector('input[placeholder="Nhập tên người nhận"]');
-          const addrEl = document.querySelector('input[placeholder="Nhập địa chỉ (Số nhà/ đường/ ngõ/ tòa nhà...)"]') || document.querySelector('input[placeholder*="Số nhà/ đường/ ngõ"]') || document.querySelector('input[placeholder*="địa chỉ"]');
-          const orderCodeEl = document.querySelector('input[placeholder*="Mã đơn" i]') || document.querySelector('input[placeholder*="Mã tham chiếu" i]');
-          let codInp = document.querySelector('input[placeholder="Nhập số tiền..."]') || document.querySelector('input[placeholder="Nhập số tiền"]') || document.querySelector('#money');
-          
-          if (!codInp) {
-            document.querySelectorAll('.el-form-item').forEach(item => {
-              const labelText = (item.innerText || '').trim();
-              if (labelText.includes('Tiền thu hộ') && !labelText.includes('Phí')) {
-                const el = item.querySelector('input');
-                if (el) codInp = el;
-              }
-            });
-          }
-
-          if (phoneEl) phone = phoneEl.value || '';
-          if (nameEl) name = nameEl.value || '';
-          if (addrEl) address = addrEl.value || '';
-          if (orderCodeEl) orderCode = orderCodeEl.value || '';
-          if (codInp && codInp.value) codAmount = parseInt(codInp.value.replace(/\D/g, ''), 10) || 0;
-        }
-      } catch (e) {
-        console.warn('Lỗi khi cào dữ liệu từ DOM:', e);
-      }
-      return { name, phone, address, orderCode, codAmount, collectFee };
-    }
-
+    // scrapeOrderFromDOM moved to IIFE scope
     function doSave() {
       // Luôn lấy giá trị từ DOM (form VNPost) trước — user có thể đã sửa tay
       let data = scrapeOrderFromDOM(platform);
@@ -487,7 +489,8 @@ import { OrderStorage } from '../../application/storage.js';
         codAmount: data.codAmount || 0,
         collectFee: data.collectFee || false,
         platform: platform || '',
-        extraNote: data.extraNote || ''
+        extraNote: data.extraNote || '',
+        carrierAccount: data.carrierAccount || detectCarrierAccount(platform) || ''
       };
       
       if (data.id) orderToSave.id = data.id;
@@ -569,6 +572,7 @@ import { OrderStorage } from '../../application/storage.js';
             collectFee: saved.collectFee || orderToSave.collectFee || false,
             platform: platform || '',
             extraNote: saved.extraNote || orderToSave.extraNote || '',
+            carrierAccount: saved.carrierAccount || orderToSave.carrierAccount || detectCarrierAccount(platform) || '',
             trackingCode: trackingCode || '',
             savedOrderId: saved.id
           };
@@ -585,14 +589,6 @@ import { OrderStorage } from '../../application/storage.js';
 
             // Phát sự kiện báo React panel rằng đơn đã được lưu DB
             window.dispatchEvent(new CustomEvent('order-saved-db'));
-
-            if (hasParsedData) {
-              const rawEl = getVnpostEl('rawOrderText');
-              if (rawEl) { rawEl.value = ''; rawEl.dispatchEvent(new Event('input', { bubbles: true })); }
-              globalThis.parsedDataStore = null;
-              const reviewPanel = getVnpostEl('review-panel');
-              if (reviewPanel) reviewPanel.style.display = 'none';
-            }
           }).catch((err) => {
             console.error('Lỗi khi lưu đơn vào DB:', err);
             showVnpostToast('❌ Lỗi khi lưu đơn vào Database!', 'error');
@@ -620,24 +616,20 @@ import { OrderStorage } from '../../application/storage.js';
           return;
         }
 
-        // Check success message trên DOM (CSS class)
-        const successSelector = platform === 'vnpost'
-          ? '.ant-message-success, .ant-notification-notice-success, .ant-message, .ant-notification-notice, .ant-alert-success, .el-message--success, .el-notification--success, .el-notification, [role="alert"]'
-          : '.ant-message-success, .ant-notification-notice-success, .ant-alert-success, .el-message--success, .el-notification--success';
+        // Check success message trên DOM (chỉ match class success cụ thể và có nội dung tạo đơn thành công)
+        const successSelector = '.ant-message-success, .ant-notification-notice-success, .ant-alert-success, .el-message--success, .el-notification--success';
         const successEls = document.querySelectorAll(successSelector);
         if (successEls.length > 0) {
-          let foundCode = null;
           for (const el of successEls) {
             const txt = (el.textContent || el.innerText || '').trim();
+            const isOrderSuccess = /(?:tạo|lưu|đăng|bưu gửi|vận đơn|thành công|đơn hàng|tracking)/i.test(txt);
             const codeMatch = txt.match(/\b([A-Z]{2}\d{9,13}VN|C\d{9,13}VN|MP\d{8,12}VN|E[A-Z]\d{8,12}VN|8\d{11,14})\b/i) ||
                               txt.match(/(?:mã\s*vận\s*đơn|số\s*hiệu\s*bưu\s*gửi|mã\s*bưu\s*gửi|tracking)\s*[:;]?\s*([A-Z0-9]{8,22})/i);
-            if (codeMatch && codeMatch[1]) {
-              foundCode = codeMatch[1].trim();
-              break;
+            if (isOrderSuccess || codeMatch) {
+              onSuccess(codeMatch ? codeMatch[1].trim() : null);
+              return;
             }
           }
-          onSuccess(foundCode);
-          return;
         }
 
         // Chỉ kiểm tra error nếu chưa có success — giảm false positive từ field validation
@@ -723,16 +715,17 @@ import { OrderStorage } from '../../application/storage.js';
   }
 
   // ─── ĐIỀN BIỂU MẪU ĐVVC (MUTEX KHÓA TRÙNG) ───
+  // 🚀 ĐIỀN BIỂU MẪU ĐƠN (MUTEX KHÓA TRẠNG) 🚀
   async function triggerFillForm(targetPlatform) {
     if (!globalThis.parsedDataStore) {
-      showVnpostToast("⚠️ Vui lòng bấm 'Tách Đơn Hàng' trước!", "error");
+      showVnpostToast("❌ Vui lòng bấm 'Tách Đơn Hàng' trước!", "error");
       return;
     }
 
     // Chống double click hoặc thao tác lặp ghi đè DOM (Lỗi số 1 & Lỗi số 7)
     const acquired = await Mutex.acquire('autofill_execution');
     if (!acquired) {
-      showVnpostToast("⏳ Biểu mẫu đang được điền, vui lòng đợi...", "info");
+      showVnpostToast("⌛ Biểu mẫu đang được điền, vui lòng đợi...", "info");
       return;
     }
 
@@ -758,7 +751,8 @@ import { OrderStorage } from '../../application/storage.js';
     globalThis.parsedDataStore.phone = normalizedPhone;
 
     const btnId = targetPlatform === 'vnpost' ? 'btnFillVNPost' : 'btnFillJT';
-    const btn = getVnpostEl(btnId);
+    let btn = getVnpostEl(btnId);
+    if (!btn) btn = getVnpostEl('btnFillForm'); // Fallback for React UI
     const originalLabel = btn ? btn.innerHTML : '';
     if (btn) {
       btn.disabled = true;
@@ -807,6 +801,7 @@ import { OrderStorage } from '../../application/storage.js';
             codAmount: codAmount || 0,
             collectFee: !!collectFee,
             platform: targetPlatform,
+            carrierAccount: detectCarrierAccount(targetPlatform) || "",
             savedOrderId: globalThis.parsedDataStore?.id || null
           });
         }
@@ -816,20 +811,6 @@ import { OrderStorage } from '../../application/storage.js';
 
       // Tự động theo dõi bấm nút gửi trên trang web
       setupAutoSaveOnSubmit(targetPlatform);
-
-      // Lưu lịch sử tách đơn
-      try {
-        if (typeof globalThis.SplitHistory !== 'undefined') {
-          const rawTextEl = getVnpostEl('rawOrderText');
-          const rawText = rawTextEl ? rawTextEl.value.trim() : '';
-          const res = await globalThis.SplitHistory.add(rawText, globalThis.parsedDataStore, targetPlatform);
-          if (res && res.isDuplicate) {
-            showVnpostToast('ℹ️ Đơn này đã được tách trước đó — cập nhật thời gian mới nhất.', 'info');
-          }
-        }
-      } catch (e) {
-        console.warn('Lỗi ghi lịch sử:', e);
-      }
     } catch (err) {
       Logger.error('Lỗi điền form:', err);
       showVnpostToast('❌ Có lỗi khi điền đơn: ' + (err?.message || err), 'error');
@@ -882,6 +863,7 @@ import { OrderStorage } from '../../application/storage.js';
         codAmount: globalThis.parsedDataStore.codAmount || 0,
         collectFee: globalThis.parsedDataStore.collectFee || false,
         extraNote: globalThis.parsedDataStore.extraNote || "",
+        carrierAccount: detectCarrierAccount(platform) || globalThis.parsedDataStore.carrierAccount || "",
         platform: platform ? platform.id : "",
         createdAt: globalThis.parsedDataStore.createdAt
       };
@@ -976,6 +958,7 @@ import { OrderStorage } from '../../application/storage.js';
 
     try {
       const platform = getCurrentPlatform();
+      const carrierAccount = detectCarrierAccount(platform);
       const orderToSave = {
         name: name || "",
         phone: phone || "",
@@ -983,7 +966,8 @@ import { OrderStorage } from '../../application/storage.js';
         orderCode: orderCode || "",
         codAmount: codAmount || 0,
         collectFee: collectFee || false,
-        platform: platform ? platform.id : "",
+        platform: platform || "",
+        carrierAccount: carrierAccount || globalThis.parsedDataStore.carrierAccount || "",
         extraNote: globalThis.parsedDataStore.extraNote || ""
       };
 
@@ -1033,7 +1017,7 @@ import { OrderStorage } from '../../application/storage.js';
       globalThis.parsedDataStore.id = savedOrder.id;
       globalThis.parsedDataStore.createdAt = savedOrder.createdAt;
       
-      showVnpostToast("💾 Đã lưu vào Đơn nháp thành công!", "success");
+      showVnpostToast("📦 Đã lưu vào Đơn nháp thành công!", "success");
     } catch (err) {
       Logger.error("Lỗi khi lưu đơn hàng:", err);
       showVnpostToast("❌ Lỗi khi lưu: " + (err?.message || err), "error");
@@ -1324,5 +1308,143 @@ import { OrderStorage } from '../../application/storage.js';
     setInterval(scanVnpostOrderManagerPage, 2500);
     onDOMReady(scanVnpostOrderManagerPage);
   }
+
+  // ─── TÁCH HÀM SCRAPE DOM RA PHẠM VI TOÀN CỤC ĐỂ TÁI SỬ DỤNG ───
+  function scrapeOrderFromDOM(plat) {
+    let name = '', phone = '', address = '', orderCode = '', codAmount = 0, collectFee = false, carrierAccount = '';
+    try {
+      carrierAccount = detectCarrierAccount(plat);
+      if (plat === 'vnpost' && globalThis.VNPOST_SELECTORS) {
+        const phoneEl = document.querySelector('#form-create-order_receiverPhone') || (globalThis.findFieldInput ? globalThis.findFieldInput(sel.phoneLabels, sel.phoneFallbacks) : document.querySelector('input#receiverPhone') || document.querySelector('input[placeholder*="SĐT" i]'));
+        const nameEl = document.querySelector('#form-create-order_receiverName') || (globalThis.findFieldInput ? globalThis.findFieldInput(sel.nameLabels, sel.nameFallbacks) : document.querySelector('input#receiverName') || document.querySelector('input[placeholder*="Tên" i]'));
+        const addrEl = document.querySelector('#form-create-order_receiverAddress') || document.querySelector('input[placeholder="Địa chỉ chi tiết"]') || (globalThis.findFieldInput ? globalThis.findFieldInput(sel.addressLabels, sel.addressFallbacks, true) : document.querySelector('textarea#receiverAddress') || document.querySelector('input[placeholder*="Địa chỉ" i]'));
+        const codEl = globalThis.findFieldInput ? globalThis.findFieldInput([/Phát hàng thu tiền COD/i, /Thu tiền COD/i], sel.codInputFallbacks) : document.querySelector('input.ant-input-number-input') || document.querySelector('input[name="PROP0018"]');
+
+        if (phoneEl) phone = phoneEl.value || '';
+        if (nameEl) name = nameEl.value || '';
+        if (addrEl) address = addrEl.value || '';
+        let noteEl = globalThis.findFieldInput ? globalThis.findFieldInput(sel.noteLabels, sel.noteFallbacks, true) : document.querySelector('textarea#receiverNote') || document.querySelector('textarea[placeholder*="Nội dung" i]');
+        if (noteEl && noteEl.value) {
+          const match = noteEl.value.match(/Đơn hàng:\s*([A-Z0-9.\-_]+)/i);
+          if (match) orderCode = match[1];
+        }
+      } else if (plat === 'jt') {
+        const phoneEl = document.querySelector('input[placeholder="Nhập số điện thoại"]');
+        const nameEl = document.querySelector('input[placeholder="Nhập tên người nhận"]');
+        const addrEl = document.querySelector('input[placeholder="Nhập địa chỉ (Số nhà/ đường/ ngõ/ tòa nhà...)"]') || document.querySelector('input[placeholder*="Số nhà/ đường/ ngõ"]') || document.querySelector('input[placeholder*="địa chỉ"]');
+        const orderCodeEl = document.querySelector('input[placeholder*="Mã đơn" i]') || document.querySelector('input[placeholder*="Mã tham chiếu" i]');
+        let codInp = document.querySelector('input[placeholder="Nhập số tiền..."]') || document.querySelector('input[placeholder="Nhập số tiền"]') || document.querySelector('#money');
+        
+        if (!codInp) {
+          document.querySelectorAll('.el-form-item').forEach(item => {
+            const labelText = (item.innerText || '').trim();
+            if (labelText.includes('Tiền thu hộ') && !labelText.includes('Phí')) {
+              const el = item.querySelector('input');
+              if (el) codInp = el;
+            }
+          });
+        }
+
+        if (phoneEl) phone = phoneEl.value || '';
+        if (nameEl) name = nameEl.value || '';
+        if (addrEl) address = addrEl.value || '';
+        if (orderCodeEl) orderCode = orderCodeEl.value || '';
+        if (codInp && codInp.value) codAmount = parseInt(codInp.value.replace(/\D/g, ''), 10) || 0;
+      }
+    } catch (e) {
+      console.warn('Lỗi khi cào dữ liệu từ DOM:', e);
+    }
+    return { name, phone, address, orderCode, codAmount, collectFee, carrierAccount };
+  }
+
+  // ─── NHÚNG INTERCEPTOR VÀ LẮNG NGHE TẠO ĐƠN (GÕ TAY) ───
+  function injectInterceptor() {
+    try {
+      if (document.getElementById('af-interceptor-script')) return;
+      if (!window.location.hostname.includes('vnpost.vn') && !window.location.hostname.includes('jtexpress.vn')) return;
+
+      const script = document.createElement('script');
+      script.id = 'af-interceptor-script';
+      script.src = chrome.runtime.getURL('interceptor.js');
+      script.onload = () => { console.log('[Auto Fill] Interceptor injected.'); };
+      (document.head || document.documentElement).appendChild(script);
+
+      window.addEventListener('message', (event) => {
+        if (event.source !== window || !event.data || event.data.type !== 'AF_ORDER_CREATED') return;
+        
+        console.log('[Auto Fill] Nhận sự kiện tạo đơn gõ tay!', event.data);
+        const trackingCode = event.data.trackingCode;
+        const platform = getCurrentPlatform();
+        if (!platform) return;
+
+        // Cào thông tin đơn từ form
+        const data = scrapeOrderFromDOM(platform);
+        const parsed = globalThis.parsedDataStore;
+        
+        if (parsed) {
+          if (!data.name) data.name = parsed.name || '';
+          if (!data.phone) data.phone = parsed.phone || '';
+          if (!data.address) data.address = parsed.address || '';
+          if (!data.orderCode) data.orderCode = parsed.orderCode || '';
+          if (!data.codAmount) data.codAmount = parsed.codAmount || 0;
+          if (!data.collectFee) data.collectFee = parsed.collectFee || false;
+          data.extraNote = parsed.extraNote || '';
+          if (parsed.id) data.id = parsed.id;
+        }
+
+        const { name, phone, address, orderCode } = data;
+        if (!name && !phone && !address && !orderCode && !trackingCode) return;
+
+        const orderToSave = {
+          name: name || '',
+          phone: phone || '',
+          address: address && address !== 'không tìm thấy' ? address : '',
+          orderCode: orderCode || '',
+          codAmount: data.codAmount || 0,
+          collectFee: data.collectFee || false,
+          platform: platform || '',
+          carrierAccount: data.carrierAccount || detectCarrierAccount(platform) || '',
+          extraNote: data.extraNote || ''
+        };
+
+        if (data.id) orderToSave.id = data.id;
+
+        // Lưu đơn hàng trước
+        OrderStorage.saveOrder(orderToSave).then(saved => {
+          const submittedOrder = {
+            id: 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            name: saved.name || orderToSave.name || '',
+            phone: saved.phone || orderToSave.phone || '',
+            address: saved.address || orderToSave.address || '',
+            orderCode: saved.orderCode || orderToSave.orderCode || '',
+            codAmount: saved.codAmount || orderToSave.codAmount || 0,
+            collectFee: saved.collectFee || orderToSave.collectFee || false,
+            platform: platform || '',
+            carrierAccount: saved.carrierAccount || orderToSave.carrierAccount || detectCarrierAccount(platform) || '',
+            extraNote: saved.extraNote || orderToSave.extraNote || '',
+            trackingCode: trackingCode || '',
+            savedOrderId: saved.id
+          };
+
+          OrderStorage.saveSubmittedOrder(submittedOrder).then(() => {
+            if (trackingCode) {
+              showVnpostToast('📦 Đã bắt đơn từ form! Mã vận đơn: ' + trackingCode, 'success');
+            } else {
+              showVnpostToast('✅ Đã ghi nhận đơn từ form! Đang chờ mã vận đơn...', 'success');
+              if (platform === 'vnpost') {
+                startTrackingCodeMonitor(saved.id, platform);
+              }
+            }
+            window.dispatchEvent(new CustomEvent('order-saved-db'));
+          }).catch(e => console.error('Lỗi khi lưu tự động:', e));
+        }).catch(e => console.error('Lỗi khi lưu đơn nháp:', e));
+
+      });
+    } catch (e) {
+      console.warn('Lỗi inject interceptor:', e);
+    }
+  }
+
+  onDOMReady(injectInterceptor);
 
 })();

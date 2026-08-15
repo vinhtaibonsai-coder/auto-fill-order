@@ -33,4 +33,3 @@ if (typeof globalThis !== 'undefined') {
   globalThis.AuthEvents = AuthEvents;
 }
 
-export { AuthEvents };

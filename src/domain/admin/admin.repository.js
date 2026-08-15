@@ -41,7 +41,9 @@ export class AdminRepository {
   }
 
   /**
-   * Ghi log Audit Admin
+   * Ghi log Audit Admin qua RPC SECURITY DEFINER insert_audit_log
+   * (audit_logs bị RLS chặn INSERT qua REST — probe 42501; bảng
+   * admin_audit_logs cũ KHÔNG tồn tại trong DB)
    */
   static async insertAuditLog(action, targetId, targetType, beforeState, afterState, result = 'SUCCESS') {
     try {
@@ -52,16 +54,17 @@ export class AdminRepository {
       if (!adminId) return; // Bỏ qua nếu không lấy được Admin ID
 
       const payload = {
-        admin_id: adminId,
-        action: action,
-        target_id: String(targetId),
-        target_type: targetType,
-        before_state: beforeState,
-        after_state: afterState,
-        result: result,
+        p_action: action,
+        p_entity_type: targetType,
+        p_entity_id: targetId != null ? String(targetId) : null,
+        p_details: {
+          before_state: beforeState ?? null,
+          after_state: afterState ?? null,
+          result: result,
+        },
       };
 
-      const res = await fetch(`${configRes.url}/rest/v1/admin_audit_logs`, {
+      const res = await fetch(`${configRes.url}/rest/v1/rpc/insert_audit_log`, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(payload)
@@ -87,6 +90,25 @@ export class AdminRepository {
 
     if (!res.ok) {
       throw new Error(`RPC get_admin_kpis Failed: ${res.status} - ${await res.text()}`);
+    }
+
+    return await res.json();
+  }
+
+  /**
+   * Gọi RPC get_system_health — số liệu thật cho System Health page
+   */
+  static async getSystemHealth() {
+    const configRes = await this._getConfig();
+    const headers = await this._getAuthHeaders(configRes);
+
+    const res = await fetch(`${configRes.url}/rest/v1/rpc/get_system_health`, {
+      method: 'POST',
+      headers: headers
+    });
+
+    if (!res.ok) {
+      throw new Error(`RPC get_system_health Failed: ${res.status} - ${await res.text()}`);
     }
 
     return await res.json();
@@ -488,10 +510,10 @@ export class AdminRepository {
     const configRes = await this._getConfig();
     const headers = await this._getAuthHeaders(configRes);
 
-    // Đếm tổng audit logs hôm nay từ admin_audit_logs
+    // Đếm tổng audit logs hôm nay từ audit_logs (bảng thật)
     const today = new Date().toISOString().split('T')[0];
     const res = await fetch(
-      `${configRes.url}/rest/v1/admin_audit_logs?select=id,action,target_type,result,created_at&created_at=gte.${today}T00:00:00Z&order=created_at.desc&limit=100`,
+      `${configRes.url}/rest/v1/audit_logs?select=id,action,entity_type,entity_id,details,created_at&created_at=gte.${today}T00:00:00Z&order=created_at.desc&limit=100`,
       { method: 'GET', headers: headers }
     );
 

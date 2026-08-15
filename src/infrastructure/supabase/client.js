@@ -571,7 +571,8 @@
         collect_fee: !!o.collectFee,
         platform: o.platform || '',
         created_at: o.createdAt || new Date().toISOString(),
-        device_name: o.deviceName || this._deviceName || ''
+        device_name: o.deviceName || this._deviceName || '',
+        status: o.status || 'draft'
       };
       if (shopId) rec.shop_id = shopId;
       return rec;
@@ -604,7 +605,8 @@
       collect_fee: !!order.collectFee,
       platform: order.platform || '',
       created_at: order.createdAt || new Date().toISOString(),
-      device_name: order.deviceName || this._deviceName || ''
+      device_name: order.deviceName || this._deviceName || '',
+      status: order.status || 'draft'
     };
     if (shopId) rec.shop_id = shopId;
 

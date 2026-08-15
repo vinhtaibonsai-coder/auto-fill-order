@@ -2,8 +2,6 @@
 // AUTH.SERVICE.JS — DỊCH VỤ XÁC THỰC NGƯỜI DÙNG CHUẨN USERNAME / EMAIL V3.1
 // =========================================================================
 
-import { AuthSession } from './auth.session.js';
-import { AuthEvents } from './auth.events.js';
 const AuthService = {
   async _getSupabaseUrlAndKey() {
     if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.loadConfig === 'function') {
@@ -379,6 +377,16 @@ const AuthService = {
     if (typeof AuthEvents !== 'undefined') {
       AuthEvents.emit('AUTH_STATE_CHANGED', { isAuthenticated: false, user: null, session: null });
     }
+
+    // Phase 3.1: Session/logout nhất quán giữa mọi context
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'PERFORM_LOGOUT' }, resolve);
+        });
+      } catch (_) {}
+    }
+
     return { ok: true };
   },
 
@@ -708,4 +716,3 @@ if (typeof window !== 'undefined') {
   window.AuthService = AuthService;
 }
 
-export { AuthService };

@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { AuthSession } from '../../../../domain/auth/auth.session.js';
 
 export default function Subscription() {
-  const [currentPlan, setCurrentPlan] = useState('STARTER');
+  const [currentPlan, setCurrentPlan] = useState(null);
+  const [budget, setBudget] = useState(null);
+  const [deviceCount, setDeviceCount] = useState(0);
+  const [periodEnd, setPeriodEnd] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const plans = [
     { code: 'FREE', name: 'Miễn phí', price: '0 đ/tháng', users: '1 Staff', devices: '1 Thiết bị', ai: '100 AI/tháng', popular: false },
@@ -11,13 +16,81 @@ export default function Subscription() {
     { code: 'ENTERPRISE', name: 'Enterprise', price: 'Liên hệ', users: 'Không giới hạn', devices: 'Không giới hạn', ai: 'Custom SLA', popular: false },
   ];
 
-  const handleSelectPlan = (code) => {
-    if (code === currentPlan) return;
-    if (confirm(`Bạn có muốn chuyển sang gói cước ${code}?`)) {
-      setCurrentPlan(code);
-      alert(`Đã kích hoạt yêu cầu nâng cấp gói ${code}!`);
+  useEffect(() => {
+    loadSubscription();
+  }, []);
+
+  const loadSubscription = async () => {
+    try {
+      const configRes = await globalThis.SupabaseCloud.loadConfig();
+      const sess = await AuthSession.getSession();
+      if (!sess || !sess.active_shop_id || !sess.access_token) {
+        setIsLoading(false);
+        return;
+      }
+      const headers = {
+        'apikey': configRes.anonKey,
+        'Authorization': `Bearer ${sess.access_token}`
+      };
+
+      // Gói cước thật (RLS: chỉ OWNER đọc được; staff -> rỗng -> mặc định FREE)
+      const subRes = await fetch(
+        `${configRes.url}/rest/v1/subscriptions?shop_id=eq.${sess.active_shop_id}&select=plan_code,status,current_period_end,max_users,max_devices`,
+        { headers }
+      );
+      if (subRes.ok) {
+        const rows = await subRes.json();
+        if (rows && rows.length > 0) {
+          setCurrentPlan(rows[0].plan_code);
+          setPeriodEnd(rows[0].current_period_end);
+        }
+      }
+
+      // Quota AI thật
+      const budgetRes = await fetch(`${configRes.url}/rest/v1/rpc/get_ai_budget`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_shop_id: sess.active_shop_id })
+      });
+      if (budgetRes.ok) {
+        const data = await budgetRes.json();
+        if (data && data.success) setBudget(data);
+      }
+
+      // Số thiết bị thật (chỉ đếm device của shop, nếu RLS cho phép)
+      try {
+        const devRes = await fetch(
+          `${configRes.url}/rest/v1/devices?shop_id=eq.${sess.active_shop_id}&select=id`,
+          { headers }
+        );
+        if (devRes.ok) {
+          const rows = await devRes.json();
+          setDeviceCount(Array.isArray(rows) ? rows.length : 0);
+        }
+      } catch (_) {}
+    } catch (err) {
+      console.error('Lỗi tải gói cước:', err);
+    }
+    setIsLoading(false);
+  };
+
+  const formatDate = (iso) => {
+    if (!iso) return 'Không rõ';
+    try {
+      return new Date(iso).toLocaleDateString('vi-VN');
+    } catch (_) {
+      return 'Không rõ';
     }
   };
+
+  const handleSelectPlan = (code) => {
+    if (code === currentPlan) return;
+    if (confirm(`Bạn có muốn yêu cầu chuyển sang gói cước ${code}?`)) {
+      alert(`Yêu cầu nâng cấp gói ${code} đã được ghi nhận. Vui lòng liên hệ Admin (admin@luathuysinh.vn) để kích hoạt.`);
+    }
+  };
+
+  if (isLoading) return <div style={{ padding: '20px' }}>Đang tải...</div>;
 
   return (
     <div style={{ maxWidth: '1100px' }}>
@@ -31,17 +104,19 @@ export default function Subscription() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>GÓI CƯỚC HIỆN TẠI</div>
-            <h3 style={{ margin: '4px 0', fontSize: '20px', color: '#0f172a' }}>Gói {currentPlan} — Đang hoạt động</h3>
-            <div style={{ fontSize: '13px', color: '#475569' }}>Hạn dùng đến: <strong>04/09/2026</strong> (Tự động gia hạn)</div>
+            <h3 style={{ margin: '4px 0', fontSize: '20px', color: '#0f172a' }}>Gói {currentPlan || 'FREE'} — Đang hoạt động</h3>
+            <div style={{ fontSize: '13px', color: '#475569' }}>Hạn dùng đến: <strong>{formatDate(periodEnd)}</strong></div>
           </div>
           <div style={{ display: 'flex', gap: '24px', textAlign: 'right' }}>
             <div>
               <div style={{ fontSize: '11px', color: '#64748b' }}>AI Quota tháng này</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: '#2563eb' }}>480 / 1.000</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#2563eb' }}>
+                {budget ? `${budget.monthly_remaining} / ${budget.monthly_limit}` : '—'}
+              </div>
             </div>
             <div>
               <div style={{ fontSize: '11px', color: '#64748b' }}>Thiết bị active</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: '#16a34a' }}>2 / 2</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#16a34a' }}>{deviceCount}</div>
             </div>
           </div>
         </div>

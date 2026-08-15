@@ -168,6 +168,54 @@
     letter-spacing: 0.05em;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
+#vnpost-panel-header .badge-shop {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+#vnpost-panel-header .badge-user {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    max-width: 115px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+#vnpost-panel-header .badge-carrier {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    max-width: 125px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
 #vnpost-panel-header-text {
     font-family: 'Be Vietnam Pro', sans-serif;
     font-weight: 600;
@@ -883,6 +931,26 @@
 .panel-login-input:focus {
     border-color: var(--theme-color, #6366f1);
     background: var(--input-focus-bg);
+}
+#vnpost-autofill-panel.light-mode .panel-login-title {
+    color: #0f172a;
+}
+#vnpost-autofill-panel.light-mode .panel-login-subtitle {
+    color: #475569;
+}
+#vnpost-autofill-panel.light-mode .panel-login-label {
+    color: #0f766e;
+}
+#vnpost-autofill-panel.light-mode .panel-login-input {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+#vnpost-autofill-panel.light-mode .panel-login-input:focus {
+    border-color: var(--theme-color, #0056b3);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.15);
 }
 .panel-login-error {
     display: none;

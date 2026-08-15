@@ -3,14 +3,14 @@
   // J&T AUTOFILL ADAPTER — chỉ điền text, không cần dropdown khu vực
   // =========================================================================
 
-  // ─── CHỌN CHẾ ĐỘ ĐỊA CHỈ CŨ ───
-  function selectAddressMode(preferOld = true) {
+  // ─── CHỌN CHẾ ĐỘ ĐỊA CHỈ MỚI ───
+  function selectAddressMode(preferNew = true) {
     try {
       const labels = Array.from(document.querySelectorAll('label.el-radio, label'));
       for (const lbl of labels) {
         const text = (lbl.innerText || '').trim();
-        if (preferOld && /địa chỉ cũ/i.test(text)) { lbl.click(); return true; }
-        if (!preferOld && /địa chỉ mới/i.test(text)) { lbl.click(); return true; }
+        if (preferNew && /địa chỉ mới/i.test(text)) { lbl.click(); return true; }
+        if (!preferNew && /địa chỉ cũ/i.test(text)) { lbl.click(); return true; }
       }
       const radios = Array.from(document.querySelectorAll('input[type="radio"]'));
       if (radios.length > 0) { radios[0].click(); return true; }
@@ -42,7 +42,7 @@
       const results = {};
       const store = globalThis.parsedDataStore || {};
 
-      // 1. Chọn chế độ địa chỉ cũ
+      // 1. Chọn chế độ địa chỉ mới
       results.addressMode = selectAddressMode(true);
       await new Promise(r => setTimeout(r, 300));
 

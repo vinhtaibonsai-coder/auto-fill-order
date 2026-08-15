@@ -17,21 +17,18 @@
 // Nếu thiếu biến -> chạy ở '@mode offline' chỉ validate cấu hình.
 // =============================================================================
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-// Lưu ý: dùng ESM với Deno/node-fetch. Nếu chạy Node local, thay bằng:
-//   import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 const ENV = process.env;
 const required = [
-  'SB_URL', 'SB_ANON_KEY', 'SB_MEMBER_EMAIL', 'SB_MEMBER_PASS',
-  'SB_SHOP_A_ID', 'SB_SHOP_B_ID', 'SB_OTHER_USER_ID',
+  'TEST_SUPABASE_URL', 'TEST_SUPABASE_ANON_KEY', 'TEST_MEMBER_EMAIL', 'TEST_MEMBER_PASS',
+  'TEST_SHOP_A_ID', 'TEST_SHOP_B_ID', 'TEST_OTHER_USER_ID',
 ];
 const missing = required.filter(k => !ENV[k]);
 console.log('== Cross-Shop Isolation Security Test ==');
 if (missing.length > 0) {
-  console.log('SKIP: thiếu biến môi trường:', missing.join(', '));
-  console.log('Chạy bằng env nếu muốn active. (offline config check)');
-  process.exit(0);
+  console.error('FAIL: Missing required environment variables:', missing.join(', '));
+  process.exit(1); // Fail aggressively instead of skipping
 }
 
 const admin = createClient(ENV.TEST_SUPABASE_URL, ENV.TEST_SUPABASE_ANON_KEY, {
@@ -70,23 +67,34 @@ if (signInA) {
   report('admin_list_users guard', !!errL, errL?.message || 'UNEXPECTED ACCESS');
 }
 
-// 4. IDOR: get_user_role người khác -> phải lỗi
-if (signInA) {
-  const { data, error: errR } = await memberA.rpc('get_user_role', {
-    p_user_id: ENV.SB_OTHER_USER_ID,
-  });
-  report('IDOR guard on get_user_role', !!errR, errR?.message || 'UNEXPECTED ROLE');
-}
+  // 4. IDOR: get_user_role người khác -> phải lỗi
+  if (signInA) {
+    const { data, error: errR } = await memberA.rpc('get_user_role', {
+      p_user_id: ENV.TEST_OTHER_USER_ID,
+    });
+    report('IDOR guard on get_user_role', !!errR, errR?.message || 'UNEXPECTED ROLE');
+  }
+  
+  // 5. Quota: user A consume quota cho SHOP B -> phải bị từ chối
+  if (signInA) {
+    const { data: q, error: errQ } = await memberA.rpc('consume_ai_quota', {
+      p_shop_id: ENV.TEST_SHOP_B_ID,
+      p_delta: 1,
+    });
+    const denied = errQ || (q && q.code === 'ACCESS_DENIED');
+    report('QUOTA deny cross-shop', !!denied, JSON.stringify(q?.code || errQ?.message));
+  }
 
-// 5. Quota: user A consume quota cho SHOP B -> phải bị từ chối
-if (signInA) {
-  const { data: q, error: errQ } = await memberA.rpc('consume_ai_quota', {
-    p_shop_id: ENV.TEST_SHOP_B_ID,
-    p_delta: 1,
-  });
-  const denied = errQ || (q && q.code === 'ACCESS_DENIED');
-  report('QUOTA deny cross-shop', !!denied, JSON.stringify(q?.code || errQ?.message));
-}
+  // 6. system_configs RLS: public/member không được đọc bảng cấu hình hệ thống
+  if (signInA) {
+    const { data: configs, error: errC } = await memberA
+      .from('system_configs')
+      .select('*')
+      .limit(10);
+    // Phải bị lỗi hoặc không có dữ liệu trả về (vi phạm RLS)
+    const blocked = errC || (configs && configs.length === 0);
+    report('system_configs RLS guard', !!blocked, errC?.message || `rows=${configs?.length || 0}`);
+  }
 
 console.log('\n== TỔNG KẾT ==');
 console.log(failures === 0 ? 'ALL PASS ✅' : `${failures} test(s) FAIL ❌`);

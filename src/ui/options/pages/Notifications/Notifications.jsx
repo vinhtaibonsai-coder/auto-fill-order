@@ -1,53 +1,97 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { AuthSession } from '../../../../domain/auth/auth.session.js';
 
 export default function Notifications() {
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const loadNotifications = async () => {
+    try {
+      const configRes = await globalThis.SupabaseCloud.loadConfig();
+      const sess = await AuthSession.getSession();
+      if (!sess || !sess.active_shop_id || !sess.access_token) {
+        setIsLoading(false);
+        return;
+      }
+      const res = await fetch(`${configRes.url}/rest/v1/rpc/system_get_notifications`, {
+        method: 'POST',
+        headers: {
+          'apikey': configRes.anonKey,
+          'Authorization': `Bearer ${sess.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_shop_id: sess.active_shop_id })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data || []);
+      }
+    } catch (err) {
+      console.error('Lỗi tải thông báo:', err);
+    }
+    setIsLoading(false);
+  };
+
+  const formatTime = (iso) => {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleString('vi-VN');
+    } catch (_) {
+      return '';
+    }
+  };
+
   return (
     <div style={{ maxWidth: '800px' }}>
       <h2 className="page-title">Notifications & Alerts</h2>
       <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-        Quản lý cách hệ thống thông báo các sự kiện quan trọng của Shop.
+        Các thông báo hệ thống của Shop (lời mời thành viên, sự kiện, cảnh báo).
       </p>
 
-      <div className="card">
-        <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Tùy chọn thông báo</h3>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <input type="checkbox" defaultChecked id="notif-1" style={{ width: '18px', height: '18px' }} />
-          <div>
-            <label htmlFor="notif-1" style={{ fontWeight: 600, display: 'block' }}>Sắp hết hạn mức AI (AI Quota Low)</label>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Cảnh báo khi số lượt bóc tách AI còn dưới 10% của tháng.</span>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {isLoading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải...</div>
+        ) : notifications.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Chưa có thông báo nào.
           </div>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <input type="checkbox" defaultChecked id="notif-2" style={{ width: '18px', height: '18px' }} />
-          <div>
-            <label htmlFor="notif-2" style={{ fontWeight: 600, display: 'block' }}>Lỗi hệ thống AI (AI Error)</label>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Báo đỏ khi AI Gateway không phản hồi hoặc bị sập.</span>
-          </div>
-        </div>
+        ) : (
+          notifications.map(n => (
+            <div
+              key={n.id}
+              style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid var(--border)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: '16px'
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '14px' }}>{n.title}</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{n.content}</div>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                <span style={{
+                  display: 'inline-block', padding: '2px 8px', borderRadius: '99px', fontSize: '11px', fontWeight: 600,
+                  background: n.level === 'ERROR' ? 'rgba(220, 38, 38, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                  color: n.level === 'ERROR' ? '#dc2626' : 'var(--success)', marginBottom: '4px'
+                }}>
+                  {n.level || 'INFO'}
+                </span>
+                <div>{formatTime(n.created_at)}</div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <input type="checkbox" defaultChecked id="notif-3" style={{ width: '18px', height: '18px' }} />
-          <div>
-            <label htmlFor="notif-3" style={{ fontWeight: 600, display: 'block' }}>Mất kết nối Máy chủ (Cloud Offline)</label>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Thông báo rớt mạng khi không thể đồng bộ dữ liệu.</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <input type="checkbox" defaultChecked id="notif-4" style={{ width: '18px', height: '18px' }} />
-          <div>
-            <label htmlFor="notif-4" style={{ fontWeight: 600, display: 'block' }}>Giao diện hãng cập nhật (DOM Changed)</label>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Cảnh báo khi phát hiện VNPost/J&T thay đổi giao diện làm hỏng tính năng Autofill.</span>
-          </div>
-        </div>
-        
-        <div style={{ marginTop: '24px' }}>
-          <button style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
-            Lưu Cấu Hình
-          </button>
-        </div>
+      <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
+        Tùy chọn kênh thông báo (email/SMS) sẽ được quản lý tập trung trên Admin Dashboard.
       </div>
     </div>
   );

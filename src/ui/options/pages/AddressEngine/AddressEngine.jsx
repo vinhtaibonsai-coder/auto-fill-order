@@ -1,42 +1,108 @@
 import React, { useState, useEffect } from 'react';
+import { AuthSession } from '../../../../domain/auth/auth.session.js';
 
 export default function AddressEngine() {
   const [aliases, setAliases] = useState([]);
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState('');
+
   useEffect(() => {
-    if (chrome && chrome.storage) {
-      chrome.storage.local.get(['af_address_aliases'], (result) => {
-        if (result.af_address_aliases) {
-          setAliases(result.af_address_aliases);
-        } else {
-          setAliases([
-            { id: Date.now(), original: 'Thới Lai', mapping: 'Huyện Thới Lai, Cần Thơ' },
-            { id: Date.now() + 1, original: 'Q9', mapping: 'Quận 9, TP Hồ Chí Minh' },
-          ]);
-        }
-      });
-    }
+    loadAliases();
   }, []);
 
-  const saveAlias = (newAliases) => {
-    setAliases(newAliases);
-    if (chrome && chrome.storage) {
-      chrome.storage.local.set({ 'af_address_aliases': newAliases });
-    }
+  const getClient = async () => {
+    const configRes = await globalThis.SupabaseCloud.loadConfig();
+    const sess = await AuthSession.getSession();
+    return { configRes, sess };
   };
 
-  const handleAdd = () => {
+  const loadAliases = async () => {
+    try {
+      const { configRes, sess } = await getClient();
+      if (!sess || !sess.active_shop_id || !sess.access_token) {
+        setIsLoading(false);
+        return;
+      }
+      const res = await fetch(
+        `${configRes.url}/rest/v1/shop_address_aliases?shop_id=eq.${sess.active_shop_id}&order=created_at.asc&select=id,original,mapping`,
+        {
+          headers: {
+            'apikey': configRes.anonKey,
+            'Authorization': `Bearer ${sess.access_token}`
+          }
+        }
+      );
+      if (res.ok) {
+        const rows = await res.json();
+        setAliases(rows || []);
+      }
+    } catch (err) {
+      console.error('Lỗi tải từ điển địa chỉ:', err);
+    }
+    setIsLoading(false);
+  };
+
+  const handleAdd = async () => {
     const original = prompt('Nhập từ khóa viết tắt (VD: q1):');
     if (!original) return;
     const mapping = prompt('Nhập địa chỉ chuẩn xác (VD: Quận 1, TP Hồ Chí Minh):');
     if (!mapping) return;
 
-    saveAlias([...aliases, { id: Date.now(), original, mapping }]);
+    try {
+      const { configRes, sess } = await getClient();
+      if (!sess || !sess.active_shop_id || !sess.access_token) {
+        setStatus('❌ Phiên đăng nhập không hợp lệ.');
+        return;
+      }
+      const res = await fetch(`${configRes.url}/rest/v1/shop_address_aliases`, {
+        method: 'POST',
+        headers: {
+          'apikey': configRes.anonKey,
+          'Authorization': `Bearer ${sess.access_token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          shop_id: sess.active_shop_id,
+          original: original.trim(),
+          mapping: mapping.trim()
+        })
+      });
+      if (res.ok) {
+        const row = await res.json();
+        setAliases(prev => [...prev, ...row]);
+        setStatus('✅ Đã lưu từ khóa lên Cloud (đồng bộ mọi máy).');
+        setTimeout(() => setStatus(''), 3000);
+      } else {
+        const data = await res.json();
+        setStatus('❌ ' + (data.message || 'Không lưu được (có thể trùng từ khóa hoặc mất quyền).'));
+      }
+    } catch (err) {
+      setStatus('❌ Lỗi: ' + err.message);
+    }
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Xóa từ khóa này?')) {
-      saveAlias(aliases.filter(a => a.id !== id));
+  const handleDelete = async (id) => {
+    if (!confirm('Xóa từ khóa này?')) return;
+    try {
+      const { configRes, sess } = await getClient();
+      if (!sess || !sess.access_token) return;
+      const res = await fetch(`${configRes.url}/rest/v1/shop_address_aliases?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': configRes.anonKey,
+          'Authorization': `Bearer ${sess.access_token}`
+        }
+      });
+      if (res.ok) {
+        setAliases(prev => prev.filter(a => a.id !== id));
+        setStatus('✅ Đã xóa từ khóa.');
+        setTimeout(() => setStatus(''), 3000);
+      } else {
+        setStatus('❌ Không xóa được từ khóa.');
+      }
+    } catch (err) {
+      setStatus('❌ Lỗi: ' + err.message);
     }
   };
 
@@ -49,8 +115,9 @@ export default function AddressEngine() {
         </button>
       </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-        Dạy AI hiểu các từ lóng, viết tắt địa phương để tăng độ chính xác khi nhận diện địa chỉ.
+        Dạy AI hiểu các từ lóng, viết tắt địa phương để tăng độ chính xác khi nhận diện địa chỉ. Dữ liệu lưu trên Cloud theo Shop — đồng bộ mọi máy.
       </p>
+      {status && <div style={{ marginBottom: '12px', fontSize: '13px', fontWeight: 600 }}>{status}</div>}
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -62,7 +129,9 @@ export default function AddressEngine() {
             </tr>
           </thead>
           <tbody>
-            {aliases.map(alias => (
+            {isLoading ? (
+              <tr><td colSpan="3" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải...</td></tr>
+            ) : aliases.map(alias => (
               <tr key={alias.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '16px', fontWeight: 600 }}>{alias.original}</td>
                 <td style={{ padding: '16px', color: 'var(--primary)' }}>{alias.mapping}</td>
@@ -71,7 +140,7 @@ export default function AddressEngine() {
                 </td>
               </tr>
             ))}
-            {aliases.length === 0 && (
+            {!isLoading && aliases.length === 0 && (
               <tr>
                 <td colSpan="3" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có từ điển nào</td>
               </tr>

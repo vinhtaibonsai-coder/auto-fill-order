@@ -75,4 +75,3 @@ if (typeof globalThis !== 'undefined') {
   globalThis.AuthSession = AuthSession;
 }
 
-export { AuthSession };

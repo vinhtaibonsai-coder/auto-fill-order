@@ -8,7 +8,8 @@ import '../../infrastructure/supabase/client.js';
 import '../../application/logger.js';
 import '../../application/api.js';
 import '../../application/queue.js';
-import { OrderStorage } from '../../application/storage.js';
+import '../../application/storage.js';
+const OrderStorage = globalThis.OrderStorage;
 
 const aiQueue = new PromiseQueue(2);
 
@@ -49,37 +50,79 @@ async function _autoSyncOrders() {
 
     const stored = await chrome.storage.local.get([draftKey, submittedKey, 'savedOrders', 'submittedOrders']).catch(() => ({}));
 
-    // Merge Đơn nháp (không ghi đè bản local)
+    // Merge đơn nháp (Cải thiện Sync semantics - Cập nhật theo updated_at)
     if (cloudOrders.length > 0) {
       const localDrafts = stored[draftKey] || stored.savedOrders || [];
-      const localIds = new Set(localDrafts.map(o => o.id));
-      const newDrafts = cloudOrders.filter(o => o.id && !localIds.has(o.id));
-      if (newDrafts.length > 0) {
-        const merged = [...localDrafts, ...newDrafts];
+      const localMap = new Map(localDrafts.map(o => [o.id, o]));
+      let hasChanges = false;
+      
+      cloudOrders.forEach(co => {
+        if (!co.id) return;
+        const lo = localMap.get(co.id);
+        if (!lo) {
+          localMap.set(co.id, co);
+          hasChanges = true;
+        } else {
+          // So sánh updated_at
+          const cTime = co.updated_at ? new Date(co.updated_at).getTime() : 0;
+          const lTime = lo.updated_at ? new Date(lo.updated_at).getTime() : 0;
+          // Coi deleted_at là ưu tiên cao nhất
+          if (co.deleted_at && !lo.deleted_at) {
+            localMap.delete(co.id);
+            hasChanges = true;
+          } else if (cTime > lTime && !lo.deleted_at) {
+            localMap.set(co.id, { ...lo, ...co });
+            hasChanges = true;
+          }
+        }
+      });
+      
+      if (hasChanges) {
+        const merged = Array.from(localMap.values()).filter(o => !o.deleted_at);
         await chrome.storage.local.set({ [draftKey]: merged, savedOrders: merged }).catch(() => {});
-        // Thông báo các tab đang mở cập nhật lại danh sách
+        // Thông báo cập nhật
         chrome.tabs.query({}, tabs => {
           tabs.forEach(t => {
             if (t.url && (t.url.startsWith('chrome-extension://') || t.url.includes('options.html'))) {
-              chrome.tabs.sendMessage(t.id, { type: 'cloud_sync_update', table: 'orders', count: newDrafts.length }).catch(() => {});
+              chrome.tabs.sendMessage(t.id, { type: 'cloud_sync_update', table: 'orders' }).catch(() => {});
             }
           });
         });
       }
     }
 
-    // Merge Đơn đã lên đơn
+    // Merge đơn đã lên đơn
     if (cloudSubmitted.length > 0) {
       const localSub = stored[submittedKey] || stored.submittedOrders || [];
-      const localSubIds = new Set(localSub.map(o => o.id));
-      const newSub = cloudSubmitted.filter(o => o.id && !localSubIds.has(o.id));
-      if (newSub.length > 0) {
-        const mergedSub = [...localSub, ...newSub];
+      const localSubMap = new Map(localSub.map(o => [o.id, o]));
+      let subHasChanges = false;
+      
+      cloudSubmitted.forEach(co => {
+        if (!co.id) return;
+        const lo = localSubMap.get(co.id);
+        if (!lo) {
+          localSubMap.set(co.id, co);
+          subHasChanges = true;
+        } else {
+          const cTime = co.updated_at ? new Date(co.updated_at).getTime() : 0;
+          const lTime = lo.updated_at ? new Date(lo.updated_at).getTime() : 0;
+          if (co.deleted_at && !lo.deleted_at) {
+            localSubMap.delete(co.id);
+            subHasChanges = true;
+          } else if (cTime > lTime && !lo.deleted_at) {
+            localSubMap.set(co.id, { ...lo, ...co });
+            subHasChanges = true;
+          }
+        }
+      });
+      
+      if (subHasChanges) {
+        const mergedSub = Array.from(localSubMap.values()).filter(o => !o.deleted_at);
         await chrome.storage.local.set({ [submittedKey]: mergedSub, submittedOrders: mergedSub }).catch(() => {});
         chrome.tabs.query({}, tabs => {
           tabs.forEach(t => {
             if (t.url && (t.url.includes('options.html') || t.url.startsWith('chrome-extension://'))) {
-              chrome.tabs.sendMessage(t.id, { type: 'cloud_sync_update', table: 'submitted_orders', count: newSub.length }).catch(() => {});
+              chrome.tabs.sendMessage(t.id, { type: 'cloud_sync_update', table: 'submitted_orders' }).catch(() => {});
             }
           });
         });
@@ -328,15 +371,27 @@ async function _focusOrCreateOptionsTab(sendResponse) {
       if (sendResponse) sendResponse({ ok: true, reused: true });
     } else {
       // Chưa mở → tạo mới
+      if (typeof chrome.runtime.openOptionsPage === 'function') {
+        chrome.runtime.openOptionsPage(() => {
+          if (sendResponse) sendResponse({ ok: true, reused: false });
+        });
+      } else {
+        chrome.tabs.create({ url: OPTIONS_PAGE_URL }, () => {
+          if (sendResponse) sendResponse({ ok: true, reused: false });
+        });
+      }
+    }
+  } catch (e) {
+    // Fallback an toàn
+    if (typeof chrome.runtime.openOptionsPage === 'function') {
+      chrome.runtime.openOptionsPage(() => {
+        if (sendResponse) sendResponse({ ok: true, reused: false });
+      });
+    } else {
       chrome.tabs.create({ url: OPTIONS_PAGE_URL }, () => {
         if (sendResponse) sendResponse({ ok: true, reused: false });
       });
     }
-  } catch (e) {
-    // Fallback an toàn
-    chrome.tabs.create({ url: OPTIONS_PAGE_URL }, () => {
-      if (sendResponse) sendResponse({ ok: true, reused: false });
-    });
   }
 }
 
@@ -389,10 +444,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message.action === 'firebaseSignOut') {
+  if (message.action === 'firebaseSignOut' || message.action === 'PERFORM_LOGOUT') {
     if (typeof AuthService !== 'undefined' && typeof AuthService.logout === 'function') {
       AuthService.logout().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: true }));
     } else {
+      chrome.storage.local.remove(['vnpost_session']).catch(() => {});
       sendResponse({ ok: true });
     }
     return true;

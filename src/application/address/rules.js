@@ -1,6 +1,6 @@
 (() => {
   const AddressRules = {
-    applyRules(addressObj) {
+    async applyRules(addressObj) {
       let street = addressObj.street || "";
       let prov = addressObj.province || "";
       let dist = addressObj.district || "";
@@ -93,42 +93,53 @@
         }
       }
 
-      // Tra WARD_MERGER_MAP: tìm xã cũ → xã MỚI (sau sáp nhập 2025)
-      // Dùng WARD_MERGER_MAP trực tiếp thay vì WARD_MERGER_INDEX (index sai chiều)
+      // Tra WARD_MERGER_MAP: tìm xã/cũ -> xã MỚI (sau sáp nhập 2025)
       // Chỉ chạy nếu LEVEL2_ADDRESS_MAPPING không match (dist vẫn có giá trị)
-      if (typeof WARD_MERGER_MAP !== 'undefined' && ward && (prov || dist)) {
-        const _n = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase();
-        const wardNormKey = _n(ward).replace(/^(phuong|xa|thi tran|thi xa)\s+/, '').trim();
-        const provNormKey = _n(prov).replace(/^(tinh|thanh pho|tp\.?)\s+/, '').trim();
-        const distNormKey = _n(dist).replace(/^(quan|huyen|thanh pho|tp\.?)\s+/, '').trim();
+      if (ward && (prov || dist)) {
+        try {
+          const mergerModule = await import('./database/ward_merger.js');
+          const WARD_MERGER_MAP = mergerModule.WARD_MERGER_MAP;
+          
+          if (WARD_MERGER_MAP) {
+            const _n = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase();
+            const wardNormKey = _n(ward).replace(/^(phuong|xa|thi tran|thi xa)\s+/, '').trim();
+            const provNormKey = _n(prov).replace(/^(tinh|thanh pho|tp\.?)\s+/, '').trim();
+            const distNormKey = _n(dist).replace(/^(quan|huyen|thanh pho|tp\.?)\s+/, '').trim();
 
-        let matchedVal = null;
-        if (distNormKey) {
-          for (const [oldKey, newVal] of Object.entries(WARD_MERGER_MAP)) {
-            const keyNorm = _n(oldKey);
-            if (keyNorm.includes(wardNormKey) && keyNorm.includes(distNormKey)) {
-              matchedVal = newVal;
-              break;
+            let matchedVal = null;
+            if (distNormKey) {
+              for (const [oldKey, newVal] of Object.entries(WARD_MERGER_MAP)) {
+                const keyNorm = _n(oldKey);
+                if (keyNorm.includes(wardNormKey) && keyNorm.includes(distNormKey)) {
+                  matchedVal = newVal;
+                  break;
+                }
+              }
+            }
+            if (!matchedVal && provNormKey) {
+              for (const [oldKey, newVal] of Object.entries(WARD_MERGER_MAP)) {
+                const keyNorm = _n(oldKey);
+                if (keyNorm.includes(wardNormKey) && keyNorm.includes(provNormKey)) {
+                  matchedVal = newVal;
+                  break;
+                }
+              }
+            }
+
+            if (matchedVal) {
+              const oldWard = ward;
+              ward = matchedVal.ward;
+              if (matchedVal.district && dist && _n(dist) !== _n(matchedVal.district)) {
+                dist = matchedVal.district;
+              }
+              if (matchedVal.province && _n(prov) !== _n(matchedVal.province)) {
+                prov = matchedVal.province;
+              }
+              warningMsg = `Hệ thống tự động cập nhật: '${oldWard}' đã sáp nhập thành '${ward}' theo bản đồ 2025.`;
             }
           }
-        }
-        if (!matchedVal && provNormKey) {
-          for (const [oldKey, newVal] of Object.entries(WARD_MERGER_MAP)) {
-            const keyNorm = _n(oldKey);
-            if (keyNorm.includes(wardNormKey) && keyNorm.includes(provNormKey)) {
-              matchedVal = newVal;
-              break;
-            }
-          }
-        }
-
-        if (matchedVal) {
-          const oldWard = ward;
-          ward = matchedVal.ward;
-          if (matchedVal.province) prov = matchedVal.province;
-          dist = '';
-          warningMsg = `Địa bàn ${oldWard} đã sáp nhập năm 2025 sang ${ward} (${matchedVal.province || prov}).`;
-          suggestedAddr = `${street ? street + ', ' : ''}${ward}, ${matchedVal.province || prov}`;
+        } catch (e) {
+          console.warn("Could not load ward_merger.js", e);
         }
       }
 

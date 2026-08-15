@@ -1,9 +1,8 @@
 // =========================================================================
 // MÔ ĐUN BÓC TÁCH ĐƠN HÀNG (PARSER)
-// Chuyển đổi sang ES Module
 // =========================================================================
 
-export const OrderProcessor = {
+const OrderProcessor = {
   parseCOD(text) {
     if (!text) return 0;
     let s = text.toLowerCase().replace(/\s+/g, '');

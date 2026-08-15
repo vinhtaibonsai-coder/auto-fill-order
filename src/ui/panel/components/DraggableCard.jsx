@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-export default function DraggableCard({ children, onClose, title, isAuth = false, session }) {
+export default function DraggableCard({ children, onClose, title, isAuth = false, session, carrierAccount }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -96,12 +96,34 @@ export default function DraggableCard({ children, onClose, title, isAuth = false
             ></span>
             <span className="af-panel-header-badge" style={{ fontSize: '9px', padding: '1px 3px' }}>V1</span>
           </div>
-          {isAuth && (
-            <div style={{ fontSize: '9px', color: '#475569', display: 'flex', gap: '8px', fontWeight: 500, lineHeight: 1 }}>
-              <span title="Cửa hàng đang hoạt động">🏪 {session?.shop_name || 'Mặc định'}</span>
-              <span title="Nhân viên đang đăng nhập">👤 {session?.user?.full_name || session?.user?.email || 'Ngoại tuyến'}</span>
-            </div>
-          )}
+          <div style={{ fontSize: '9px', color: '#475569', display: 'flex', flexWrap: 'wrap', gap: '6px', fontWeight: 500, lineHeight: 1.2, marginTop: '2px' }}>
+            <span 
+              title="Tài khoản bưu cục / ĐVVC đang đăng nhập trên trang"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px',
+                background: carrierAccount ? '#e0f2fe' : '#f1f5f9',
+                color: carrierAccount ? '#0369a1' : '#64748b',
+                padding: '2px 5px',
+                borderRadius: '4px',
+                fontWeight: 600,
+                border: `1px solid ${carrierAccount ? '#bae6fd' : '#e2e8f0'}`
+              }}
+            >
+              🚚 TK lên đơn: <strong>{carrierAccount || 'Đang quét...'}</strong>
+            </span>
+            {isAuth && (
+              <>
+                <span title="Cửa hàng đang hoạt động" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                  🏪 {session?.shop_name || 'Mặc định'}
+                </span>
+                <span title="Nhân viên đang đăng nhập" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                  👤 {session?.user?.full_name || session?.user?.email || 'Ngoại tuyến'}
+                </span>
+              </>
+            )}
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <button className="af-panel-header-btn" title="Làm mới" onClick={() => window.location.reload()}>↻</button>

@@ -40,6 +40,26 @@ export class AdminService {
   }
 
   /**
+   * Fetch System Health thật cho trang System Health
+   */
+  static async getSystemHealth() {
+    try {
+      await this._ensureAdmin();
+      const health = await AdminRepository.getSystemHealth();
+      return {
+        success: true,
+        data: health
+      };
+    } catch (e) {
+      console.error("[AdminService] getSystemHealth Error:", e);
+      return {
+        success: false,
+        error: e.message || "Không thể lấy dữ liệu hệ thống"
+      };
+    }
+  }
+
+  /**
    * Fetch Danh sách Cửa hàng
    */
   static async getAllShops() {

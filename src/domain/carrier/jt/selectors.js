@@ -66,7 +66,61 @@
       'input[placeholder*="tiền thu hộ" i]',
       '#money'
     ],
-    radioPaymentLabels: 'label.el-radio'
+    radioPaymentLabels: 'label.el-radio',
+    accountSelectors: [
+      '.user-name',
+      '.username',
+      '.header-user',
+      '.avatar-wrapper',
+      '.el-dropdown-link .user-name',
+      '.el-dropdown-link',
+      '.customer-name',
+      '.user-info__name',
+      '[class*="user-name"]',
+      '[class*="userName"]',
+      '.header-right .name',
+      '.navbar-user',
+      '.header-account',
+      '.shop-name'
+    ],
+    getAccountName: function() {
+      try {
+        // 1. Quét DOM
+        for (const sel of this.accountSelectors) {
+          const els = document.querySelectorAll(sel);
+          for (const el of els) {
+            if (!el || (el.offsetParent === null && el.offsetWidth === 0)) continue;
+            const clone = el.cloneNode(true);
+            const icons = clone.querySelectorAll('svg, i, .el-icon, [class*="icon"], [class*="arrow"]');
+            icons.forEach(i => i.remove());
+            const text = (clone.textContent || '').trim().replace(/\s+/g, ' ');
+            if (text && text.length >= 2 && text.length <= 60 && !/^(đăng nhập|login|tài khoản|thông báo|tiếng việt|vn|en)$/i.test(text)) {
+              return text;
+            }
+          }
+        }
+        // 2. Quét localStorage/sessionStorage
+        const storageKeys = ['userInfo', 'user_info', 'user', 'customerInfo', 'customer', 'loginUser', 'userData', 'auth'];
+        for (const key of storageKeys) {
+          const val = localStorage.getItem(key) || sessionStorage.getItem(key);
+          if (val) {
+            try {
+              const parsed = typeof val === 'string' && (val.startsWith('{') || val.startsWith('[')) ? JSON.parse(val) : val;
+              const name = parsed?.customerName || parsed?.customer_name || parsed?.fullName || parsed?.full_name || parsed?.name || parsed?.userName || parsed?.username || parsed?.nickName;
+              if (name && typeof name === 'string' && name.length >= 2) return name.trim();
+            } catch (_) {}
+          }
+        }
+        // 3. Quét thông tin người gửi trên trang nếu có
+        const senderEl = document.querySelector('input#senderName, input[name*="sender" i], input[placeholder*="người gửi" i], input[placeholder*="tên người gửi" i]');
+        if (senderEl && senderEl.value && senderEl.value.trim().length >= 2) {
+          return senderEl.value.trim();
+        }
+      } catch (e) {
+        console.warn('JT getAccountName error:', e);
+      }
+      return '';
+    }
   };
 
   globalThis.JT_SELECTORS = JT_SELECTORS;

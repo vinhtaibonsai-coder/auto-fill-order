@@ -5,6 +5,9 @@
      */
     async learn(rawAddress, correctAddressObj, phone = "") {
       if (!correctAddressObj) return;
+      // Chỉ học khi độ tin cậy >= 85
+      if ((correctAddressObj.confidence || 0) < 85) return;
+      
       try {
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local) {
           chrome.storage.local.get(['addressLearningDB'], (res) => {
@@ -12,23 +15,41 @@
             if (lastErr) return;
             const db = res.addressLearningDB || { byPhone: {}, byRaw: {} };
             
+            // Giới hạn kích thước DB (LRU đơn giản, giữ 1000 records)
+            const MAX_ENTRIES = 1000;
+            
             if (phone) {
+              const keys = Object.keys(db.byPhone);
+              if (keys.length > MAX_ENTRIES) delete db.byPhone[keys[0]];
               db.byPhone[phone] = correctAddressObj;
             }
             if (rawAddress) {
               const cleanRaw = rawAddress.trim().toLowerCase();
+              const keys = Object.keys(db.byRaw);
+              if (keys.length > MAX_ENTRIES) delete db.byRaw[keys[0]];
               db.byRaw[cleanRaw] = correctAddressObj;
             }
             
-            chrome.storage.local.set({ addressLearningDB: db });
+            chrome.storage.local.set({ addressLearningDB: db }).catch(() => {});
           });
-        } else {
-          const data = localStorage.getItem('addressLearningDB');
-          const db = data ? JSON.parse(data) : { byPhone: {}, byRaw: {} };
-          if (phone) db.byPhone[phone] = correctAddressObj;
-          if (rawAddress) db.byRaw[rawAddress.trim().toLowerCase()] = correctAddressObj;
-          localStorage.setItem('addressLearningDB', JSON.stringify(db));
-        }
+          } else {
+            const data = localStorage.getItem('addressLearningDB');
+            const db = data ? JSON.parse(data) : { byPhone: {}, byRaw: {} };
+            const MAX_ENTRIES = 1000;
+            
+            if (phone) {
+              const keys = Object.keys(db.byPhone);
+              if (keys.length > MAX_ENTRIES) delete db.byPhone[keys[0]];
+              db.byPhone[phone] = correctAddressObj;
+            }
+            if (rawAddress) {
+              const cleanRaw = rawAddress.trim().toLowerCase();
+              const keys = Object.keys(db.byRaw);
+              if (keys.length > MAX_ENTRIES) delete db.byRaw[keys[0]];
+              db.byRaw[cleanRaw] = correctAddressObj;
+            }
+            localStorage.setItem('addressLearningDB', JSON.stringify(db));
+          }
       } catch (e) {
         console.warn("Lỗi Learning Engine:", e);
       }

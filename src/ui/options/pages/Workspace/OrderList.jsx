@@ -115,13 +115,21 @@ export default function OrderList() {
                     {order.parsedData?.address || order.address || order.rawText || 'Không có địa chỉ'}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <span style={{ 
-                      padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
-                      background: order.platform === 'vnpost' ? '#e0f2fe' : '#fee2e2',
-                      color: order.platform === 'vnpost' ? '#0369a1' : '#be123c'
-                    }}>
-                      {order.platform === 'vnpost' ? 'VNPost' : (order.platform === 'jt' ? 'J&T Express' : 'Khác')}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ 
+                        padding: '3px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
+                        background: order.platform === 'vnpost' ? '#e0f2fe' : '#fee2e2',
+                        color: order.platform === 'vnpost' ? '#0369a1' : '#be123c',
+                        width: 'fit-content'
+                      }}>
+                        {order.platform === 'vnpost' ? 'VNPost' : (order.platform === 'jt' ? 'J&T Express' : 'Khác')}
+                      </span>
+                      {order.carrierAccount && (
+                        <span style={{ fontSize: '11px', color: '#0284c7', fontWeight: 600 }} title="Tài khoản lên đơn">
+                          👤 TK: {order.carrierAccount}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                     <button 

@@ -1,3 +1,4 @@
+(() => {
 // options-config.js — extracted from options.js
 // =========================================================================
 // 1. CHUYỂN TAB & CẤU HÌNH API KEY
@@ -564,6 +565,8 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
 
 // Hiển thị trạng thái lưu cấu hình API
 function showApiStatus(msg, type = 'ok', icon = '') {
+  const statusEl = document.getElementById('apiStatus') || document.getElementById('promptStatus');
+  if (!statusEl) return;
   statusEl.innerHTML = icon ? `<span class="spinner" style="${type === 'testing' ? '' : 'display:none'}"></span><span>${icon} ${msg}</span>` : `<span>${msg}</span>`;
   if (type === 'testing') {
     statusEl.innerHTML = `<span class="spinner"></span><span>${msg}</span>`;
@@ -583,7 +586,7 @@ function showApiStatus(msg, type = 'ok', icon = '') {
 // Kiểm tra kết nối AI Gateway (thay thế testGroqApiKey cũ)
 // P0-04: Extension không gọi trực tiếp api.groq.com nữa
 async function checkAiGatewayStatus() {
-  const statusEl = document.getElementById('apiStatus');
+  const statusEl = document.getElementById('apiStatus') || document.getElementById('promptStatus');
   if (!statusEl) return;
 
   showApiStatus('Đang kiểm tra kết nối AI Gateway...', 'testing');
@@ -624,17 +627,10 @@ async function checkAiGatewayStatus() {
 
 // ─── PHASE 1: Tải ngay từ local (< 50ms, không đợi cloud) ───────────────
 
-// ─── PHASE 1: Tải cấu hình từ local cache (sẽ chạy trong DOMReady)
-// window.loadSettingsToUI() sẽ được gọi tự động để nạp dữ liệu.
-
 // ─── PHASE 1.5: Thiết lập UI AI Gateway Status ────────────────────────
-// P0-04: Không còn hiển thị / đồng bộ Groq API key ở phía client.
-// UI chỉ hiển thị trạng thái AI Gateway.
 setTimeout(async () => {
-  // Hiển thị thông tin trạng thái gateway thay vì API key
   const apiKeyInput = document.getElementById('apiKey');
   const apiKeyLabel = document.querySelector('label[for="apiKey"]');
-  const gatewayStatusEl = document.getElementById('apiStatus');
 
   if (apiKeyInput) {
     apiKeyInput.value = '✔️ Được quản lý server-side qua AI Gateway';
@@ -646,7 +642,7 @@ setTimeout(async () => {
     apiKeyLabel.textContent = 'AI Gateway';
   }
 
-  // Thư kiểm tra kết nối gateway tự động sau 1s
+  // Thử kiểm tra kết nối gateway tự động sau 1s
   setTimeout(() => {
     if (typeof checkAiGatewayStatus === 'function') {
       checkAiGatewayStatus();
@@ -656,13 +652,12 @@ setTimeout(async () => {
 
 
 // ─── PHASE 2: Sync cloud song song ở nền (không block UI) ───────────────
-// Chạy sau 300ms để nhường CPU cho render UI trước
 setTimeout(() => {
   if (typeof OrderStorage === 'undefined' || typeof OrderStorage.syncAllFromCloudParallel !== 'function') return;
   OrderStorage.syncAllFromCloudParallel({
     onApiKeyReady(key) {
-      // Cập nhật API key field nếu cloud có key mới hơn
-      if (key && key !== apiKeyInput.value) {
+      const apiKeyInput = document.getElementById('apiKey');
+      if (key && apiKeyInput && key !== apiKeyInput.value) {
         apiKeyInput.value = key;
         showApiStatus('☁️ API key đã được cập nhật từ cloud.', 'ok');
       }
@@ -671,7 +666,6 @@ setTimeout(() => {
       if (!result || !result.ok) return;
       const newCount = result.newCount || 0;
       if (newCount > 0) {
-        // Có đơn mới từ cloud → reload list và thông báo
         if (typeof loadOrders === 'function') loadOrders();
         if (typeof showQuickToast === 'function') {
           showQuickToast(`☁️ Đã đồng bộ thêm ${newCount} đơn từ cloud`, 'success');
@@ -679,7 +673,6 @@ setTimeout(() => {
       }
     },
     onCustomersReady(meta) {
-      // Customer metadata đã được lưu vào storage, nếu tab customers đang mở thì re-render
       if (!meta) return;
       const customersTab = document.getElementById('tab-customers');
       if (customersTab && customersTab.classList.contains('active') && typeof renderCustomers === 'function') {
@@ -691,23 +684,29 @@ setTimeout(() => {
 
 
 // Lưu Cấu hình AI — chỉ lưu model name để hiển thị
-// P0-04: không còn lưu groqApiKey và đưa lên cloud
-btnSaveApi.addEventListener('click', async () => {
-  const model = apiModelSelect ? apiModelSelect.value : 'llama-3.3-70b-versatile';
-  if (typeof OrderStorage !== 'undefined') {
-    try {
-      await OrderStorage.saveAIConfigs({ groqModelName: model });
-      showApiStatus('💾 Đã lưu cấu hình thành công.', 'ok');
-    } catch (err) {
-      showApiStatus('Lỗi khi lưu: ' + err.message, 'err');
+const btnSaveApi = document.getElementById('btnSaveApi');
+if (btnSaveApi) {
+  btnSaveApi.addEventListener('click', async () => {
+    const apiModelSelect = document.getElementById('apiModel');
+    const model = apiModelSelect ? apiModelSelect.value : 'llama-3.3-70b-versatile';
+    if (typeof OrderStorage !== 'undefined') {
+      try {
+        await OrderStorage.saveAIConfigs({ groqModelName: model });
+        showApiStatus('💾 Đã lưu cấu hình thành công.', 'ok');
+      } catch (err) {
+        showApiStatus('Lỗi khi lưu: ' + err.message, 'err');
+      }
     }
-  }
-});
+  });
+}
 
 // Kiểm tra AI Gateway
-btnTestApi.addEventListener('click', () => {
-  checkAiGatewayStatus();
-});
+const btnTestApi = document.getElementById('btnTestApi');
+if (btnTestApi) {
+  btnTestApi.addEventListener('click', () => {
+    checkAiGatewayStatus();
+  });
+}
 
 
 // =========================================================================
@@ -1058,3 +1057,5 @@ onDOMReady(() => {
         });
     }
 });
+
+})();

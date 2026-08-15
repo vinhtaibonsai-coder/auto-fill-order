@@ -6,10 +6,14 @@
           const lastErr = chrome.runtime.lastError;
           if (lastErr) return;
           const logs = res.errorLogs || [];
+          const safeContext = String(context).replace(/(api_key|gsk_[a-zA-Z0-9]+|Bearer\s+[a-zA-Z0-9\-\._~+\/]+)/g, '[REDACTED_SECRET]');
           logs.unshift({
             timestamp: new Date().toLocaleString('vi-VN'),
             message: String(message),
-            context: String(context)
+            context: safeContext,
+            category: message.includes('AI Gateway') ? 'AI' : 
+                      message.includes('Auth') || message.includes('session') ? 'AUTH' :
+                      message.includes('Sync') || message.includes('Supabase') ? 'SYNC' : 'APP'
           });
           // Limit to 100 logs
           if (logs.length > 100) logs.length = 100;

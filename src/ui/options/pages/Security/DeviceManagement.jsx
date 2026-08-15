@@ -1,17 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { AuthSession } from '../../../../domain/auth/auth.session.js';
 
 export default function DeviceManagement() {
-  const [devices, setDevices] = useState([
-    { id: '1', name: 'Chrome - Windows Staff 01', browser: 'Chrome 127.0', ip: '113.161.40.12', lastActive: 'Vừa xong', isCurrent: true },
-    { id: '2', name: 'Edge - Windows Manager', browser: 'Edge 126.0', ip: '113.161.40.15', lastActive: '2 giờ trước', isCurrent: false },
-    { id: '3', name: 'Chrome - Mac Shop Owner', browser: 'Chrome 127.0', ip: '14.232.18.90', lastActive: 'Hôm qua', isCurrent: false },
-  ]);
+  const [devices, setDevices] = useState([]);
+  const [maxDevices, setMaxDevices] = useState(5);
+  const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState('');
 
-  const maxDevices = 5;
+  useEffect(() => {
+    loadDevices();
+  }, []);
 
-  const handleRevoke = (id) => {
-    if (confirm("Bạn có chắc chắn muốn đăng xuất thiết bị này khỏi Shop?")) {
-      setDevices(prev => prev.filter(d => d.id !== id));
+  const loadDevices = async () => {
+    try {
+      const configRes = await globalThis.SupabaseCloud.loadConfig();
+      const sess = await AuthSession.getSession();
+      if (!sess || !sess.active_shop_id || !sess.access_token) {
+        setIsLoading(false);
+        return;
+      }
+      const headers = {
+        'apikey': configRes.anonKey,
+        'Authorization': `Bearer ${sess.access_token}`
+      };
+
+      const devRes = await fetch(
+        `${configRes.url}/rest/v1/devices?shop_id=eq.${sess.active_shop_id}&select=id,user_id,browser_info,location_ip,last_active,status,created_at`,
+        { headers }
+      );
+      if (devRes.ok) {
+        const rows = await devRes.json();
+        setDevices(rows || []);
+      }
+
+      // Hạn mức từ gói cước (RLS: chỉ OWNER đọc; staff giữ mặc định)
+      try {
+        const subRes = await fetch(
+          `${configRes.url}/rest/v1/subscriptions?shop_id=eq.${sess.active_shop_id}&select=max_devices`,
+          { headers }
+        );
+        if (subRes.ok) {
+          const rows = await subRes.json();
+          if (rows && rows.length > 0 && rows[0].max_devices) setMaxDevices(rows[0].max_devices);
+        }
+      } catch (_) {}
+    } catch (err) {
+      console.error('Lỗi tải thiết bị:', err);
+    }
+    setIsLoading(false);
+  };
+
+  const handleRevoke = async (id) => {
+    if (!confirm("Bạn có chắc chắn muốn đăng xuất thiết bị này khỏi Shop?")) return;
+    try {
+      const configRes = await globalThis.SupabaseCloud.loadConfig();
+      const sess = await AuthSession.getSession();
+      if (!sess || !sess.access_token) return;
+      const res = await fetch(`${configRes.url}/rest/v1/rpc/admin_revoke_device`, {
+        method: 'POST',
+        headers: {
+          'apikey': configRes.anonKey,
+          'Authorization': `Bearer ${sess.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_device_id: id, p_revoked: true })
+      });
+      if (res.ok) {
+        setDevices(prev => prev.filter(d => d.id !== id));
+        setStatus('✅ Đã thu hồi thiết bị.');
+        setTimeout(() => setStatus(''), 3000);
+      } else {
+        const data = await res.json();
+        setStatus('❌ ' + (data.message || 'Không thu hồi được thiết bị.'));
+      }
+    } catch (err) {
+      setStatus('❌ Lỗi: ' + err.message);
+    }
+  };
+
+  const lastActive = (iso) => {
+    if (!iso) return 'Không rõ';
+    try {
+      const diff = Date.now() - new Date(iso).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'Vừa xong';
+      if (mins < 60) return `${mins} phút trước`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours} giờ trước`;
+      return `${Math.floor(hours / 24)} ngày trước`;
+    } catch (_) {
+      return 'Không rõ';
     }
   };
 
@@ -28,35 +106,41 @@ export default function DeviceManagement() {
           Hạn mức: {devices.length} / {maxDevices} thiết bị
         </div>
       </div>
+      {status && <div style={{ marginBottom: '10px', fontSize: '13px', fontWeight: 600 }}>{status}</div>}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {devices.map(device => (
-          <div key={device.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>{device.name}</span>
-                {device.isCurrent && (
-                  <span style={{ background: '#dcfce7', color: '#15803d', fontSize: '10px', padding: '2px 6px', borderRadius: '4px' }}>Thiết bị này</span>
+      {isLoading ? (
+        <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải...</div>
+      ) : devices.length === 0 ? (
+        <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          Chưa có thiết bị nào được liên kết với Shop. Thiết bị sẽ xuất hiện sau khi nhân viên đăng nhập Extension.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {devices.map(device => (
+            <div key={device.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: '#0f172a' }}>
+                  <span>{device.browser_info || 'Trình duyệt không xác định'}</span>
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  IP: {device.location_ip || '—'} • Hoạt động: {lastActive(device.last_active)} • Trạng thái: {device.status || 'ACTIVE'}
+                </div>
+              </div>
+
+              <div>
+                {(device.status || 'ACTIVE').toUpperCase() !== 'REVOKED' && (
+                  <button
+                    onClick={() => handleRevoke(device.id)}
+                    style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                  >
+                    Thu hồi (Revoke)
+                  </button>
                 )}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                {device.browser} • IP: {device.ip} • Hoạt động: {device.lastActive}
-              </div>
             </div>
-
-            <div>
-              {!device.isCurrent && (
-                <button
-                  onClick={() => handleRevoke(device.id)}
-                  style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                >
-                  Thu hồi (Revoke)
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,14 +4,17 @@ import ParseMode from './components/ParseMode';
 import ConfidenceReview from './components/ConfidenceReview';
 import SkeletonReview from './components/SkeletonReview';
 import LoginForm from './components/LoginForm';
+import ParseReview from './components/ParseReview';
 
 export default function App() {
   const [isOpen, setIsOpen] = useState(true);
   const [state, setState] = useState('IDLE'); // IDLE, LOADING, REVIEW, SUCCESS, ERROR, UPGRADE_REQUIRED
   const [parsedData, setParsedData] = useState(null);
+  const [localData, setLocalData] = useState(null);
   const [rawText, setRawText] = useState('');
   const [isAuth, setIsAuth] = useState(false);
   const [session, setSession] = useState(null);
+  const [carrierAccount, setCarrierAccount] = useState('');
 
   const triggerToast = (msg, type = 'info') => {
     if (typeof globalThis.showVnpostToast === 'function') {
@@ -20,6 +23,25 @@ export default function App() {
       console.log(`[Toast] [${type.toUpperCase()}] ${msg}`);
     }
   };
+
+  useEffect(() => {
+    const scanCarrierAccount = () => {
+      let acc = '';
+      if (typeof globalThis.detectCarrierAccount === 'function') {
+        acc = globalThis.detectCarrierAccount();
+      } else if (typeof window !== 'undefined' && window.location.href.includes('vnpost.vn') && globalThis.VNPOST_SELECTORS?.getAccountName) {
+        acc = globalThis.VNPOST_SELECTORS.getAccountName();
+      } else if (typeof window !== 'undefined' && window.location.href.includes('jtexpress.vn') && globalThis.JT_SELECTORS?.getAccountName) {
+        acc = globalThis.JT_SELECTORS.getAccountName();
+      }
+      if (acc) {
+        setCarrierAccount(acc);
+      }
+    };
+    scanCarrierAccount();
+    const interval = setInterval(scanCarrierAccount, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -58,10 +80,8 @@ export default function App() {
     }
 
     const handleOrderSaved = () => {
-      setRawText('');
-      setParsedData(null);
-      triggerToast('💾 Đã ghi nhận và lưu đơn hàng vào Database thành công!', 'success');
-      setState('IDLE');
+      // Giữ nguyên rawText và parsedData trên panel để người dùng xem và đối chiếu trên form hãng
+      triggerToast('💾 Đã lưu thông tin đơn hàng!', 'success');
     };
 
     window.addEventListener('order-saved-db', handleOrderSaved);
@@ -75,10 +95,31 @@ export default function App() {
 
   const handleParse = (text) => {
     setRawText(text);
+    let localParsed = null;
+    try {
+      const parser = window.OrderProcessor || globalThis.OrderProcessor;
+      if (parser && typeof parser.parse === 'function') {
+        localParsed = parser.parse(text);
+      }
+    } catch (e) {
+      console.warn("Local parse error:", e);
+    }
+
+    if (!localParsed) {
+      localParsed = { name: "", phone: "", address: "không tìm thấy", orderCode: "", productItem: "", codAmount: 0, collectFee: false, extraPhones: [], extraNote: "" };
+    }
+
+    setLocalData(localParsed);
+    setParsedData(localParsed);
+    setState('PARSE_REVIEW');
+  };
+
+  const handleConfirmParseReview = (editedData) => {
+    setParsedData(editedData);
     setState('LOADING');
     try {
       if (typeof chrome !== 'undefined' && chrome?.runtime?.id && typeof chrome.runtime.sendMessage === 'function') {
-        chrome.runtime.sendMessage({ action: 'runGroq', text: text, token: session?.access_token }, async (response) => {
+        chrome.runtime.sendMessage({ action: 'runGroq', text: rawText, token: session?.access_token }, async (response) => {
           if (chrome.runtime.lastError || !response || !response.ok) {
             const errMsg = chrome.runtime.lastError?.message || response?.error || '';
             console.error("AI Error:", errMsg);
@@ -102,8 +143,49 @@ export default function App() {
               return;
             }
 
-            triggerToast('❌ Lỗi AI: ' + (errMsg || 'Lỗi mạng hoặc Server không phản hồi.'), 'error');
-            setState('IDLE');
+            // Fallback to local reviewed data if AI fails
+            triggerToast('❌ Lỗi AI: ' + (errMsg || 'Lỗi mạng hoặc Server không phản hồi. Sử dụng dữ liệu trích xuất cục bộ.'), 'warning');
+            
+            let finalAddress = editedData.address;
+            let warning = '';
+            let confidence = 95;
+            let confidenceThreshold = 90;
+            let autoCorrect = true;
+            
+            try {
+              const settings = await new Promise(resolve => {
+                chrome.storage.local.get(['ai_confidence_threshold', 'ai_auto_correct'], r => {
+                  resolve({
+                    confidenceThreshold: r.ai_confidence_threshold !== undefined ? Number(r.ai_confidence_threshold) : 90,
+                    autoCorrect: r.ai_auto_correct !== undefined ? r.ai_auto_correct : true
+                  });
+                });
+              });
+              confidenceThreshold = settings.confidenceThreshold;
+              autoCorrect = settings.autoCorrect;
+            } catch(e){}
+
+            if (autoCorrect && window.AddressEngine && typeof window.AddressEngine.process === 'function' && finalAddress && finalAddress !== 'không tìm thấy') {
+              try {
+                const engResult = await window.AddressEngine.process(finalAddress, editedData.phone || '');
+                if (engResult) {
+                  finalAddress = engResult.fullAddress || finalAddress;
+                  warning = engResult.warning || '';
+                  confidence = engResult.confidence || 95;
+                }
+              } catch (e) {
+                console.warn('[React Panel] Lỗi chạy AddressEngine:', e);
+              }
+            }
+
+            setParsedData({
+              ...editedData,
+              address: finalAddress,
+              warning,
+              confidence,
+              confidenceThreshold
+            });
+            setState('REVIEW');
             return;
           }
           
@@ -112,43 +194,95 @@ export default function App() {
           
           let finalAddress = rawAddress;
           let warning = '';
-          let suggestedAddress = '';
           let confidence = 95;
 
-          // Đọc cấu hình AI thực tế của người dùng từ Chrome Storage
+          // Đọc cấu hình AI thực tế: ưu tiên Cloud (shop_feature_flags), fallback Chrome Storage
+          let confidenceThreshold = 90;
+          let autoCorrect = true;
+          try {
+            if (window.AuthService && window.AuthService.fetchShopFeatureFlags && typeof SupabaseCloud !== 'undefined') {
+              const cloud = await SupabaseCloud.loadConfig();
+              const sess = await window.AuthSession.getSession();
+              if (sess && sess.active_shop_id && sess.access_token && !sess.access_token.startsWith('local_dev_token_')) {
+                const res = await fetch(`${cloud.url}/rest/v1/shop_feature_flags?shop_id=eq.${sess.active_shop_id}&select=ai_confidence_threshold,ai_auto_correct`, {
+                  headers: {
+                    'apikey': cloud.anonKey,
+                    'Authorization': `Bearer ${sess.access_token}`
+                  }
+                });
+                if (res.ok) {
+                  const flags = await res.json();
+                  if (flags && flags.length > 0) {
+                    if (flags[0].ai_confidence_threshold !== null && flags[0].ai_confidence_threshold !== undefined) confidenceThreshold = Number(flags[0].ai_confidence_threshold);
+                    if (flags[0].ai_auto_correct !== null && flags[0].ai_auto_correct !== undefined) autoCorrect = !!flags[0].ai_auto_correct;
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('[React Panel] Không đọc được AI config từ Cloud:', e);
+          }
           const settings = await new Promise(resolve => {
             chrome.storage.local.get(['ai_confidence_threshold', 'ai_auto_correct'], r => {
               resolve({
-                confidenceThreshold: r.ai_confidence_threshold !== undefined ? Number(r.ai_confidence_threshold) : 90,
-                autoCorrect: r.ai_auto_correct !== undefined ? r.ai_auto_correct : true
+                confidenceThreshold: confidenceThreshold !== 90 ? confidenceThreshold
+                  : (r.ai_confidence_threshold !== undefined ? Number(r.ai_confidence_threshold) : 90),
+                autoCorrect: autoCorrect !== true ? autoCorrect
+                  : (r.ai_auto_correct !== undefined ? r.ai_auto_correct : true)
               });
             });
           });
 
+          // MERGE STRATEGY: Preserve user corrections
+          const mergedData = { ...editedData };
+
+          if (editedData.name === localData.name) {
+            mergedData.name = data.name || editedData.name;
+          }
+          if (editedData.phone === localData.phone) {
+            mergedData.phone = data.phone || editedData.phone;
+          }
+          if (editedData.orderCode === localData.orderCode) {
+            mergedData.orderCode = data.orderCode || editedData.orderCode;
+          }
+          if (editedData.extraNote === localData.extraNote) {
+            mergedData.extraNote = data.extraNote || editedData.extraNote;
+          }
+          if (Number(editedData.codAmount) === Number(localData.codAmount)) {
+            mergedData.codAmount = data.codAmount !== undefined ? data.codAmount : editedData.codAmount;
+          }
+          if (editedData.collectFee === localData.collectFee) {
+            mergedData.collectFee = data.collectFee !== undefined ? !!data.collectFee : editedData.collectFee;
+          }
+          if (editedData.productItem === localData.productItem) {
+            mergedData.productItem = data.productItem || editedData.productItem;
+          }
+
+          let addressToProcess = rawAddress;
+          if (editedData.address !== localData.address) {
+            addressToProcess = editedData.address;
+          } else {
+            addressToProcess = rawAddress || editedData.address;
+          }
+
           if (settings.autoCorrect && window.AddressEngine && typeof window.AddressEngine.process === 'function') {
             try {
-              const engResult = await window.AddressEngine.process(rawAddress, data.phone || '');
+              const engResult = await window.AddressEngine.process(addressToProcess, mergedData.phone || '');
               if (engResult) {
-                finalAddress = engResult.fullAddress || rawAddress;
+                finalAddress = engResult.fullAddress || addressToProcess;
                 warning = engResult.warning || '';
                 confidence = engResult.confidence || 95;
-
-                // Đoạn này đã loại bỏ tính năng gợi ý địa chỉ 2 cấp theo yêu cầu của người dùng
               }
             } catch (e) {
               console.warn('[React Panel] Lỗi chạy AddressEngine:', e);
             }
+          } else {
+            finalAddress = addressToProcess;
           }
 
-          // Đã loại bỏ logic fallback gợi ý địa chỉ 2 cấp
-
           setParsedData({
-            name: data.name || '',
-            phone: data.phone || '',
+            ...mergedData,
             address: finalAddress,
-            orderCode: data.orderCode || '',
-            codAmount: data.codAmount || '',
-            extraNote: data.extraNote || '',
             warning: warning,
             confidence: confidence,
             confidenceThreshold: settings.confidenceThreshold
@@ -157,13 +291,32 @@ export default function App() {
         });
       } else {
         setTimeout(() => {
-          setParsedData({ 
+          const mockAi = { 
             name: 'Nguyễn Văn An', 
             phone: '0901234567', 
             address: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
             orderCode: 'DH123456',
             codAmount: 150000,
-            extraNote: 'Ghi chú mẫu'
+            extraNote: 'Ghi chú mẫu',
+            productItem: '5kg đỗ quyên'
+          };
+          
+          const mergedData = { ...editedData };
+          if (editedData.name === localData.name) mergedData.name = mockAi.name;
+          if (editedData.phone === localData.phone) mergedData.phone = mockAi.phone;
+          if (editedData.orderCode === localData.orderCode) mergedData.orderCode = mockAi.orderCode;
+          if (editedData.extraNote === localData.extraNote) mergedData.extraNote = mockAi.extraNote;
+          if (Number(editedData.codAmount) === Number(localData.codAmount)) mergedData.codAmount = mockAi.codAmount;
+          if (editedData.productItem === localData.productItem) mergedData.productItem = mockAi.productItem;
+          
+          let finalAddress = editedData.address !== localData.address ? editedData.address : mockAi.address;
+
+          setParsedData({
+            ...mergedData,
+            address: finalAddress,
+            warning: '',
+            confidence: 95,
+            confidenceThreshold: 90
           }); 
           setState('REVIEW');
         }, 1000);
@@ -201,6 +354,7 @@ export default function App() {
       orderCode: finalData.orderCode || '',
       codAmount: finalData.codAmount || 0,
       extraNote: finalData.extraNote || '',
+      carrierAccount: carrierAccount || finalData.carrierAccount || '',
       defaultGoodsName: defaults.defaultGoodsName,
       defaultWeightVnpost: defaults.defaultWeightVnpost,
       defaultWeightJt: defaults.defaultWeightJt,
@@ -233,8 +387,23 @@ export default function App() {
   }
 
   return (
-    <DraggableCard title="Auto Fill Order" onClose={() => setIsOpen(false)} isAuth={isAuth} session={session}>
+    <DraggableCard 
+      title="Auto Fill Order" 
+      onClose={() => setIsOpen(false)} 
+      isAuth={isAuth} 
+      session={session}
+      carrierAccount={carrierAccount}
+    >
       {isAuth && state === 'IDLE' && <ParseMode onParse={handleParse} />}
+
+      {state === 'PARSE_REVIEW' && (
+        <ParseReview
+          data={parsedData}
+          rawText={rawText}
+          onConfirm={handleConfirmParseReview}
+          onCancel={() => setState('IDLE')}
+        />
+      )}
 
       {state === 'LOADING' && (
         <SkeletonReview rawText={rawText} />

@@ -49,7 +49,6 @@
         "src/domain/auth/auth.service.js",
         "src/domain/permission/permission.service.js",
         "src/application/address/database/data.js",
-        "src/application/address/database/ward_merger.js",
         "src/application/address/normalizer.js",
         "src/application/address/aliases.js",
         "src/application/address/rules.js",
@@ -69,7 +68,7 @@
         "src/infrastructure/utils/debounce.js",
         "frontend/panel/styling/styles.js",
         "frontend/panel/toast/toast.js",
-        "src/ui/panel/index.jsx",
+        "frontend/panel/panel.js",
         "src/runtime/content/index.js"
       ],
       "run_at": "document_end",
@@ -79,11 +78,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "admin-dashboard/admin.html",
-        "frontend/options/options.html",
-        "assets/*"
+        "assets/*",
+        "interceptor.js"
       ],
-      "matches": ["<all_urls>"]
+      "matches": ["*://*.vnpost.vn/*", "*://*.jtgateway.com/*", "*://*.jtexpress.vn/*", "http://localhost/*", "http://127.0.0.1/*"]
     }
   ]
 }

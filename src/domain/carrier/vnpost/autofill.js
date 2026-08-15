@@ -215,19 +215,71 @@
       return true;
     },
 
-    fill(name, phone, address, orderCode, codAmount, collectFee) {
-      // Chọn "Địa chỉ mới"
-      document.querySelectorAll('label, span, input[type="radio"]').forEach(el => {
-        if (el.innerText?.trim() === 'Địa chỉ mới') {
-          const radioClick = el.querySelector('input') || el.closest('label') || el;
-          radioClick.click();
+    async fill(name, phone, address, orderCode, codAmount, collectFee) {
+      // 1. Chọn chế độ "Địa chỉ mới" và đợi DOM render
+      try {
+        const allRadioWrappers = Array.from(document.querySelectorAll('.ant-radio-wrapper, label, span, input[type="radio"]'));
+        for (const el of allRadioWrappers) {
+          const txt = (el.innerText || el.textContent || '').trim();
+          if (/^địa chỉ mới$/i.test(txt) || txt.includes('Địa chỉ mới')) {
+            const radioInput = el.querySelector('input[type="radio"]') || (el.tagName === 'INPUT' ? el : null);
+            const clickTarget = radioInput || el.closest('label') || el;
+            simulateFullClick(clickTarget);
+            if (radioInput && !radioInput.checked) {
+              radioInput.checked = true;
+              radioInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            break;
+          }
         }
-      });
+      } catch (e) {
+        console.warn('Lỗi chọn Địa chỉ mới:', e);
+      }
 
-      let phoneEl = findFieldInput(VNPOST_SELECTORS.phoneLabels, VNPOST_SELECTORS.phoneFallbacks);
-      let nameEl  = findFieldInput(VNPOST_SELECTORS.nameLabels,  VNPOST_SELECTORS.nameFallbacks);
-      let addrEl  = findFieldInput(VNPOST_SELECTORS.addressLabels, VNPOST_SELECTORS.addressFallbacks, true);
-      let noteEl  = findFieldInput(VNPOST_SELECTORS.noteLabels,  VNPOST_SELECTORS.noteFallbacks, true);
+      // Đợi ngắn để React render các trường nhập liệu của "Địa chỉ mới"
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      let phoneEl = document.querySelector('#form-create-order_receiverPhone') ||
+                    document.querySelector('input#receiverPhone') ||
+                    findFieldInput(VNPOST_SELECTORS.phoneLabels, VNPOST_SELECTORS.phoneFallbacks);
+      let nameEl  = document.querySelector('#form-create-order_receiverName') ||
+                    document.querySelector('input#receiverName') ||
+                    findFieldInput(VNPOST_SELECTORS.nameLabels,  VNPOST_SELECTORS.nameFallbacks);
+      
+      // Tìm chính xác ô nhập địa chỉ mới (#form-create-order_receiverAddress / Địa chỉ chi tiết / Số nhà, đường...)
+      let addrEl = document.querySelector('#form-create-order_receiverAddress') ||
+                   document.querySelector('input#form-create-order_receiverAddress') ||
+                   document.querySelector('input[placeholder="Địa chỉ chi tiết"]') ||
+                   document.querySelector('input[placeholder*="Địa chỉ chi tiết" i]');
+      
+      if (!addrEl) {
+        const addrCandidates = Array.from(document.querySelectorAll('textarea, input')).filter(el => {
+          if (el.type === 'hidden' || el.type === 'radio' || el.type === 'checkbox' || el.disabled) return false;
+          const ph = (el.placeholder || '').toLowerCase();
+          const nm = (el.name || '').toLowerCase();
+          const id = (el.id || '').toLowerCase();
+          const lbl = (el.closest('.ant-form-item')?.querySelector('label')?.innerText || '').toLowerCase();
+          return (
+            id.includes('receiveraddress') || nm.includes('receiveraddress') ||
+            ph.includes('địa chỉ chi tiết') || ph.includes('số nhà') || ph.includes('địa chỉ') ||
+            lbl.includes('địa chỉ chi tiết') || lbl.includes('địa chỉ mới')
+          );
+        });
+
+        if (addrCandidates.length > 0) {
+          addrEl = addrCandidates.find(el => {
+            const container = (el.closest('.ant-card, .ant-form, div')?.innerText || '').toLowerCase();
+            return !container.includes('người gửi') || container.includes('người nhận');
+          }) || addrCandidates[0];
+        }
+      }
+
+      if (!addrEl) {
+        addrEl = findFieldInput(VNPOST_SELECTORS.addressLabels, VNPOST_SELECTORS.addressFallbacks, true);
+      }
+      let noteEl  = document.querySelector('#form-create-order_receiverNote') ||
+                    document.querySelector('#form-create-order_note') ||
+                    findFieldInput(VNPOST_SELECTORS.noteLabels,  VNPOST_SELECTORS.noteFallbacks, true);
 
       if (phone) {
         const cleanPhone = phone.replace(/[^0-9]/g, '');

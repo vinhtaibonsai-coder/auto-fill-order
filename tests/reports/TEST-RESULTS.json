@@ -37,7 +37,7 @@
     {
       "name": "test_configs has blacklist_phones as array",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "urls config exists",
@@ -171,7 +171,7 @@
     {
       "name": "File exists: database/migrations/v4_saas_architecture.sql",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: database/migrations/v5_master_admin_schema.sql",
@@ -186,7 +186,7 @@
     {
       "name": "Migration database/migrations/v3_enterprise_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "Migration database/migrations/v3_1_rbac_schema.sql contains required keywords",
@@ -230,7 +230,7 @@
       "name": "shop.service.js has CRUD operations",
       "status": "❌ FAIL",
       "error": "ENOENT: no such file or directory, open 'D:\\WEBAPP\\ODER AUTO FILL\\src\\backend\\shop\\shop.service.js'",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "audit.service.js logs actions",
@@ -256,14 +256,14 @@
     {
       "name": "No hardcoded passwords in source code",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "3ms"
     },
     {
       "name": "manifest.json has minimum permissions",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     }
   ],
-  "startTime": "2026-08-08T06:58:51.599Z",
-  "endTime": "2026-08-08T06:58:51.668Z"
+  "startTime": "2026-08-14T00:07:20.956Z",
+  "endTime": "2026-08-14T00:07:21.079Z"
 }

@@ -9,7 +9,7 @@
       const cached = await AddressLearning.lookup(rawAddress, phone);
       if (cached) {
         const match = cached.match;
-        const ruledMatch = typeof AddressRules !== 'undefined' ? AddressRules.applyRules(match) : match;
+        const ruledMatch = typeof AddressRules !== 'undefined' ? await AddressRules.applyRules(match) : match;
         return {
           street: ruledMatch.street || match.street || "",
           ward: ruledMatch.ward || match.ward || "",
@@ -26,11 +26,11 @@
       // 2. Chuẩn hóa chuỗi địa chỉ
       let normalized = AddressNormalizer.normalize(rawAddress);
 
-      // 3. Phân tích địa chỉ cục bộ (Fuzzy Match & Database Lookup)
+      // 3. Phân tích địa chỉ các bộ (Fuzzy Match & Database Lookup)
       let parsed = AddressParser.parse(normalized);
 
       // 4. Áp dụng quy tắc địa lý (Sáp nhập 2025, đặc thù quận/huyện)
-      let ruled = AddressRules.applyRules(parsed);
+      let ruled = await AddressRules.applyRules(parsed);
       ruled.confidence = parsed.confidence;
 
       // 5. Xác thực phân cấp hành chính

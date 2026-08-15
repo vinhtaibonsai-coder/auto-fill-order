@@ -24,6 +24,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
   });
   
   const [currentText, setCurrentText] = useState(rawText || '');
+  const [showRawText, setShowRawText] = useState(true);
 
   useEffect(() => {
     setFormData({
@@ -52,47 +53,59 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
   return (
     <div className="af-panel-content">
       {/* Raw text input area for editing and re-parsing */}
-      <textarea 
-        placeholder="Dán thông tin đơn hàng thô vào đây...&#10;(Ctrl+Enter để tách nhanh)"
-        value={currentText}
-        onChange={e => setCurrentText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.ctrlKey && e.key === 'Enter') {
-            e.preventDefault();
-            if (currentText.trim()) onParse(currentText);
-          }
-        }}
-      />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: '8px' }}>
-        <button 
-          className="af-btn-primary" 
-          onClick={() => onParse(currentText)}
-          disabled={!currentText.trim()}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Zap size={14} /></span> Tách Đơn
-        </button>
-        <button 
-          className="af-btn-primary" 
-          style={{ background: '#3b82f6' }}
-          onClick={async () => {
-            try {
-              const clipText = await navigator.clipboard.readText();
-              if (clipText) setCurrentText(clipText);
-            } catch (err) {
-              console.warn("Lỗi dán:", err);
-            }
-          }}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}><ClipboardPaste size={14} /></span> Dán
-        </button>
-        <button className="af-btn-delete" onClick={() => { setCurrentText(''); onCancel(); }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Trash2 size={14} /></span> Xóa
-        </button>
-      </div>
+      {showRawText && (
+        <>
+          <textarea 
+            placeholder="Dán thông tin đơn hàng thô vào đây...&#10;(Ctrl+Enter để tách nhanh)"
+            value={currentText}
+            onChange={e => setCurrentText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (currentText.trim()) onParse(currentText);
+              }
+            }}
+          />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: '8px' }}>
+            <button 
+              className="af-btn-primary" 
+              onClick={() => onParse(currentText)}
+              disabled={!currentText.trim()}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}><Zap size={14} /></span> Tách Đơn
+            </button>
+            <button 
+              className="af-btn-primary" 
+              style={{ background: '#3b82f6' }}
+              onClick={async () => {
+                try {
+                  const clipText = await navigator.clipboard.readText();
+                  if (clipText) setCurrentText(clipText);
+                } catch (err) {
+                  console.warn("Lỗi dán:", err);
+                }
+              }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}><ClipboardPaste size={14} /></span> Dán
+            </button>
+            <button className="af-btn-delete" onClick={() => { setCurrentText(''); setShowRawText(false); onCancel(); }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}><Trash2 size={14} /></span> Xóa
+            </button>
+          </div>
+        </>
+      )}
 
       <div style={{ border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px', marginTop: '4px' }}>
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: '12px' }}>
-          PHÂN TÍCH DỮ LIỆU <span style={{ textTransform: 'none', fontWeight: 400 }}>(bấm vào ô để sửa nếu sai)</span>
+        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>PHÂN TÍCH DỮ LIỆU <span style={{ textTransform: 'none', fontWeight: 400 }}>(bấm vào ô để sửa nếu sai)</span></span>
+          {!showRawText && (
+            <button 
+              onClick={() => setShowRawText(true)}
+              style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '10px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Hiển thị văn bản gốc
+            </button>
+          )}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
@@ -184,7 +197,7 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <button className="af-btn-fill" onClick={handleConfirm}>
+        <button id="btnFillForm" className="af-btn-fill" onClick={handleConfirm}>
           <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowDownToLine size={14} /></span> Nhập đơn
         </button>
         <button className="af-btn-save" onClick={() => {

@@ -1,22 +1,9 @@
-# Dependencies
-node_modules/
-.pnpm-store/
-
-# Build outputs
-dist/
-dist-zip/
-
-# Environment & Secrets
-.env
+node_modules
 .env.local
-.env.*.local
-
-# IDE & Logs
-.vscode/
-.idea/
-*.log
-.code-review-graph/
-.agents/
-.claude/
 .gemini/
-spec-kit/
+.claude/
+.agents/
+.vscode/
+scratch/
+dist/
+*.log

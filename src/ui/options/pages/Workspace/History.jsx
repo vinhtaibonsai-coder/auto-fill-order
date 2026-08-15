@@ -11,8 +11,8 @@ export default function History() {
   const loadHistory = () => {
     setLoading(true);
     if (chrome && chrome.storage) {
-      chrome.storage.local.get(['af_parse_history'], (res) => {
-        setHistoryLogs(res.af_parse_history || []);
+      chrome.storage.local.get(['splitHistory'], (res) => {
+        setHistoryLogs(res.splitHistory || []);
         setLoading(false);
       });
     } else {
@@ -23,7 +23,7 @@ export default function History() {
   const clearHistory = () => {
     if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tách đơn?')) return;
     if (chrome && chrome.storage) {
-      chrome.storage.local.set({ 'af_parse_history': [] }, () => {
+      chrome.storage.local.set({ 'splitHistory': [] }, () => {
         setHistoryLogs([]);
         alert('Đã xóa lịch sử!');
       });
@@ -60,7 +60,7 @@ export default function History() {
               {historyLogs.map((log, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid var(--border)', verticalAlign: 'top' }}>
                   <td style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {new Date(log.timestamp).toLocaleString('vi-VN')}
+                    {new Date(log.createdAt).toLocaleString('vi-VN')}
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: '13px', maxWidth: '300px', whiteSpace: 'pre-wrap' }}>
                     {log.rawText}

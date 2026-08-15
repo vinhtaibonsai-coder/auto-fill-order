@@ -33,7 +33,7 @@
     return new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout sau ${ms}ms`)), ms));
   }
 
-  export const OrderStorage = {
+  const OrderStorage = {
     isExtensionAvailable() {
       return typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local;
     },
@@ -238,7 +238,27 @@
       const activeShop = await this.getActiveShop();
       const activeShopId = activeShop ? String(activeShop.id || activeShop) : null;
       const rawOrders = await this._getOrdersFromLocal();
-      const orders = rawOrders.filter(o => o && String(o.shopId || '') === (activeShopId || ''));
+      const orders = rawOrders.filter(o => {
+        if (!o) return false;
+        const sId = String(o.shopId || '');
+        const aId = String(activeShopId || '');
+        return sId === aId || sId === '' || sId.startsWith('shop_') || aId === '';
+      });
+      // Tự động gán lại shopId đúng cho các đơn chưa chuẩn
+      let changed = false;
+      orders.forEach(o => {
+        const sId = String(o.shopId || '');
+        const aId = String(activeShopId || '');
+        if (aId && aId !== '' && !aId.startsWith('shop_') && (sId === '' || sId.startsWith('shop_'))) {
+          o.shopId = aId;
+          changed = true;
+        }
+      });
+      if (changed) {
+        // Chỉ lưu lại ở background, không await để tránh chặn flow
+        this._saveOrdersToLocal(rawOrders).catch(() => {});
+      }
+      
       this._ordersCache = orders;
       this._ordersCacheTime = Date.now();
       return orders;
@@ -841,10 +861,9 @@
       const mergedList = Array.from(uniqueMap.values());
       return mergedList.filter(o => {
         if (!o) return false;
-        if (!activeShopId || activeShopId === 'shop_default' || activeShopId === 'default_shop') {
-          return !o.shopId || String(o.shopId) === 'shop_default' || String(o.shopId) === 'default_shop' || String(o.shopId) === activeShopId;
-        }
-        return String(o.shopId || '') === activeShopId || !o.shopId;
+        const sId = String(o.shopId || '');
+        const aId = String(activeShopId || '');
+        return sId === aId || sId === '' || sId.startsWith('shop_') || aId === '';
       });
     },
 
@@ -1116,8 +1135,13 @@
                       isDefault: true,
                       createdAt: s.created_at
                     }));
-                    resolve(formattedCloud);
-                    return;
+                      if (this.isExtensionAvailable()) {
+                        chrome.storage.local.set({ [shopsKey]: formattedCloud }, () => {});
+                      } else {
+                        localStorage.setItem(shopsKey, JSON.stringify(formattedCloud));
+                      }
+                      resolve(formattedCloud);
+                      return;
                   }
                 } catch (_) {}
               }
@@ -1193,6 +1217,24 @@
       if (!allowedShops || allowedShops.length === 0) return null;
 
       const activeShopKey = await this._getActiveShopKey();
+
+      if (typeof AuthSession !== 'undefined') {
+        try {
+          const sId = await AuthSession.getActiveShop();
+          if (sId) {
+            const found = allowedShops.find(s => String(s.id) === String(sId));
+            if (found) {
+              if (this.isExtensionAvailable()) {
+                chrome.storage.local.set({ [activeShopKey]: String(sId) }, () => {});
+              } else {
+                localStorage.setItem(activeShopKey, String(sId));
+              }
+              return found;
+            }
+          }
+        } catch (_) {}
+      }
+
       let activeId = null;
       if (this.isExtensionAvailable()) {
         activeId = await new Promise(res => chrome.storage.local.get([activeShopKey], r => res(r ? r[activeShopKey] : null)));

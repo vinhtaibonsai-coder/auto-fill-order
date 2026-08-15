@@ -1,8 +1,7 @@
 // ward_merger.js - Bản đồ sáp nhập Phường/Xã 2025 (từ Quyết định 19/2025/QĐ-TTg)
 // Nguồn chính thức: https://github.com/dvhcvn/20250701 (merges.json)
 // Tích hợp dữ liệu cũ + mới, chuẩn hoá tất cả 34 tỉnh thành. Tổng: 31223 entries
-(() => {
-  const WARD_MERGER_MAP = {
+export const WARD_MERGER_MAP = {
     "- (Quảng Ninh)": { ward: "Xã Hải Hòa", province: "Quảng Ninh" },
     "- (Thành phố Hải Phòng)": { ward: "Xã Đường An", province: "Thành phố Hải Phòng" },
     "- (Tây Ninh)": { ward: "Xã Trà Vong", province: "Tây Ninh" },
@@ -31175,7 +31174,7 @@
 
   };
 
-  const WARD_MERGER_INDEX = {
+export const WARD_MERGER_INDEX = {
     "ac khu con dao": ["huyen con dao"],
     "dac khu bach long vi": ["huyen bach long vi", "huyen bach long vi (hai phong)"],
     "dac khu cat hai": ["thi tran cat ba", "thi tran cat ba (hai phong)", "thi tran cat hai", "thi tran cat hai (hai phong)", "xa dong bai", "xa dong bai (hai phong)", "xa gia luan", "xa gia luan (hai phong)", "xa hien hao", "xa hien hao (hai phong)", "xa hoang chau", "xa hoang chau (hai phong)", "xa nghia lo (hai phong)", "xa phu long", "xa phu long (hai phong)", "xa tran chau", "xa tran chau (hai phong)", "xa van phong", "xa van phong (hai phong)", "xa viet hai", "xa viet hai (hai phong)", "xa xuan dam", "xa xuan dam (hai phong)"],
@@ -34071,6 +34070,5 @@
     "xa yet kieu": ["Xã Lê Lợi (huyện Gia Lộc)", "Xã Thống Nhất (huyện Gia Lộc)", "Xã Yết Kiêu (huyện Gia Lộc)", "xa le loi (hai phong)", "xa thong nhat (hai phong)", "xa yet kieu (hai phong)"],
   };
 
-  globalThis.WARD_MERGER_MAP = WARD_MERGER_MAP;
-  globalThis.WARD_MERGER_INDEX = WARD_MERGER_INDEX;
-})();
+
+
