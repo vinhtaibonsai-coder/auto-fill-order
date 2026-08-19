@@ -575,16 +575,19 @@
             globalThis.parsedDataStore.createdAt = saved.createdAt;
           }
 
+          // Khi lưu đơn, cào lại DOM để ưu tiên giá trị người dùng vừa sửa trực tiếp trên form VNPost/J&T
+          const latestDom = scrapeOrderFromDOM(platform);
+
           const submittedOrder = {
             id: 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-            name: saved.name || orderToSave.name || '',
-            phone: saved.phone || orderToSave.phone || '',
-            address: saved.address || orderToSave.address || '',
-            orderCode: saved.orderCode || orderToSave.orderCode || '',
-            codAmount: saved.codAmount || orderToSave.codAmount || 0,
-            collectFee: saved.collectFee || orderToSave.collectFee || false,
+            name: latestDom.name || saved.name || orderToSave.name || '',
+            phone: latestDom.phone || saved.phone || orderToSave.phone || '',
+            address: latestDom.address || saved.address || orderToSave.address || '',
+            orderCode: latestDom.orderCode || saved.orderCode || orderToSave.orderCode || '',
+            codAmount: latestDom.codAmount !== undefined && latestDom.codAmount > 0 ? latestDom.codAmount : (saved.codAmount || orderToSave.codAmount || 0),
+            collectFee: latestDom.collectFee || saved.collectFee || orderToSave.collectFee || false,
             platform: platform || '',
-            extraNote: saved.extraNote || orderToSave.extraNote || '',
+            extraNote: latestDom.extraNote || saved.extraNote || orderToSave.extraNote || '',
             carrierAccount: saved.carrierAccount || orderToSave.carrierAccount || detectCarrierAccount(platform) || '',
             trackingCode: trackingCode || '',
             savedOrderId: saved.id
@@ -1330,31 +1333,105 @@
 
   // ─── TÁCH HÀM SCRAPE DOM RA PHẠM VI TOÀN CỤC ĐỂ TÁI SỬ DỤNG ───
   function scrapeOrderFromDOM(plat) {
-    let name = '', phone = '', address = '', orderCode = '', codAmount = 0, collectFee = false, carrierAccount = '';
+    let name = '', phone = '', address = '', orderCode = '', codAmount = 0, collectFee = false, carrierAccount = '', productItem = '', extraNote = '';
     try {
       carrierAccount = detectCarrierAccount(plat);
-      if (plat === 'vnpost' && globalThis.VNPOST_SELECTORS) {
-        const sel = globalThis.VNPOST_SELECTORS;
-        const phoneEl = document.querySelector('#form-create-order_receiverPhone') || (globalThis.findFieldInput ? globalThis.findFieldInput(sel.phoneLabels, sel.phoneFallbacks) : document.querySelector('input#receiverPhone') || document.querySelector('input[placeholder*="SĐT" i]'));
-        const nameEl = document.querySelector('#form-create-order_receiverName') || (globalThis.findFieldInput ? globalThis.findFieldInput(sel.nameLabels, sel.nameFallbacks) : document.querySelector('input#receiverName') || document.querySelector('input[placeholder*="Tên" i]'));
-        const addrEl = document.querySelector('#form-create-order_receiverAddress') || document.querySelector('input[placeholder="Địa chỉ chi tiết"]') || (globalThis.findFieldInput ? globalThis.findFieldInput(sel.addressLabels, sel.addressFallbacks, true) : document.querySelector('textarea#receiverAddress') || document.querySelector('input[placeholder*="Địa chỉ" i]'));
-        const codEl = globalThis.findFieldInput ? globalThis.findFieldInput([/Phát hàng thu tiền COD/i, /Thu tiền COD/i], sel.codInputFallbacks) : document.querySelector('input.ant-input-number-input') || document.querySelector('input[name="PROP0018"]');
+      if (plat === 'vnpost') {
+        const sel = globalThis.VNPOST_SELECTORS || {};
 
-        if (phoneEl) phone = phoneEl.value || '';
-        if (nameEl) name = nameEl.value || '';
-        if (addrEl) address = addrEl.value || '';
-        let noteEl = globalThis.findFieldInput ? globalThis.findFieldInput(sel.noteLabels, sel.noteFallbacks, true) : document.querySelector('textarea#receiverNote') || document.querySelector('textarea[placeholder*="Nội dung" i]');
-        if (noteEl && noteEl.value) {
-          const match = noteEl.value.match(/Đơn hàng:\s*([A-Z0-9.\-_]+)/i);
-          if (match) orderCode = match[1];
+        // 1. Số điện thoại người nhận
+        const phoneEl = document.querySelector('#form-create-order_receiverPhone') ||
+                        document.querySelector('input#receiverPhone') ||
+                        document.querySelector('input[placeholder*="SĐT" i]') ||
+                        document.querySelector('input[placeholder*="Số điện thoại" i]') ||
+                        (globalThis.findFieldInput ? globalThis.findFieldInput(sel.phoneLabels, sel.phoneFallbacks) : null);
+        if (phoneEl && phoneEl.value) phone = phoneEl.value.trim();
+
+        // 2. Tên người nhận
+        const nameEl = document.querySelector('#form-create-order_receiverName') ||
+                       document.querySelector('input#receiverName') ||
+                       document.querySelector('input[placeholder*="Tên" i]') ||
+                       document.querySelector('input[placeholder*="Họ và tên" i]') ||
+                       (globalThis.findFieldInput ? globalThis.findFieldInput(sel.nameLabels, sel.nameFallbacks) : null);
+        if (nameEl && nameEl.value) name = nameEl.value.trim();
+
+        // 3. Địa chỉ người nhận
+        const addrEl = document.querySelector('#form-create-order_receiverAddress') ||
+                       document.querySelector('input#receiverAddress') ||
+                       document.querySelector('input[placeholder="Địa chỉ chi tiết"]') ||
+                       document.querySelector('input[placeholder*="Địa chỉ chi tiết" i]') ||
+                       document.querySelector('textarea#receiverAddress') ||
+                       (globalThis.findFieldInput ? globalThis.findFieldInput(sel.addressLabels, sel.addressFallbacks, true) : null);
+        if (addrEl && addrEl.value) address = addrEl.value.trim();
+
+        // 4. Mã đơn hàng của Shop (Trực tiếp từ ô nhập trên VNPost)
+        const orderCodeEl = document.querySelector('#form-create-order_customerOrderCode') ||
+                            document.querySelector('#form-create-order_orderCode') ||
+                            document.querySelector('input#customerOrderCode') ||
+                            document.querySelector('input#orderCode') ||
+                            document.querySelector('input[placeholder*="mã đơn" i]') ||
+                            document.querySelector('input[placeholder*="Mã đơn" i]') ||
+                            document.querySelector('input[placeholder*="Mã khách hàng" i]');
+        if (orderCodeEl && orderCodeEl.value && orderCodeEl.value.trim()) {
+          orderCode = orderCodeEl.value.trim();
         }
+
+        // 5. Tên hàng hóa / Nội dung hàng hóa
+        const goodsEl = document.querySelector('#form-create-order_goodsName') ||
+                        document.querySelector('#form-create-order_itemName') ||
+                        document.querySelector('#form-create-order_productName') ||
+                        document.querySelector('input[placeholder*="tên hàng" i]') ||
+                        document.querySelector('input[placeholder*="Tên hàng" i]') ||
+                        document.querySelector('input[placeholder*="nội dung hàng" i]') ||
+                        document.querySelector('input[placeholder*="Nội dung hàng" i]') ||
+                        document.querySelector('textarea[placeholder*="nội dung hàng" i]');
+        if (goodsEl && goodsEl.value && goodsEl.value.trim()) {
+          productItem = goodsEl.value.trim();
+          // Nếu chưa có orderCode mà ô nội dung/hàng hóa có mã (vd: E80.290 hoặc Mã: ...)
+          if (!orderCode) {
+            const match = productItem.match(/(?:mã|đơn|đh|dh)[:\s\-]*([A-Za-z0-9.\-_]{2,25})/i) ||
+                          productItem.match(/\b([A-Za-z][0-9]{1,4}[\.-][0-9]{1,6}|DH[-_]?[0-9]{3,10}|[A-Za-z]{1,5}[-_]?[0-9]{2,10})\b/i);
+            if (match && match[1]) orderCode = match[1].trim();
+          }
+        }
+
+        // 6. Ghi chú chuyển phát
+        const noteEl = document.querySelector('#form-create-order_receiverNote') ||
+                       document.querySelector('#form-create-order_note') ||
+                       document.querySelector('textarea#receiverNote') ||
+                       document.querySelector('textarea[placeholder*="Ghi chú" i]') ||
+                       (globalThis.findFieldInput ? globalThis.findFieldInput(sel.noteLabels, sel.noteFallbacks, true) : null);
+        if (noteEl && noteEl.value && noteEl.value.trim()) {
+          extraNote = noteEl.value.trim();
+          if (!orderCode) {
+            const match = extraNote.match(/(?:mã\s*đơn|đơn\s*hàng|mã|đh|dh)[:\s\-]*([A-Za-z0-9.\-_]{2,25})/i) ||
+                          extraNote.match(/\b([A-Za-z][0-9]{1,4}[\.-][0-9]{1,6}|DH[-_]?[0-9]{3,10})\b/i);
+            if (match && match[1]) orderCode = match[1].trim();
+          }
+        }
+
+        // 7. Tiền thu hộ COD
+        const codEl = document.querySelector('input.ant-input-number-input') ||
+                      document.querySelector('input[name="PROP0018"]') ||
+                      document.querySelector('input[name*="COD" i]') ||
+                      (globalThis.findFieldInput ? globalThis.findFieldInput([/Phát hàng thu tiền COD/i, /Thu tiền COD/i], sel.codInputFallbacks) : null);
+        if (codEl && codEl.value) {
+          codAmount = parseInt(codEl.value.replace(/\D/g, ''), 10) || 0;
+        }
+
+        // 8. Thu phí ship
+        const shipFeeBox = document.querySelector('input.ant-checkbox-input[aria-label*="cước" i]') ||
+                           document.querySelector('input.ant-checkbox-input');
+        if (shipFeeBox) collectFee = !!shipFeeBox.checked;
+
       } else if (plat === 'jt') {
-        const phoneEl = document.querySelector('input[placeholder="Nhập số điện thoại"]');
-        const nameEl = document.querySelector('input[placeholder="Nhập tên người nhận"]');
-        const addrEl = document.querySelector('input[placeholder="Nhập địa chỉ (Số nhà/ đường/ ngõ/ tòa nhà...)"]') || document.querySelector('input[placeholder*="Số nhà/ đường/ ngõ"]') || document.querySelector('input[placeholder*="địa chỉ"]');
+        const phoneEl = document.querySelector('input[placeholder*="số điện thoại" i]');
+        const nameEl = document.querySelector('input[placeholder*="tên người nhận" i]');
+        const addrEl = document.querySelector('input[placeholder*="địa chỉ" i]') || document.querySelector('input[placeholder*="Số nhà/ đường/ ngõ"]');
         const orderCodeEl = document.querySelector('input[placeholder*="Mã đơn" i]') || document.querySelector('input[placeholder*="Mã tham chiếu" i]');
-        let codInp = document.querySelector('input[placeholder="Nhập số tiền..."]') || document.querySelector('input[placeholder="Nhập số tiền"]') || document.querySelector('#money');
+        const goodsInp = document.querySelector('textarea[placeholder*="tên sản phẩm" i]') || document.querySelector('input[placeholder*="tên sản phẩm" i]');
         
+        let codInp = document.querySelector('input[placeholder*="Nhập số tiền" i]') || document.querySelector('#money');
         if (!codInp) {
           document.querySelectorAll('.el-form-item').forEach(item => {
             const labelText = (item.innerText || '').trim();
@@ -1365,16 +1442,17 @@
           });
         }
 
-        if (phoneEl) phone = phoneEl.value || '';
-        if (nameEl) name = nameEl.value || '';
-        if (addrEl) address = addrEl.value || '';
-        if (orderCodeEl) orderCode = orderCodeEl.value || '';
+        if (phoneEl && phoneEl.value) phone = phoneEl.value.trim();
+        if (nameEl && nameEl.value) name = nameEl.value.trim();
+        if (addrEl && addrEl.value) address = addrEl.value.trim();
+        if (orderCodeEl && orderCodeEl.value) orderCode = orderCodeEl.value.trim();
+        if (goodsInp && goodsInp.value) productItem = goodsInp.value.trim();
         if (codInp && codInp.value) codAmount = parseInt(codInp.value.replace(/\D/g, ''), 10) || 0;
       }
     } catch (e) {
       console.warn('Lỗi khi cào dữ liệu từ DOM:', e);
     }
-    return { name, phone, address, orderCode, codAmount, collectFee, carrierAccount };
+    return { name, phone, address, orderCode, productItem, extraNote, codAmount, collectFee, carrierAccount };
   }
 
   // ─── NHÚNG INTERCEPTOR VÀ LẮNG NGHE TẠO ĐƠN (GÕ TAY) ───
