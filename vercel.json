@@ -1,18 +1,11 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    {
-      "source": "/admin/:path*",
-      "destination": "/admin-dashboard/admin.html"
-    },
-    {
-      "source": "/admin",
-      "destination": "/admin-dashboard/admin.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+  "buildCommand": null,
+  "outputDirectory": "admin-dashboard",
+  "cleanUrls": true,
+  "routes": [
+    { "src": "/login", "dest": "/login.html" },
+    { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/dashboard", "dest": "/index.html" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }

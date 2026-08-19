@@ -3,1191 +3,929 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auto Fill Order - Quản lý Đơn Hàng & Khách Hàng</title>
-
-  <!-- Google Fonts -->
+  <title>Shop Owner Command Center - Auto Fill Order System</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Tailwind CSS CDN & Config -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Phosphor Icons CDN -->
+  <link rel="stylesheet" href="options.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --tw-bg: #F4F6F9;
-      --tw-card: #FFFFFF;
-      --tw-text: #1F2937;
-      --tw-border: #E3E8EF;
-      --tw-primary: #10B981;
-      --tw-primary-light: rgba(16, 185, 129, 0.12);
-      --tw-primary-hover: #059669;
+      --primary: #4F46E5;
+      --primary-dark: #4338CA;
+      --primary-light: #EEF2FF;
+      --primary-glow: rgba(79, 70, 229, 0.2);
     }
-    html.dark {
-      --tw-bg: #0B1220;
-      --tw-card: #131C2E;
-      --tw-text: #E5EAF3;
-      --tw-border: rgba(148, 163, 184, 0.16);
-      --tw-primary: #34D399;
-      --tw-primary-light: rgba(52, 211, 153, 0.14);
-      --tw-primary-hover: #10B981;
+    body.dark-mode {
+      --primary: #818CF8;
+      --primary-dark: #6366F1;
+      --primary-light: rgba(99, 102, 241, 0.15);
     }
-
-    body {
-      font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .font-mono-code {
-      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.25); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.45); }
-
-    /* Card surface */
-    .glass-card {
-      background: var(--tw-card);
-      border: 1px solid var(--tw-border);
-      border-radius: 0.75rem;
-      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-    }
-
-    /* Inputs */
-    .glass-input {
-      background: var(--tw-card);
-      border: 1px solid var(--tw-border);
-      color: var(--tw-text);
-      width: 100%;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.5rem;
-      font-size: 0.75rem;
-      outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .glass-input::placeholder { color: rgba(100, 116, 139, 0.6); }
-    .glass-input:focus {
-      border-color: var(--tw-primary) !important;
-      box-shadow: 0 0 0 3px var(--tw-primary-light) !important;
-    }
-    html.dark .glass-input {
-      background: rgba(255, 255, 255, 0.04);
-    }
-    select.glass-input option { background: var(--tw-card); color: var(--tw-text); }
-
-    /* Pastel surfaces used by JS-rendered rows */
-    .pastel-blue { background: #E5F1FB; }
-    .pastel-rose { background: #FFE8EA; }
-    .pastel-green { background: #E4F4EA; }
-    html.dark .pastel-blue { background: rgba(56, 189, 248, 0.12); }
-    html.dark .pastel-rose { background: rgba(244, 63, 94, 0.12); }
-    html.dark .pastel-green { background: rgba(52, 211, 153, 0.12); }
-
-    /* Avatar circle */
-    .avatar-text {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 9999px;
-      background: var(--tw-primary);
+    .owner-badge {
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
       color: #FFFFFF;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
     }
-
-    /* Base button */
-    .btn {
+    .status-online {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.375rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.5rem 0.875rem;
-      border-radius: 0.5rem;
-      border: 1px solid transparent;
-      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
-      cursor: pointer;
-      white-space: nowrap;
+      gap: 6px;
+      color: #10B981;
+      font-size: 11px;
+      font-weight: 700;
     }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-primary { background: var(--tw-primary); color: #FFFFFF; }
-    .btn-primary:hover { background: var(--tw-primary-hover); }
-    .btn-outline { background: var(--tw-card); border-color: var(--tw-border); color: var(--tw-text); }
-    .btn-outline:hover { background: var(--tw-primary-light); border-color: var(--tw-primary); color: var(--tw-primary-hover); }
-    .btn-danger { background: rgba(244, 63, 94, 0.1); border-color: rgba(244, 63, 94, 0.25); color: #E11D48; }
-    .btn-danger:hover { background: rgba(244, 63, 94, 0.18); }
-
-    /* Table header style */
-    .table-head th {
+    .status-online::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #10B981;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    .status-offline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #94A3B8;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .status-offline::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #94A3B8;
+      border-radius: 50%;
+    }
+    .quick-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .badge-vnpost {
+      background: #FEF3C7;
+      color: #B45309;
+      font-weight: 700;
+      border: 1px solid #FDE68A;
+    }
+    .badge-jt {
+      background: #FEE2E2;
+      color: #DC2626;
+      font-weight: 700;
+      border: 1px solid #FECACA;
+    }
+    .badge-vip {
+      background: #FEF9C3;
+      color: #854D0E;
+      font-weight: 700;
+      border: 1px solid #FEF08A;
+    }
+    .badge-blacklist {
+      background: #FFE4E6;
+      color: #E11D48;
+      font-weight: 800;
+      border: 1px solid #FECDD3;
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 95%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
+    }
+    .confidence-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       font-size: 10px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--tw-text);
-      opacity: 0.65;
-      white-space: nowrap;
+      padding: 2px 6px;
+      border-radius: 4px;
     }
-    .table-body tr {
-      transition: background-color 0.12s;
-    }
-    .table-body tr:hover { background: var(--tw-primary-light); }
-    html.dark .table-body tr:hover { background: rgba(148, 163, 184, 0.08); }
-
-    /* Section transition */
-    main { transition: opacity 0.15s ease; }
+    .conf-high { background: #ECFDF5; color: #059669; }
+    .conf-med { background: #FFFBEB; color: #D97706; }
+    .conf-low { background: #FEF2F2; color: #DC2626; }
   </style>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              neutralBg: 'var(--tw-bg)',
-              neutralCard: 'var(--tw-card)',
-              darkText: 'var(--tw-text)',
-              borderLight: 'var(--tw-border)',
-              primaryBlue: 'var(--tw-primary)',
-              primaryBlueLight: 'var(--tw-primary-light)',
-              primaryBlueHover: 'var(--tw-primary-hover)',
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <!-- Supabase JSClient CDN (UMD bundle) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <!-- Chart.js CDN for Revenue and Order Count Charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Phosphor Icons CDN (Minimalist Iconography) -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <!-- Supabase Config File -->
-  <script src="supabase-config.js"></script>
-  <script src="../frontend/assets/theme-manager.js"></script>
 </head>
-<body class="bg-brand-neutralBg text-brand-darkText antialiased min-h-screen flex font-medium text-[13px]">
+<body>
 
-  <!-- LEFT SIDEBAR (Desktop) -->
-  <aside class="w-60 glass-card border-r border-brand-borderLight shrink-0 hidden md:flex flex-col justify-between sticky top-0 h-screen z-40">
-    <div class="flex flex-col h-full">
-      <!-- Brand -->
-      <div class="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-brand-borderLight">
-        <div class="w-9 h-9 bg-brand-primaryBlue text-white rounded-lg flex items-center justify-center font-mono-code text-xs font-bold">
-          AF
-        </div>
-        <div class="min-w-0">
-          <h1 class="text-[13px] font-bold text-brand-darkText tracking-tight leading-tight">Auto Fill Order</h1>
-          <p class="text-[10px] text-brand-darkText/55 font-mono-code mt-0.5">VNPost & J&T System</p>
-        </div>
+  <!-- SIDEBAR: COMMAND CENTER -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon" style="background: linear-gradient(135deg, #4F46E5, #7C3AED);">👑</div>
+      <div class="sidebar-logo-text">
+        <h2>Auto Fill Order</h2>
+        <p>Shop Owner Command Center</p>
       </div>
+    </div>
 
-      <!-- Navigation Menu -->
-      <nav class="flex-1 px-3 py-4 space-y-1 text-xs font-medium overflow-y-auto">
-        <button id="nav-tab-statistics" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-brand-primaryBlue text-white font-semibold transition-all">
-          <i class="ph ph-chart-bar text-base"></i>
-          <span>Thống kê Báo cáo</span>
-        </button>
-        <button id="nav-tab-orders" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-brand-darkText/70 hover:bg-brand-primaryBlueLight hover:text-brand-primaryBlue transition-all">
-          <i class="ph ph-paper-plane-tilt text-base"></i>
-          <span>Đơn hàng đã lên đơn</span>
-        </button>
-        <button id="nav-tab-drafts" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-brand-darkText/70 hover:bg-brand-primaryBlueLight hover:text-brand-primaryBlue transition-all">
-          <i class="ph ph-file-text text-base"></i>
-          <span>Đơn nháp</span>
-        </button>
-        <button id="nav-tab-customers" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-brand-darkText/70 hover:bg-brand-primaryBlueLight hover:text-brand-primaryBlue transition-all">
-          <i class="ph ph-users text-base"></i>
-          <span>Khách hàng</span>
-        </button>
-        <button id="nav-tab-settings" class="hidden w-full flex items-center gap-3 px-3 py-2 rounded-lg text-brand-darkText/70 hover:bg-brand-primaryBlueLight hover:text-brand-primaryBlue transition-all">
-          <i class="ph ph-gear text-base"></i>
-          <span>Cài đặt & Nhân sự</span>
-        </button>
-      </nav>
+    <nav class="nav-menu">
+      <button class="nav-item active" data-tab="dashboard">
+        <i class="ph ph-chart-line-up text-lg"></i>
+        <span>📊 Tổng Quan & KPIs</span>
+      </button>
 
-      <!-- Sidebar Footer -->
-      <div class="px-3 pb-5 pt-3 border-t border-brand-borderLight space-y-1">
-        <button id="sidebar-go-admin" class="hidden w-full flex items-center gap-3 px-3 py-2 rounded-lg text-brand-primaryBlue hover:bg-brand-primaryBlueLight transition-all text-xs font-bold">
-          <i class="ph ph-shield-check text-base"></i>
-          <span>Chuyển sang Admin Portal</span>
-        </button>
-        <button id="sidebar-logout-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 transition-all text-xs font-bold">
-          <i class="ph ph-sign-out text-base"></i>
-          <span>Đăng xuất</span>
-        </button>
+      <button class="nav-item" data-tab="orders">
+        <i class="ph ph-paper-plane-tilt text-lg"></i>
+        <span>📦 Quản Lý Đơn Hàng</span>
+      </button>
+
+      <button class="nav-item" data-tab="customers">
+        <i class="ph ph-address-book text-lg"></i>
+        <span>📇 Khách Hàng & Blacklist</span>
+      </button>
+
+      <button class="nav-item" data-tab="staff">
+        <i class="ph ph-users-three text-lg"></i>
+        <span>👥 Nhân Viên & Phân Quyền</span>
+      </button>
+
+      <button class="nav-item" data-tab="settings">
+        <i class="ph ph-storefront text-lg"></i>
+        <span>🏪 Cấu Hình Shop & Bưu Cục</span>
+      </button>
+
+      <button class="nav-item" data-tab="devices">
+        <i class="ph ph-device-mobile text-lg"></i>
+        <span>📱 Thiết Bị & Bảo Mật</span>
+      </button>
+
+      <button class="nav-item" data-tab="subscription">
+        <i class="ph ph-lightning text-lg"></i>
+        <span>⚡ Hạn Ngạch AI & Gói Cước</span>
+      </button>
+
+      <button class="nav-item" data-tab="quick-parse">
+        <i class="ph ph-magic-wand text-lg"></i>
+        <span>✨ Bóc Tách Đơn Nhanh</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div id="sideAdminLinkContainer" style="margin-bottom: 8px;">
+        <a href="admin.html" class="side-link" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;color:#6366f1;background:rgba(99,102,241,0.08);text-decoration:none;" title="Chuyển sang Quản Trị Hệ Thống">
+          <i class="ph ph-crown text-base"></i>
+          <span>Master Admin Portal</span>
+        </a>
       </div>
+      <button id="btnSidebarLogout" class="side-link" style="color:#EF4444; border:none; background:transparent; width:100%; cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; font-weight:600; font-size:13px;">
+        <i class="ph ph-sign-out text-base"></i> Đăng xuất
+      </button>
     </div>
   </aside>
 
-  <!-- MAIN COLUMN -->
-  <div class="flex-1 min-w-0 flex flex-col">
+  <!-- CONTENT WRAPPER -->
+  <div class="content-wrapper">
 
     <!-- TOPBAR -->
-    <header class="sticky top-0 z-30 glass-card border-b border-brand-borderLight flex items-center gap-3 px-4 md:px-6 h-14 shrink-0">
-      <button id="mobile-menu-btn" title="Mở menu điều hướng" class="md:hidden p-2 rounded-lg text-brand-darkText hover:bg-brand-neutralBg transition-all">
-        <i class="ph ph-list text-xl"></i>
-      </button>
-      <div class="min-w-0 flex-1">
-        <h2 class="text-sm font-bold text-brand-darkText truncate leading-tight">Quản lý Đơn Hàng</h2>
-        <p class="text-[10px] text-brand-darkText/50 font-mono-code hidden sm:block">Auto Fill Order - VNPost & J&T</p>
+    <header class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <h1 class="topbar-title" id="topbarShopTitle">SHOP COMMAND CENTER</h1>
+        <span class="owner-badge" id="topbarUserRoleBadge">SUPER OWNER</span>
+        <span class="status-online" id="cloudSyncStatus" title="Supabase Realtime Cloud Connected">Cloud Live</span>
       </div>
-      <button id="refresh-btn" title="Tải lại dữ liệu" class="btn btn-outline px-3 py-1.5 text-[11px]">
-        <i class="ph ph-arrows-clockwise text-sm"></i>
-        <span class="hidden sm:inline">Tải lại</span>
-      </button>
-      <button id="header-user-menu-btn" title="Mở menu cá nhân bên phải" class="flex items-center gap-2 pl-2 pr-2 py-1 rounded-lg border border-transparent hover:border-brand-borderLight hover:bg-brand-neutralBg transition-all">
-        <span id="header-admin-name" class="hidden sm:inline text-xs font-bold text-brand-darkText max-w-[120px] truncate">Admin</span>
-        <span id="header-admin-avatar" class="avatar-text">A</span>
-      </button>
+
+      <div class="topbar-right">
+        <!-- Active Shop Selector -->
+        <div style="display:flex; align-items:center; gap:6px; background:var(--card); padding:4px 10px; border-radius:8px; border:1px solid var(--border);">
+          <span style="font-size:11px; font-weight:700; color:var(--text-s);"><i class="ph ph-storefront"></i> Shop:</span>
+          <select id="topbarShopSelect" style="border:none; background:transparent; font-size:12px; font-weight:700; color:var(--primary); outline:none; cursor:pointer;">
+            <option value="">Đang tải danh sách Shop...</option>
+          </select>
+        </div>
+
+        <!-- Refresh Button -->
+        <button id="btnRefreshStats" class="btn btn-secondary btn-sm" title="Tải lại số liệu từ Supabase">
+          <i class="ph ph-arrows-clockwise text-base"></i> Làm mới
+        </button>
+
+        <!-- Dark mode toggle -->
+        <button id="btnToggleTheme" class="btn btn-secondary btn-sm" title="Chuyển chế độ Sáng/Tối">
+          <i id="themeIcon" class="ph ph-sun text-base"></i>
+        </button>
+
+        <!-- User Profile Pill -->
+        <div class="user-profile-pill" id="topbarUserPill">
+          <div class="avatar" id="topbarAvatar" style="background:#4F46E5; color:#fff;">AF</div>
+          <div class="user-pill-info">
+            <span class="user-pill-name" id="topbarUserName">Chủ Shop</span>
+            <span class="user-pill-role" id="topbarUserRoleText" style="color:#4F46E5; font-weight:700;">Owner</span>
+          </div>
+        </div>
+      </div>
     </header>
 
-    <!-- RIGHT USER MENU (Slide-over) -->
-    <div id="right-user-menu" class="fixed inset-0 z-50 hidden opacity-0 pointer-events-none transition-opacity duration-200">
-      <div id="right-menu-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div id="right-menu-panel" class="absolute top-0 right-0 w-80 max-w-[calc(100vw-2rem)] h-full glass-card border-l border-brand-borderLight shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300 ease-in-out z-10">
-        <div>
-          <!-- User Info -->
-          <div class="p-5 border-b border-brand-borderLight flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-              <span id="right-admin-avatar" class="avatar-text w-10 h-10 text-sm">A</span>
-              <div class="min-w-0">
-                <h4 id="right-admin-name" class="text-sm font-bold text-brand-darkText leading-tight truncate">Admin</h4>
-                <p id="right-admin-email" class="text-[11px] text-brand-darkText/55 font-mono-code max-w-[180px] truncate mt-0.5">admin@system.com</p>
+    <!-- CONTENT BODY -->
+    <main class="content">
+
+      <!-- ======================================================== -->
+      <!-- TAB 1: EXECUTIVE DASHBOARD & REALTIME KPIS               -->
+      <!-- ======================================================== -->
+      <section id="tab-dashboard" class="tab-content active">
+        <div class="page-hdr">
+          <div>
+            <h1>Dashboard Điều Hành Doanh Thu & Vận Đơn</h1>
+            <p>Số liệu thời gian thực đồng bộ trực tiếp từ cơ sở dữ liệu Supabase và Extension Panel.</p>
+          </div>
+          <div>
+            <span id="lastUpdatedTime" style="font-size:12px; color:var(--text-s); font-weight:500;">Cập nhật lúc: Vừa xong</span>
+          </div>
+        </div>
+
+        <!-- KPI Cards Grid -->
+        <div class="quick-stat-grid">
+          <div class="card" style="border-left: 4px solid #4F46E5;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <span style="font-size:12px; font-weight:600; color:var(--text-s);">Đơn Đã Lên Hôm Nay</span>
+                <h2 style="font-size:24px; font-weight:800; color:var(--text); margin-top:4px;" id="kpiOrdersToday">0</h2>
+                <div style="font-size:11px; color:#10B981; font-weight:600; margin-top:4px;" id="kpiOrdersGrowth">Đã đẩy lên bưu cục</div>
+              </div>
+              <div style="width:40px; height:40px; border-radius:10px; background:#EEF2FF; color:#4F46E5; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                <i class="ph ph-truck"></i>
               </div>
             </div>
-            <button id="right-menu-close-btn" title="Đóng menu" class="p-1.5 text-brand-darkText/55 hover:text-brand-darkText rounded-md hover:bg-brand-neutralBg transition-all">
-              <i class="ph ph-x text-lg"></i>
-            </button>
           </div>
 
-          <!-- Navigation -->
-          <nav class="p-3 space-y-1 text-xs">
-            <div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-brand-darkText/45">Điều hướng</div>
-            <button id="right-nav-statistics" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-brand-darkText hover:bg-brand-primaryBlueLight hover:text-brand-primaryBlue transition-all text-left">
-              <i class="ph ph-chart-bar text-base"></i><span>Thống kê Báo cáo</span>
-            </button>
-            <button id="right-nav-orders" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-brand-darkText hover:bg-brand-primaryBlueLight hover:text-brand-primaryBlue transition-all text-left">
-              <i class="ph ph-paper-plane-tilt text-base"></i><span>Đơn hàng đã lên đơn</span>
-            </button>
-            <button id="right-nav-customers" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-brand-darkText hover:bg-brand-primaryBlueLight hover:text-brand-primaryBlue transition-all text-left">
-              <i class="ph ph-users text-base"></i><span>Khách hàng</span>
-            </button>
-            <button id="right-nav-go-admin" class="hidden w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-brand-primaryBlue hover:bg-brand-primaryBlueLight transition-all text-left">
-              <i class="ph ph-shield-check text-base"></i><span>Admin Portal</span>
-            </button>
-            <button id="right-nav-refresh" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-brand-darkText hover:bg-brand-neutralBg transition-all text-left">
-              <i class="ph ph-arrows-clockwise text-base"></i><span>Tải lại dữ liệu</span>
-            </button>
-          </nav>
-        </div>
-
-        <div class="p-3 border-t border-brand-borderLight">
-          <button id="right-menu-logout-btn" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all">
-            <i class="ph ph-sign-out text-base"></i> Đăng xuất
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================
-         SECTION: THỐNG KÊ BÁO CÁO (default)
-    ============================================ -->
-    <main id="section-statistics" class="p-4 md:p-6 space-y-4 flex-1 w-full max-w-[1400px] mx-auto">
-
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div class="flex-1 min-w-0">
-          <h2 class="text-lg font-bold text-brand-darkText tracking-tight">Thống kê Báo cáo</h2>
-          <p class="text-xs text-brand-darkText/55 mt-0.5 flex items-center gap-1.5">
-            <i class="ph ph-circle-check text-brand-primaryBlue text-xs"></i>
-            <span id="stat-last-updated">Cập nhật: Vừa xong</span>
-          </p>
-        </div>
-        <button id="stat-btn-refresh" title="Tải lại dữ liệu hệ thống" class="btn btn-outline">
-          <i class="ph ph-arrows-clockwise text-sm"></i> Tải lại dữ liệu
-        </button>
-      </div>
-
-      <!-- Range + Filters -->
-      <div class="glass-card p-3 space-y-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <button id="stat-btn-today" class="px-3.5 py-1.5 rounded-lg border border-[#E5E7EB] bg-white text-xs font-semibold text-brand-darkText hover:bg-brand-neutralBg hover:text-[#3C7363] transition-all">Hôm nay</button>
-          <button id="stat-btn-7days" class="px-3.5 py-1.5 rounded-lg border border-[#E5E7EB] bg-white text-xs font-semibold text-brand-darkText hover:bg-brand-neutralBg hover:text-[#3C7363] transition-all">7 ngày qua</button>
-          <button id="stat-btn-30days" class="px-3.5 py-1.5 rounded-lg border border-[#3C7363] bg-[#3C7363] text-white text-xs font-bold transition-all shadow-sm">30 ngày qua</button>
-          <button id="stat-btn-month" class="px-3.5 py-1.5 rounded-lg border border-[#E5E7EB] bg-white text-xs font-semibold text-brand-darkText hover:bg-brand-neutralBg hover:text-[#3C7363] transition-all">Tháng này</button>
-          <div class="mx-1 h-6 w-px bg-brand-borderLight hidden sm:block"></div>
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-            <select id="stat-carrier-select" class="glass-input !w-auto min-w-[130px]">
-              <option value="">-- Tất cả hãng vận chuyển --</option>
-              <option value="vnpost">VNPost</option>
-              <option value="jt">J&T Express</option>
-            </select>
-            <select id="stat-shop-select" class="glass-input !w-auto min-w-[130px]">
-              <option value="">-- Tất cả shop --</option>
-            </select>
-            <input type="date" id="stat-date-from" class="glass-input !w-auto">
-            <span class="text-[11px] text-brand-darkText/50">→</span>
-            <input type="date" id="stat-date-to" class="glass-input !w-auto">
-            <button id="stat-btn-reset-filters" title="Xóa bộ lọc" class="btn btn-danger !px-2.5 !py-1.5">
-              <i class="ph ph-x text-sm"></i> Xóa lọc
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- States: Skeleton / Error / Empty / Content -->
-      <div id="stat-skeleton-screen" class="hidden space-y-4 animate-pulse">
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          <div class="glass-card h-28"></div>
-          <div class="glass-card h-28"></div>
-          <div class="glass-card h-28"></div>
-          <div class="glass-card h-28"></div>
-        </div>
-        <div class="glass-card h-72"></div>
-        <div class="glass-card h-64"></div>
-      </div>
-
-      <div id="stat-error-state" class="hidden glass-card p-8 border border-rose-200 bg-rose-50/50 text-center space-y-3">
-        <i class="ph ph-warning-circle text-3xl text-rose-500"></i>
-        <div>
-          <h3 class="text-sm font-bold text-rose-700">Không thể tải dữ liệu thống kê</h3>
-          <p id="stat-error-msg" class="text-xs text-rose-600/80 mt-1">Vui lòng kiểm tra lại kết nối Supabase hoặc đường truyền mạng.</p>
-        </div>
-        <button id="btn-stat-retry" class="btn btn-danger mx-auto">
-          <i class="ph ph-arrows-clockwise text-sm"></i> Thử lại
-        </button>
-      </div>
-
-      <div id="stat-empty-state" class="hidden glass-card p-12 border border-brand-borderLight text-center space-y-3">
-        <i class="ph ph-chart-line-down text-4xl text-brand-darkText/30"></i>
-        <div>
-          <h3 class="text-sm font-bold text-brand-darkText">Chưa có dữ liệu trong khoảng thời gian này</h3>
-          <p class="text-xs text-brand-darkText/55 mt-1">Hãy thử chọn khoảng thời gian khác hoặc bỏ bộ lọc.</p>
-        </div>
-        <button id="btn-stat-clear-empty" class="btn btn-primary mx-auto">Xóa bộ lọc và tải lại</button>
-      </div>
-
-      <div id="stat-main-content" class="space-y-4">
-
-        <!-- KPI Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          <div class="glass-card p-4 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-brand-primaryBlueLight text-brand-primaryBlue flex items-center justify-center shrink-0">
-              <i class="ph ph-package text-xl"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Tổng đơn hàng</div>
-              <div class="text-xl font-extrabold text-brand-darkText font-mono-code leading-tight" id="stat-total-orders-static">0</div>
-              <span id="stat-kpi1-delta" class="text-[10px] font-semibold text-emerald-600">+14.2% vs 30 ngày trước</span>
+          <div class="card" style="border-left: 4px solid #10B981;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <span style="font-size:12px; font-weight:600; color:var(--text-s);">Tiền Thu Hộ COD Hôm Nay</span>
+                <h2 style="font-size:24px; font-weight:800; color:#10B981; margin-top:4px;" id="kpiCodToday">0 đ</h2>
+                <div style="font-size:11px; color:var(--text-s); font-weight:500;" id="kpiCodAvg">Bưu điện đối soát</div>
+              </div>
+              <div style="width:40px; height:40px; border-radius:10px; background:#ECFDF5; color:#10B981; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                <i class="ph ph-currency-circle-dollar"></i>
+              </div>
             </div>
           </div>
-          <div class="glass-card p-4 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-brand-primaryBlueLight text-brand-primaryBlue flex items-center justify-center shrink-0">
-              <i class="ph ph-check-circle text-xl"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Tỷ lệ bóc tách thành công</div>
-              <div class="text-xl font-extrabold text-brand-darkText font-mono-code leading-tight" id="stat-kpi-success-rate">98.4%</div>
-              <span id="stat-kpi2-delta" class="text-[10px] font-semibold text-emerald-600">+0.6% vs 30 ngày trước</span>
-            </div>
-          </div>
-          <div class="glass-card p-4 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-brand-primaryBlueLight text-brand-primaryBlue flex items-center justify-center shrink-0">
-              <i class="ph ph-coins text-xl"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Tổng COD</div>
-              <div class="text-xl font-extrabold text-brand-darkText font-mono-code leading-tight" id="stat-total-cod-static">0 đ</div>
-              <span id="stat-kpi3-delta" class="text-[10px] font-semibold text-emerald-600">+18.5% vs 30 ngày trước</span>
+
+          <div class="card" style="border-left: 4px solid #F59E0B;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <span style="font-size:12px; font-weight:600; color:var(--text-s);">Đơn Nháp / Chờ Xử Lý</span>
+                <h2 style="font-size:24px; font-weight:800; color:#F59E0B; margin-top:4px;" id="kpiDraftOrders">0</h2>
+                <div style="font-size:11px; color:var(--text-s); font-weight:500;">Từ Extension & Web</div>
+              </div>
+              <div style="width:40px; height:40px; border-radius:10px; background:#FFFBEB; color:#F59E0B; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                <i class="ph ph-file-text"></i>
+              </div>
             </div>
           </div>
-          <div class="glass-card p-4 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-brand-primaryBlueLight text-brand-primaryBlue flex items-center justify-center shrink-0">
-              <i class="ph ph-lightning text-xl"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Độ trễ AI trung bình</div>
-              <div class="text-xl font-extrabold text-brand-darkText font-mono-code leading-tight" id="stat-kpi-latency">180ms</div>
-              <span id="stat-kpi4-delta" class="text-[10px] font-semibold text-brand-darkText/50">AI Fallback: 14.2%</span>
+
+          <div class="card" style="border-left: 4px solid #8B5CF6;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <span style="font-size:12px; font-weight:600; color:var(--text-s);">Hạn Ngạch AI Tháng</span>
+                <h2 style="font-size:24px; font-weight:800; color:#8B5CF6; margin-top:4px;" id="kpiAiQuota">0 / 0</h2>
+                <div style="font-size:11px; color:var(--text-s); font-weight:500;" id="kpiAiQuotaPercent">Đã sử dụng 0%</div>
+              </div>
+              <div style="width:40px; height:40px; border-radius:10px; background:#F5F3FF; color:#8B5CF6; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                <i class="ph ph-brain"></i>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Charts -->
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
-          <div class="glass-card p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-xs font-bold text-brand-darkText">Doanh thu theo ngày</h3>
-              <span class="text-[10px] font-mono-code text-brand-darkText/50">VNĐ</span>
+        <!-- Charts & Live Feed Grid -->
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:20px;">
+          <!-- 7-Day Chart -->
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="font-size:14px; font-weight:700;"><i class="ph ph-chart-bar text-indigo-500"></i> Sản Lượng Đơn Hàng 7 Ngày Gần Nhất</h3>
+              <div style="display:flex; gap:12px; font-size:11px; font-weight:600;">
+                <span style="color:#B45309;"><i class="ph ph-circle-fill" style="color:#F59E0B;"></i> VNPost</span>
+                <span style="color:#DC2626;"><i class="ph ph-circle-fill" style="color:#EF4444;"></i> J&T Express</span>
+              </div>
             </div>
-            <div class="h-64"><canvas id="revenueChart"></canvas></div>
+            <div style="height: 240px; position:relative;">
+              <canvas id="chartWeeklyOrders"></canvas>
+            </div>
           </div>
-          <div class="glass-card p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-xs font-bold text-brand-darkText">Số đơn theo ngày</h3>
-              <span class="text-[10px] font-mono-code text-brand-darkText/50">Đơn</span>
+
+          <!-- Quick Summary by Carrier -->
+          <div class="card">
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:16px;"><i class="ph ph-pie-chart text-indigo-500"></i> Tỷ Trọng Vận Chuyển</h3>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <span style="font-size:12px; font-weight:700; color:#B45309;"><i class="ph ph-envelope-simple"></i> VNPost (Bưu Điện)</span>
+                  <span style="font-size:13px; font-weight:800;" id="kpiVnpostCount">0 đơn</span>
+                </div>
+                <div style="height:6px; background:#E2E8F0; border-radius:3px; overflow:hidden;">
+                  <div id="barVnpostPercent" style="height:100%; width:0%; background:#F59E0B; transition:width 0.5s;"></div>
+                </div>
+              </div>
+
+              <div style="background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <span style="font-size:12px; font-weight:700; color:#DC2626;"><i class="ph ph-truck"></i> J&T Express</span>
+                  <span style="font-size:13px; font-weight:800;" id="kpiJtCount">0 đơn</span>
+                </div>
+                <div style="height:6px; background:#E2E8F0; border-radius:3px; overflow:hidden;">
+                  <div id="barJtPercent" style="height:100%; width:0%; background:#EF4444; transition:width 0.5s;"></div>
+                </div>
+              </div>
+
+              <div style="margin-top:8px; padding-top:12px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; font-weight:600; color:var(--text-s);">Tổng Khách Đã Mua:</span>
+                <strong style="font-size:14px; color:var(--primary);" id="kpiTotalCustomers">0 khách</strong>
+              </div>
             </div>
-            <div class="h-64"><canvas id="ordersCountChart"></canvas></div>
           </div>
         </div>
 
-        <!-- Recent Orders -->
-        <div class="glass-card overflow-hidden">
-          <div class="px-4 py-3 border-b border-brand-borderLight flex items-center justify-between gap-3">
-            <h3 class="text-xs font-bold text-brand-darkText">Đơn hàng gần đây</h3>
-            <button id="btn-view-all-orders-tab" class="text-xs font-semibold text-brand-primaryBlue hover:underline flex items-center gap-1">
-              Xem tất cả <i class="ph ph-arrow-right text-xs"></i>
-            </button>
+        <!-- Recent Realtime Orders Stream -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="font-size:14px; font-weight:700;"><i class="ph ph-clock-counter-clockwise text-indigo-500"></i> Đơn Hàng Vừa Lên Gần Đây (Realtime Stream)</h3>
+            <button class="btn btn-secondary btn-sm" onclick="document.querySelector('[data-tab=orders]').click();">Xem tất cả đơn →</button>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs min-w-[720px]">
-              <thead class="table-head bg-brand-neutralBg/60 border-b border-brand-borderLight">
+          <div class="table-wrap">
+            <table class="table" style="width:100%;">
+              <thead>
                 <tr>
-                  <th class="py-2.5 px-4">Khách hàng</th>
-                  <th class="py-2.5 px-4">Mã vận đơn</th>
-                  <th class="py-2.5 px-4">COD</th>
-                  <th class="py-2.5 px-4">Trạng thái</th>
-                  <th class="py-2.5 px-4">Thời gian</th>
+                  <th>Thời Gian</th>
+                  <th>Mã Đơn / Vận Đơn</th>
+                  <th>Người Nhận & SĐT</th>
+                  <th>Địa Chỉ Giao Hàng</th>
+                  <th>Tiền COD</th>
+                  <th>Nhà Vận Chuyển</th>
+                  <th>Trạng Thái</th>
                 </tr>
               </thead>
-              <tbody id="stat-recent-orders-tbody" class="table-body divide-y divide-brand-borderLight font-medium text-brand-darkText">
-                <tr><td colspan="5" class="py-8 text-center text-brand-darkText/50">Đang tải...</td></tr>
+              <tbody id="tbodyRecentOrders">
+                <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-s);">Đang kết nối cơ sở dữ liệu Supabase...</td></tr>
               </tbody>
             </table>
           </div>
-          <div class="px-4 py-3 border-t border-brand-borderLight flex items-center gap-2 flex-wrap">
-            <button id="btn-export-stat-csv" class="btn btn-outline !px-3 !py-1.5 text-[11px]">
-              <i class="ph ph-download-simple text-sm"></i> Xuất CSV
-            </button>
-            <button id="btn-clear-parser-cache" class="btn btn-outline !px-3 !py-1.5 text-[11px]">
-              <i class="ph ph-broom text-sm"></i> Xóa cache parser
-            </button>
-          </div>
         </div>
-      </div>
-    </main>
+      </section>
 
-    <!-- STAT DETAIL DRAWER -->
-    <div id="stat-detail-drawer" class="fixed inset-0 z-50 hidden opacity-0 pointer-events-none transition-opacity duration-200">
-      <div id="stat-drawer-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div id="stat-drawer-panel" class="absolute top-0 right-0 w-[400px] max-w-[calc(100vw-2rem)] h-full glass-card border-l border-brand-borderLight shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300 ease-in-out">
-        <div class="p-5 border-b border-brand-borderLight flex items-center justify-between shrink-0">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-receipt text-lg text-brand-primaryBlue"></i>
-            <h4 id="drawer-order-title" class="text-sm font-bold text-brand-darkText">Chi tiết Đơn Hàng</h4>
-          </div>
-          <button id="stat-drawer-close" class="p-1.5 text-brand-darkText/55 hover:text-brand-darkText rounded-md hover:bg-brand-neutralBg transition-all" aria-label="Đóng">
-            <i class="ph ph-x text-lg"></i>
-          </button>
-        </div>
-        <div class="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+      <!-- ======================================================== -->
+      <!-- TAB 2: ORDER MANAGEMENT (SUBMITTED & DRAFTS)             -->
+      <!-- ======================================================== -->
+      <section id="tab-orders" class="tab-content">
+        <div class="page-hdr">
           <div>
-            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/45 mb-1">Tin nhắn gốc</div>
-            <pre id="drawer-raw-text" class="mt-1 p-2.5 bg-brand-neutralBg rounded-md font-mono-code text-[11px] text-brand-darkText whitespace-pre-wrap break-words max-h-40 overflow-y-auto border border-brand-borderLight">--</pre>
+            <h1>Quản Lý Đơn Hàng & Vận Đơn</h1>
+            <p>Theo dõi toàn bộ đơn đã đẩy bưu điện thành công và đơn nháp từ Extension.</p>
           </div>
-          <div>
-            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/45 mb-1">Dữ liệu đã bóc tách (JSON)</div>
-            <pre id="drawer-parsed-json" class="mt-1 p-2.5 bg-gray-900 text-emerald-400 rounded-md font-mono-code text-[11px] whitespace-pre-wrap break-words max-h-52 overflow-y-auto">{}</pre>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================
-         SECTION: ĐƠN HÀNG ĐÃ LÊN ĐƠN
-    ============================================ -->
-    <main id="section-orders" class="p-4 md:p-6 space-y-4 flex-1 w-full hidden max-w-[1400px] mx-auto">
-
-      <!-- Title + Stats -->
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <h2 class="text-lg font-bold text-brand-darkText tracking-tight">Đơn hàng đã lên đơn</h2>
-          <p class="text-xs text-brand-darkText/55 mt-0.5">Danh sách đơn hàng đã bóc tách và gửi lên hệ thống vận chuyển.</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="glass-card p-4 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-brand-primaryBlueLight text-brand-primaryBlue flex items-center justify-center shrink-0">
-            <i class="ph ph-package text-xl"></i>
-          </div>
-          <div class="min-w-0">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Tổng đơn hàng</div>
-            <div id="stat-total-orders" class="text-xl font-extrabold text-brand-darkText font-mono-code leading-tight">0</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" id="btnExportOrdersCsv"><i class="ph ph-file-csv"></i> Xuất CSV</button>
+            <button class="btn btn-primary btn-sm" id="btnOpenQuickParseFromOrders"><i class="ph ph-plus-circle"></i> Bóc Đơn Mới</button>
           </div>
         </div>
-        <div class="glass-card p-4 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-brand-primaryBlueLight text-brand-primaryBlue flex items-center justify-center shrink-0">
-            <i class="ph ph-coins text-xl"></i>
-          </div>
-          <div class="min-w-0">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Tổng COD</div>
-            <div id="stat-total-cod" class="text-xl font-extrabold text-brand-darkText font-mono-code leading-tight">0 đ</div>
-          </div>
-        </div>
-        <div class="glass-card p-4 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-brand-primaryBlueLight text-brand-primaryBlue flex items-center justify-center shrink-0">
-            <i class="ph ph-users text-xl"></i>
-          </div>
-          <div class="min-w-0">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Khách hàng</div>
-            <div id="stat-total-customers-orders" class="text-xl font-extrabold text-brand-darkText font-mono-code leading-tight">0</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Filter Bar -->
-      <div class="glass-card p-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="relative flex-1 min-w-[220px]">
-            <i class="ph ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-brand-darkText/40"></i>
-            <input type="text" id="search-input" class="glass-input !pl-8" placeholder="Tìm tên, SĐT, mã đơn...">
-          </div>
-          <select id="platform-filter" class="glass-input !w-auto min-w-[140px]">
-            <option value="">-- Tất cả hãng --</option>
-            <option value="vnpost">VNPost</option>
-            <option value="jt">J&T Express</option>
-          </select>
-          <select id="device-filter" class="glass-input !w-auto min-w-[140px]">
-            <option value="">-- Tất cả thiết bị --</option>
-          </select>
-          <input type="date" id="date-from" class="glass-input !w-auto">
-          <span class="text-[11px] text-brand-darkText/50">→</span>
-          <input type="date" id="date-to" class="glass-input !w-auto">
-          <button id="btn-today" class="btn btn-outline !px-3 !py-1.5">Hôm nay</button>
-          <button id="btn-7days" class="btn btn-outline !px-3 !py-1.5">7 ngày</button>
-          <button id="btn-30days" class="btn btn-outline !px-3 !py-1.5">30 ngày</button>
-          <button id="btn-clear-filters" class="btn btn-danger !px-3 !py-1.5">
-            <i class="ph ph-x text-sm"></i> Xóa lọc
-          </button>
-        </div>
-      </div>
-
-      <!-- Bulk Actions Bar -->
-      <div id="bulk-actions-bar" class="hidden bg-slate-900/85 text-white rounded-xl p-3 px-4 border border-white/10 shadow-lg flex items-center justify-between gap-3">
-        <span class="text-xs">Đã chọn <strong id="selected-count" class="text-emerald-400 font-bold">0</strong> đơn hàng</span>
-        <button id="btn-bulk-delete" class="px-3.5 py-1.5 rounded-lg bg-pastel-rose text-xs font-bold hover:bg-rose-200 transition-all flex items-center gap-1.5 text-rose-900">
-          <i class="ph ph-trash text-sm"></i> Xóa đã chọn
-        </button>
-      </div>
-
-      <!-- States -->
-      <div id="loading-state" class="py-16 text-center hidden">
-        <i class="ph ph-circle-notch text-3xl text-brand-primaryBlue animate-spin"></i>
-        <p class="text-xs text-brand-darkText/55 mt-3">Đang tải dữ liệu đơn hàng...</p>
-      </div>
-
-      <div id="empty-state" class="py-16 text-center glass-card border border-brand-borderLight hidden">
-        <i class="ph ph-tray text-4xl text-brand-darkText/25"></i>
-        <p class="text-xs text-brand-darkText/55 mt-3">Chưa có đơn hàng nào phù hợp với bộ lọc.</p>
-      </div>
-
-      <!-- Mobile Cards -->
-      <div id="mobile-orders-container" class="space-y-3 md:hidden"></div>
-
-      <!-- Desktop Table -->
-      <div class="glass-card overflow-hidden hidden md:block">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs min-w-[900px]">
-            <thead class="table-head bg-brand-neutralBg/60 border-b border-brand-borderLight">
-              <tr>
-                <th class="py-2.5 px-4 w-8"><input type="checkbox" id="select-all" class="rounded border-brand-borderLight cursor-pointer accent-[#10B981]"></th>
-                <th class="py-2.5 px-4">Khách hàng</th>
-                <th class="py-2.5 px-4">SĐT</th>
-                <th class="py-2.5 px-4">Địa chỉ</th>
-                <th class="py-2.5 px-4">Mã đơn / Vận đơn</th>
-                <th class="py-2.5 px-4 text-right">COD</th>
-                <th class="py-2.5 px-4">Hãng</th>
-                <th class="py-2.5 px-4">Thời gian</th>
-                <th class="py-2.5 px-4 text-center">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="desktop-table-body" class="table-body divide-y divide-brand-borderLight text-brand-darkText"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <div class="glass-card px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <div id="page-info" class="text-brand-darkText/60">Trang 1 / 1 • Tổng: 0 đơn</div>
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-2">
-            <span class="text-brand-darkText/60">Hiển thị</span>
-            <select id="per-page" class="glass-input !w-auto !py-1.5">
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-            <span class="text-brand-darkText/60">/ trang</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button id="btn-prev" class="btn btn-outline !px-3 !py-1.5">&lt; Trước</button>
-            <button id="btn-next" class="btn btn-outline !px-3 !py-1.5">Sau &gt;</button>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- ============================================
-         SECTION: ĐƠN NHÁP
-    ============================================ -->
-    <main id="section-drafts" class="p-4 md:p-6 space-y-4 flex-1 w-full hidden max-w-[1400px] mx-auto">
-
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 class="text-lg font-bold text-brand-darkText tracking-tight">Đơn nháp</h2>
-          <p class="text-xs text-brand-darkText/55 mt-0.5">Các đơn hàng đã bóc tách nhưng chưa gửi lên vận chuyển.</p>
-        </div>
-        <button id="btn-open-mobile-draft-modal" class="btn btn-primary">
-          <i class="ph ph-plus text-base"></i> Lên đơn nháp mới
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div class="glass-card p-4 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <i class="ph ph-file-text text-xl"></i>
-          </div>
-          <div class="min-w-0">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Tổng đơn nháp</div>
-            <div id="stat-total-drafts" class="text-xl font-extrabold text-amber-700 font-mono-code leading-tight">0</div>
-          </div>
-        </div>
-        <div class="glass-card p-4 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <i class="ph ph-coins text-xl"></i>
-          </div>
-          <div class="min-w-0">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Tổng COD nháp</div>
-            <div id="stat-total-drafts-cod" class="text-xl font-extrabold text-emerald-700 font-mono-code leading-tight">0 đ</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="glass-card overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs min-w-[900px]">
-            <thead class="table-head bg-brand-neutralBg/60 border-b border-brand-borderLight">
-              <tr>
-                <th class="py-2.5 px-4">Khách hàng</th>
-                <th class="py-2.5 px-4">SĐT</th>
-                <th class="py-2.5 px-4">Địa chỉ</th>
-                <th class="py-2.5 px-4">Mã đơn</th>
-                <th class="py-2.5 px-4 text-right">COD</th>
-                <th class="py-2.5 px-4">Hãng</th>
-                <th class="py-2.5 px-4">Thời gian</th>
-                <th class="py-2.5 px-4 text-center">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="drafts-table-body" class="table-body divide-y divide-brand-borderLight text-brand-darkText"></tbody>
-          </table>
-        </div>
-      </div>
-    </main>
-
-    <!-- ============================================
-         SECTION: KHÁCH HÀNG
-    ============================================ -->
-    <main id="section-customers" class="p-4 md:p-6 space-y-4 flex-1 w-full hidden max-w-[1400px] mx-auto">
-
-      <div>
-        <h2 class="text-lg font-bold text-brand-darkText tracking-tight">Quản lý Khách hàng</h2>
-        <p class="text-xs text-brand-darkText/55 mt-0.5">Quản lý thông tin, phân hạng, ghi chú và các liên kết liên hệ của khách hàng.</p>
-      </div>
-
-      <!-- Stats -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div class="glass-card p-4 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <i class="ph ph-users text-xl"></i>
-          </div>
-          <div class="flex items-baseline gap-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Tổng khách hàng</span>
-            <span id="stat-total-customers-stat" class="text-xl font-extrabold text-brand-darkText font-mono-code">0</span>
-          </div>
-        </div>
-        <div class="glass-card p-4 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <i class="ph ph-star text-xl"></i>
-          </div>
-          <div class="flex items-baseline gap-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-brand-darkText/50">Khách hàng VIP</span>
-            <span id="stat-vip-customers" class="text-xl font-extrabold text-brand-darkText font-mono-code">0</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Filter Bar -->
-      <div class="glass-card p-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="relative flex-1 min-w-[220px]">
-            <i class="ph ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-brand-darkText/40"></i>
-            <input type="text" id="search-customer-input" class="glass-input !pl-8" placeholder="Tìm tên, SĐT, ghi chú...">
-          </div>
-          <select id="cust-tier-filter" class="glass-input !w-auto min-w-[180px]">
-            <option value="ALL">-- Tất cả phân hạng --</option>
-            <option value="VIP">Khách hàng VIP (3+ đơn)</option>
-            <option value="LOYAL">Thân thiết (2 đơn)</option>
-            <option value="NEW">Khách mới (1 đơn)</option>
-          </select>
-          <select id="cust-carrier-filter" class="glass-input !w-auto min-w-[160px]">
-            <option value="ALL">-- Hãng hay dùng --</option>
-            <option value="vnpost">VNPost</option>
-            <option value="jt">J&T Express</option>
-          </select>
-          <button id="btn-cust-clear-filter" class="btn btn-outline !px-3 !py-1.5">
-            <i class="ph ph-x text-sm"></i> Xóa lọc
-          </button>
-        </div>
-      </div>
-
-      <!-- Mobile Customer Cards -->
-      <div id="mobile-customers-container" class="space-y-3 md:hidden"></div>
-
-      <!-- Desktop Customer Table -->
-      <div id="desktop-customer-table" class="glass-card overflow-hidden hidden md:block">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs min-w-[1050px]">
-            <thead class="table-head bg-brand-neutralBg/60 border-b border-brand-borderLight">
-              <tr>
-                <th class="py-2.5 px-4 w-44">Tên khách hàng</th>
-                <th class="py-2.5 px-4 w-32">Số điện thoại</th>
-                <th class="py-2.5 px-4 w-20 text-center">Số đơn</th>
-                <th class="py-2.5 px-4 w-32 text-right">Tổng chi tiêu</th>
-                <th class="py-2.5 px-4 w-28 text-center">Mua gần nhất</th>
-                <th class="py-2.5 px-4 w-28 text-center">Phân hạng</th>
-                <th class="py-2.5 px-4 w-32 text-center">Ưu tiên vận chuyển</th>
-                <th class="py-2.5 px-4 w-32 text-center">Liên hệ</th>
-                <th class="py-2.5 px-4 w-40 text-center">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="customer-table-body" class="table-body divide-y divide-brand-borderLight text-brand-darkText"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <div class="glass-card px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <div id="customer-count-info" class="text-brand-darkText/60">Hiển thị 0 khách hàng</div>
-        <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-end">
-          <div class="flex items-center gap-2">
-            <span class="text-brand-darkText/60">Hiển thị</span>
-            <select id="cust-per-page" class="glass-input !w-auto !py-1.5">
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-            <span class="text-brand-darkText/60">khách / trang</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button id="cust-btn-prev" class="btn btn-outline !px-3 !py-1.5">&lt; Trước</button>
-            <button id="cust-btn-next" class="btn btn-outline !px-3 !py-1.5">Sau &gt;</button>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- MAIN SECTION: SHOP SETTINGS -->
-    <main id="section-shop-settings" class="hidden flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-      
-      <!-- Cài đặt AI -->
-      <div class="glass-card overflow-hidden">
-        <div class="px-5 py-4 border-b border-brand-borderLight flex items-center justify-between">
-          <h3 class="text-sm font-bold text-brand-darkText flex items-center gap-2">
-            <i class="ph ph-magic-wand text-brand-primaryBlue"></i> Cài đặt Tính năng (AI)
-          </h3>
-          <button id="btn-save-shop-features" class="btn btn-sm btn-primary">Lưu Cài Đặt</button>
-        </div>
-        <div class="p-5 space-y-4 text-xs font-medium text-brand-darkText">
-          <label class="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" id="toggle-ai-parsing" class="w-4 h-4 text-brand-primaryBlue rounded border-brand-borderLight focus:ring-brand-primaryBlue">
-            <span>Kích hoạt Bóc tách đơn bằng AI (Tự động nhận diện Họ Tên, SĐT, Địa chỉ)</span>
-          </label>
-          <label class="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" id="toggle-smart-address" class="w-4 h-4 text-brand-primaryBlue rounded border-brand-borderLight focus:ring-brand-primaryBlue">
-            <span>Bật tính năng Khớp địa chỉ thông minh</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Quản lý Nhân sự -->
-      <div class="glass-card overflow-hidden">
-        <div class="px-5 py-4 border-b border-brand-borderLight flex items-center justify-between">
-          <h3 class="text-sm font-bold text-brand-darkText flex items-center gap-2">
-            <i class="ph ph-users text-brand-primaryBlue"></i> Quản lý Nhân sự
-          </h3>
-          <button id="btn-add-shop-member" class="btn btn-sm btn-outline">
-            <i class="ph ph-user-plus text-base"></i> Thêm Nhân viên
-          </button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="table-head bg-brand-neutralBg/60 border-b border-brand-borderLight">
-              <tr>
-                <th class="py-2.5 px-5">Tên nhân viên</th>
-                <th class="py-2.5 px-5">Email</th>
-                <th class="py-2.5 px-5">Vai trò</th>
-                <th class="py-2.5 px-5">Trạng thái</th>
-                <th class="py-2.5 px-5 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="shop-members-tbody" class="table-body divide-y divide-brand-borderLight">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </main>
-
-    <!-- MODAL: ADD/EDIT SHOP MEMBER -->
-    <div id="shop-member-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-      <div class="glass-card shadow-2xl max-w-sm w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-5 py-3.5 border-b border-brand-borderLight flex items-center justify-between">
-          <h3 class="text-sm font-bold text-brand-darkText" id="shop-member-modal-title">Thêm Nhân viên</h3>
-          <button id="close-shop-member-modal" class="text-brand-darkText/55 hover:text-brand-darkText p-1 rounded-md hover:bg-brand-neutralBg transition-all" aria-label="Đóng">
-            <i class="ph ph-x text-lg"></i>
-          </button>
-        </div>
-        <form id="shop-member-form" class="p-5 space-y-4 text-xs font-medium">
-          <input type="hidden" id="shop-member-id">
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Email nhân viên:</label>
-            <input type="email" id="shop-member-email" class="glass-input" placeholder="nhanvien@example.com" required>
-            <p class="text-[10px] text-brand-darkText/50 mt-1">Lưu ý: Nhân viên phải đăng ký tài khoản trước.</p>
-          </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Vai trò:</label>
-            <select id="shop-member-role" class="glass-input">
-              <option value="SHOP_STAFF">Nhân viên (Được tạo đơn)</option>
-              <option value="VIEWER">Khách (Chỉ xem)</option>
-              <option value="SHOP_MANAGER">Quản lý Shop</option>
-            </select>
-          </div>
-          <div class="pt-4 border-t border-brand-borderLight flex items-center justify-end gap-2">
-            <button type="button" id="cancel-shop-member-modal" class="btn btn-outline">Hủy bỏ</button>
-            <button type="submit" id="submit-shop-member-btn" class="btn btn-primary">
-              <i class="ph ph-floppy-disk text-base"></i> Lưu
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- MODAL: THÊM / SỬA NGƯỜI DÙNG -->
-    <div id="user-manage-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-      <div class="glass-card shadow-2xl max-w-sm w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-5 py-3.5 border-b border-brand-borderLight flex items-center justify-between">
-          <h3 class="text-sm font-bold text-brand-darkText" id="user-modal-title">Thêm người dùng</h3>
-          <button id="close-user-modal-btn" class="text-brand-darkText/55 hover:text-brand-darkText p-1 rounded-md hover:bg-brand-neutralBg transition-all" aria-label="Đóng">
-            <i class="ph ph-x text-lg"></i>
-          </button>
-        </div>
-        <form id="user-manage-form" class="p-5 space-y-4 text-xs font-medium">
-          <input type="hidden" id="user-modal-id">
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Tên tài khoản (Email):</label>
-            <input type="text" id="user-modal-email" class="glass-input" required>
-          </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Mật khẩu mới:</label>
-            <input type="password" id="user-modal-password" class="glass-input" placeholder="Nhập mật khẩu mới...">
-          </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Vai trò (Role):</label>
-            <select id="user-modal-role" class="glass-input">
-              <option value="member">Nhân viên (Member)</option>
-              <option value="admin">Quản trị viên (Admin)</option>
-            </select>
-          </div>
-          <div class="pt-4 border-t border-brand-borderLight flex items-center justify-end gap-2">
-            <button type="button" id="cancel-user-modal-btn" class="btn btn-outline">Hủy bỏ</button>
-            <button type="submit" class="btn btn-primary">
-              <i class="ph ph-floppy-disk text-base"></i> Lưu tài khoản
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- MODAL: CHỈNH SỬA ĐƠN HÀNG -->
-    <div id="edit-order-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-      <div class="glass-card shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-5 py-3.5 border-b border-brand-borderLight flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-note-pencil text-lg text-brand-primaryBlue"></i>
-            <h3 class="text-sm font-bold text-brand-darkText">Chỉnh sửa thông tin đơn hàng</h3>
-          </div>
-          <button id="close-modal-btn" class="text-brand-darkText/55 hover:text-brand-darkText p-1 rounded-md hover:bg-brand-neutralBg transition-all" aria-label="Đóng">
-            <i class="ph ph-x text-lg"></i>
-          </button>
-        </div>
-        <form id="edit-order-form" class="p-5 space-y-4 text-xs font-medium">
-          <input type="hidden" id="edit-order-id">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Tên khách hàng:</label>
-              <input type="text" id="edit-name" class="glass-input" required>
+        <!-- Order Sub-tabs & Filters -->
+        <div class="card" style="margin-bottom:16px; padding:12px 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <!-- Sub-tab switcher -->
+            <div style="display:flex; gap:6px; background:var(--bg); padding:4px; border-radius:8px; border:1px solid var(--border);">
+              <button class="btn btn-sm btn-primary" id="subtabSubmittedOrders" style="font-size:12px; font-weight:700;">
+                <i class="ph ph-check-circle"></i> Đơn Đã Lên Bưu Điện (<span id="countSubmittedTab">0</span>)
+              </button>
+              <button class="btn btn-sm btn-secondary" id="subtabDraftOrders" style="font-size:12px; font-weight:700;">
+                <i class="ph ph-file-dashed"></i> Đơn Nháp (<span id="countDraftsTab">0</span>)
+              </button>
             </div>
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Số điện thoại:</label>
-              <input type="text" id="edit-phone" class="glass-input" required>
-            </div>
-          </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Địa chỉ giao hàng chi tiết:</label>
-            <textarea id="edit-address" class="glass-input" rows="3" required></textarea>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Mã đơn hàng:</label>
-              <input type="text" id="edit-order-code" class="glass-input">
-            </div>
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Mã vận đơn:</label>
-              <input type="text" id="edit-waybill-code" class="glass-input">
-            </div>
-          </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Tiền thu hộ COD (VNĐ):</label>
-            <input type="number" id="edit-cod-amount" class="glass-input" required>
-          </div>
-          <div class="pt-4 border-t border-brand-borderLight flex items-center justify-end gap-2">
-            <button type="button" id="cancel-modal-btn" class="btn btn-outline">Hủy bỏ</button>
-            <button type="submit" class="btn btn-primary">
-              <i class="ph ph-floppy-disk text-base"></i> Lưu thay đổi
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
 
-    <!-- MODAL: CHỈNH SỬA KHÁCH HÀNG -->
-    <div id="edit-customer-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-      <div class="glass-card shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-5 py-3.5 border-b border-brand-borderLight flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-user-gear text-lg text-brand-primaryBlue"></i>
-            <h3 class="text-sm font-bold text-brand-darkText">Chỉnh sửa thông tin khách hàng</h3>
-          </div>
-          <button id="close-cust-modal-btn" class="text-brand-darkText/55 hover:text-brand-darkText p-1 rounded-md hover:bg-brand-neutralBg transition-all" aria-label="Đóng">
-            <i class="ph ph-x text-lg"></i>
-          </button>
-        </div>
-        <form id="edit-customer-form" class="p-5 space-y-4 text-xs font-medium">
-          <input type="hidden" id="edit-cust-key">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Tên khách hàng:</label>
-              <input type="text" id="edit-cust-name" class="glass-input" required>
-            </div>
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Số điện thoại:</label>
-              <input type="text" id="edit-cust-phone" class="glass-input" required>
-            </div>
-          </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Địa chỉ giao hàng gần nhất:</label>
-            <textarea id="edit-cust-address" class="glass-input" rows="3" required></textarea>
-          </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Ghi chú cá nhân:</label>
-            <textarea id="edit-cust-note" class="glass-input" rows="3"></textarea>
-          </div>
-          <div class="pt-4 border-t border-brand-borderLight flex items-center justify-end gap-2">
-            <button type="button" id="cancel-cust-modal-btn" class="btn btn-outline">Hủy bỏ</button>
-            <button type="submit" class="btn btn-primary">
-              <i class="ph ph-floppy-disk text-base"></i> Cập nhật tất cả đơn của khách
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            <!-- Search & Filters -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <div class="search-box" style="width:220px;">
+                <i class="ph ph-magnifying-glass search-icon"></i>
+                <input type="text" id="txtSearchOrders" class="field search-field" placeholder="Tìm Tên, SĐT, Mã đơn...">
+              </div>
 
-    <!-- MODAL: LÊN ĐƠN NHÁP TỪ ĐIỆN THOẠI -->
-    <div id="mobile-draft-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div class="glass-card shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-        <div class="px-5 py-3.5 border-b border-brand-borderLight flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-device-mobile-speaker text-xl text-brand-primaryBlue"></i>
-            <h3 class="text-sm font-bold text-brand-darkText uppercase tracking-wide">Lên đơn nháp từ Điện thoại</h3>
-          </div>
-          <button id="close-mobile-draft-modal" class="text-brand-darkText/55 hover:text-brand-darkText p-1 rounded-md hover:bg-brand-neutralBg transition-all" aria-label="Đóng">
-            <i class="ph ph-x text-lg"></i>
-          </button>
-        </div>
-        <form id="mobile-draft-form" class="p-5 space-y-4 overflow-y-auto text-xs font-medium">
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold flex items-center justify-between">
-              <span>Dán tin nhắn chốt đơn (Zalo, FB, SMS...)</span>
-              <button type="button" id="btn-parse-mobile-raw" class="text-[11px] text-brand-primaryBlue font-extrabold hover:underline">Bóc Tách Tự Động</button>
-            </label>
-            <textarea id="mobile-raw-text" class="glass-input" rows="5"></textarea>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Tên khách hàng (*):</label>
-              <input type="text" id="mobile-cust-name" class="glass-input">
-            </div>
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Số điện thoại (*):</label>
-              <input type="text" id="mobile-cust-phone" class="glass-input">
-            </div>
-          </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Địa chỉ giao hàng (*):</label>
-            <textarea id="mobile-cust-address" class="glass-input" rows="3"></textarea>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Mã đơn hàng:</label>
-              <input type="text" id="mobile-order-code" class="glass-input">
-            </div>
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Số tiền COD (VNĐ):</label>
-              <input type="number" id="mobile-cod-amount" class="glass-input">
-            </div>
-            <div>
-              <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Hãng vận chuyển:</label>
-              <select id="mobile-platform" class="glass-input">
+              <select id="filterCarrierSelect" class="field" style="width:130px; padding:6px 10px; font-size:12px;">
+                <option value="all">Tất cả Bưu cục</option>
                 <option value="vnpost">VNPost</option>
                 <option value="jt">J&T Express</option>
               </select>
+
+              <select id="filterDateSelect" class="field" style="width:130px; padding:6px 10px; font-size:12px;">
+                <option value="today">Hôm nay</option>
+                <option value="7days">7 ngày qua</option>
+                <option value="30days">30 ngày qua</option>
+                <option value="all">Tất cả</option>
+              </select>
             </div>
           </div>
-          <div>
-            <label class="block text-brand-darkText/70 mb-1.5 font-semibold">Ghi chú đơn hàng:</label>
-            <input type="text" id="mobile-extra-note" class="glass-input">
-          </div>
-          <div class="pt-3 border-t border-brand-borderLight flex items-center justify-end gap-2">
-            <button type="button" id="cancel-mobile-draft-btn" class="btn btn-outline">Hủy</button>
-            <button type="submit" class="btn btn-primary">
-              <i class="ph ph-paper-plane-tilt text-base"></i> Lưu đơn nháp
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
 
-    <!-- GLOBAL ORDER PAYLOAD DETAIL DRAWER -->
-    <div id="order-payload-drawer" class="fixed inset-0 z-[999] hidden" aria-hidden="true">
-      <div id="order-payload-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-200 opacity-0"></div>
-      <div id="order-payload-panel" class="absolute top-0 right-0 w-[460px] max-w-[calc(100vw-2rem)] h-full glass-card border-l border-brand-borderLight shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
-        <!-- Header -->
-        <div class="p-5 border-b border-brand-borderLight bg-brand-neutralBg/60 flex items-center justify-between shrink-0">
-          <div>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-brand-primaryBlue font-mono-code">Order Payload Detail</span>
-            <h4 id="opd-title" class="text-sm font-bold text-brand-darkText mt-0.5">Chi tiết Đơn Hàng</h4>
+        <!-- Orders Table -->
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th style="width:40px;"><input type="checkbox" id="chkSelectAllOrders"></th>
+                  <th>Mã Đơn / Vận Đơn</th>
+                  <th>Khách Hàng</th>
+                  <th>Số Điện Thoại</th>
+                  <th>Địa Chỉ Nhận</th>
+                  <th>Tiền COD</th>
+                  <th>Bưu Cục</th>
+                  <th>Thời Gian</th>
+                  <th>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyOrdersList">
+                <tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-s);">Đang nạp danh sách đơn hàng...</td></tr>
+              </tbody>
+            </table>
           </div>
-          <button id="order-payload-close" class="p-1.5 text-brand-darkText/55 hover:text-brand-darkText rounded-md hover:bg-brand-neutralBg transition-all" aria-label="Đóng">
-            <i class="ph ph-x text-lg"></i>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:12px; color:var(--text-s);">
+            <span id="ordersPaginationInfo">Hiển thị 0 đơn hàng</span>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary btn-sm" id="btnPrevOrdersPage" disabled>Trang trước</button>
+              <button class="btn btn-secondary btn-sm" id="btnNextOrdersPage" disabled>Trang sau</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 3: CUSTOMER CRM & BLACKLIST BOM HÀNG                 -->
+      <!-- ======================================================== -->
+      <section id="tab-customers" class="tab-content">
+        <div class="page-hdr">
+          <div>
+            <h1>Quản Lý Khách Hàng & Blacklist Chống Bom Hàng</h1>
+            <p>Danh bạ khách tự động từ các đơn hàng và danh sách cảnh báo đỏ gửi về Extension.</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" id="btnAddBlacklistModalBtn" style="color:#EF4444; border-color:#FECDD3; background:#FFF1F2;">
+              <i class="ph ph-warning-octagon"></i> + Thêm SĐT Bom Hàng
+            </button>
+            <button class="btn btn-primary btn-sm" id="btnExportCustomersCsv"><i class="ph ph-export"></i> Xuất Danh Bạ</button>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px;">
+          <!-- Customers List -->
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 style="font-size:14px; font-weight:700;"><i class="ph ph-users text-indigo-500"></i> Danh Sách Khách Hàng Thân Thiết</h3>
+              <div class="search-box" style="width:200px;">
+                <i class="ph ph-magnifying-glass search-icon"></i>
+                <input type="text" id="txtSearchCustomers" class="field search-field" placeholder="Tìm Tên, SĐT...">
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="table" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Khách Hàng</th>
+                    <th>Số Điện Thoại</th>
+                    <th>Địa Chỉ</th>
+                    <th>Số Đơn</th>
+                    <th>Tổng Tiền COD</th>
+                    <th>Phân Hạng</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyCustomersList">
+                  <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-s);">Đang nạp dữ liệu khách hàng...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Blacklist Manager Panel -->
+          <div class="card" style="border-top: 4px solid #EF4444;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 style="font-size:14px; font-weight:700; color:#EF4444;"><i class="ph ph-shield-warning"></i> Cảnh Báo Bom Hàng (Blacklist)</h3>
+              <span class="badge badge-blacklist" id="badgeBlacklistCount">0 Số</span>
+            </div>
+            <p style="font-size:11px; color:var(--text-s); margin-bottom:12px;">
+              Khi nhân viên bóc đơn trên Extension chứa SĐT trong danh sách này, Extension sẽ <strong>bật còi báo động đỏ 🚨</strong> và khóa nút lên đơn.
+            </p>
+
+            <div id="blacklistContainer" style="display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto;">
+              <div style="text-align:center; padding:16px; color:var(--text-s); font-size:12px;">Chưa có số nào trong danh sách đen.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 4: STAFF MANAGEMENT & SHOP RBAC                      -->
+      <!-- ======================================================== -->
+      <section id="tab-staff" class="tab-content">
+        <div class="page-hdr">
+          <div>
+            <h1>Quản Lý Nhân Viên & Phân Quyền Shop</h1>
+            <p>Cấp tài khoản, phân quyền thao tác cho nhân viên bóc đơn và quản lý kho.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnOpenAddStaffModal">
+            <i class="ph ph-user-plus"></i> + Thêm Nhân Viên Vào Shop
           </button>
         </div>
 
-        <!-- Body -->
-        <div class="flex-1 overflow-y-auto p-5 space-y-3 text-xs">
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>Nhân Viên</th>
+                  <th>Email / Username</th>
+                  <th>Số Điện Thoại</th>
+                  <th>Vai Trò (Role)</th>
+                  <th>Ngày Tham Gia</th>
+                  <th>Trạng Thái</th>
+                  <th>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyStaffList">
+                <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-s);">Đang nạp danh sách nhân viên...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-brand-neutralBg rounded-lg p-3 border border-brand-borderLight space-y-0.5">
-              <div class="text-[10px] font-bold text-brand-darkText/50 uppercase tracking-wider">Khách Hàng</div>
-              <div id="opd-name" class="font-bold text-brand-darkText text-sm"></div>
-              <div id="opd-phone" class="font-mono-code text-brand-primaryBlue text-xs font-semibold"></div>
+        <!-- Invite Code Generator Card -->
+        <div class="card" style="margin-top:16px; background:var(--bg); border:1px dashed var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h4 style="font-size:13px; font-weight:700;"><i class="ph ph-ticket text-indigo-500"></i> Mã Mời Nhân Viên (Shop Invite Code)</h4>
+              <p style="font-size:11px; color:var(--text-s);">Nhân viên mới chỉ cần nhập mã này khi đăng ký để tự động gia nhập Shop với quyền STAFF.</p>
             </div>
-            <div class="bg-brand-neutralBg rounded-lg p-3 border border-brand-borderLight space-y-0.5">
-              <div class="text-[10px] font-bold text-brand-darkText/50 uppercase tracking-wider">COD / Thu cước</div>
-              <div id="opd-cod" class="font-bold text-emerald-700 text-sm font-mono-code"></div>
-              <div id="opd-collectfee" class="text-[11px] text-brand-darkText/60"></div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <code id="txtShopInviteCode" style="font-size:14px; font-weight:800; background:var(--card); padding:6px 12px; border-radius:6px; border:1px solid var(--border); color:var(--primary);">CHƯA TẠO</code>
+              <button class="btn btn-secondary btn-sm" id="btnCopyInviteCode"><i class="ph ph-copy"></i> Sao chép</button>
+              <button class="btn btn-primary btn-sm" id="btnGenerateInviteCode"><i class="ph ph-arrows-clockwise"></i> Tạo Mã Mới</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 5: SHOP PROFILE & CARRIER CONFIGS                   -->
+      <!-- ======================================================== -->
+      <section id="tab-settings" class="tab-content">
+        <div class="page-hdr">
+          <div>
+            <h1>Cấu Hình Shop & Kết Nối Bưu Cục</h1>
+            <p>Thiết lập thông tin người gửi mặc định, mã bưu điện VNPost/J&T và tài khoản nhận COD.</p>
+          </div>
+          <button class="btn btn-primary" id="btnSaveShopSettings">
+            <i class="ph ph-floppy-disk"></i> Lưu Cấu Hình Shop
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <!-- Shop Info & Sender Address -->
+          <div class="card">
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-storefront text-indigo-500"></i> Thông Tin Kho Gửi Hàng Mặc Định</h3>
+            
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Tên Cửa Hàng / Thương Hiệu:</label>
+              <input type="text" id="cfgShopName" class="field" placeholder="Ví dụ: Shop Bonsai Tài Lộc" style="margin-top:4px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Tên Người Gửi (Hiển thị trên bill):</label>
+              <input type="text" id="cfgSenderName" class="field" placeholder="Ví dụ: Nguyễn Văn Tài" style="margin-top:4px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Số Điện Thoại Người Gửi (Hotline):</label>
+              <input type="text" id="cfgSenderPhone" class="field" placeholder="Ví dụ: 0987654321" style="margin-top:4px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Tỉnh / Thành Phố Kho Hàng (Chuẩn Hóa):</label>
+              <input type="text" id="cfgSenderProvince" class="field" placeholder="Ví dụ: TP. Hồ Chí Minh" style="margin-top:4px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Quận / Huyện:</label>
+              <input type="text" id="cfgSenderDistrict" class="field" placeholder="Ví dụ: Quận Tân Bình" style="margin-top:4px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Phường / Xã & Địa Chỉ Số Nhà:</label>
+              <input type="text" id="cfgSenderAddress" class="field" placeholder="Ví dụ: 123 Hoàng Hoa Thám, Phường 13" style="margin-top:4px;">
             </div>
           </div>
 
-          <div class="bg-brand-neutralBg rounded-lg p-3 border border-brand-borderLight space-y-1">
-            <div class="text-[10px] font-bold text-brand-darkText/50 uppercase tracking-wider">Địa Chỉ Giao Hàng</div>
-            <div id="opd-address" class="text-brand-darkText leading-relaxed"></div>
+          <!-- Carrier Credentials & Bank COD -->
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <!-- Carrier Configs -->
+            <div class="card">
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-truck text-indigo-500"></i> Cấu Hình Tài Khoản Bưu Điện</h3>
+
+              <div class="form-group" style="margin-bottom:12px;">
+                <label style="color:#B45309; font-weight:700;"><i class="ph ph-envelope-simple"></i> Mã Khách Hàng VNPost (Bưu Điện):</label>
+                <input type="text" id="cfgVnpostCode" class="field" placeholder="Ví dụ: CUST-VNP-12345" style="margin-top:4px;">
+                <span style="font-size:10px; color:var(--text-s);">Mã bưu điện để tự động nhận diện giá cước hợp đồng.</span>
+              </div>
+
+              <div class="form-group" style="margin-bottom:12px;">
+                <label style="color:#DC2626; font-weight:700;"><i class="ph ph-truck"></i> Mã Hợp Đồng J&T Express:</label>
+                <input type="text" id="cfgJtCode" class="field" placeholder="Ví dụ: VIP-JT-998877" style="margin-top:4px;">
+                <span style="font-size:10px; color:var(--text-s);">Mã khách hàng VIP trên cổng jtexpress.vn.</span>
+              </div>
+
+              <div class="form-group">
+                <label>Tiền Tố Mã Đơn Hàng (Order Prefix):</label>
+                <input type="text" id="cfgOrderPrefix" class="field" placeholder="Ví dụ: AF-" style="margin-top:4px;">
+              </div>
+            </div>
+
+            <!-- Bank Account COD -->
+            <div class="card">
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-bank text-indigo-500"></i> Tài Khoản Ngân Hàng Nhận Tiền COD</h3>
+
+              <div class="form-group" style="margin-bottom:10px;">
+                <label>Ngân Hàng:</label>
+                <input type="text" id="cfgBankName" class="field" placeholder="Ví dụ: Vietcombank / MB Bank / Techcombank" style="margin-top:4px;">
+              </div>
+
+              <div class="form-group" style="margin-bottom:10px;">
+                <label>Số Tài Khoản:</label>
+                <input type="text" id="cfgBankAccountNo" class="field" placeholder="Ví dụ: 0123456789" style="margin-top:4px;">
+              </div>
+
+              <div class="form-group">
+                <label>Chủ Tài Khoản (In hoa không dấu):</label>
+                <input type="text" id="cfgBankAccountHolder" class="field" placeholder="Ví dụ: NGUYEN VAN TAI" style="margin-top:4px;">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 6: EXTENSION FLEET & DEVICE SECURITY                 -->
+      <!-- ======================================================== -->
+      <section id="tab-devices" class="tab-content">
+        <div class="page-hdr">
+          <div>
+            <h1>Giám Sát Thiết Bị Extension & Bảo Mật</h1>
+            <p>Quản lý các máy tính đang đăng nhập Extension của shop và đổi mật khẩu an toàn.</p>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px;">
+          <!-- Devices Table -->
+          <div class="card">
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-browsers text-indigo-500"></i> Danh Sách Trình Duyệt Đang Kích Hoạt Extension</h3>
+            <div class="table-wrap">
+              <table class="table" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Thiết Bị / Trình Duyệt</th>
+                    <th>Địa Chỉ IP</th>
+                    <th>Hoạt Động Cuối</th>
+                    <th>Trạng Thái</th>
+                    <th>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyDevicesList">
+                  <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-s);">Đang nạp danh sách thiết bị...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-brand-neutralBg rounded-lg p-3 border border-brand-borderLight space-y-0.5">
-              <div class="text-[10px] font-bold text-brand-darkText/50 uppercase tracking-wider">Mã Đơn Hàng</div>
-              <div id="opd-ordercode" class="font-semibold text-brand-darkText font-mono-code"></div>
+          <!-- Password Change Card -->
+          <div class="card">
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-key text-indigo-500"></i> Đổi Mật Khẩu Chủ Shop</h3>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Mật Khẩu Mới:</label>
+              <input type="password" id="txtOwnerNewPass" class="field" placeholder="Nhập ít nhất 6 ký tự..." style="margin-top:4px;">
+              <div style="height:4px; background:#E2E8F0; border-radius:2px; margin-top:6px; overflow:hidden;">
+                <div id="pwStrengthMeterBar" style="height:100%; width:0%; background:#EF4444; transition:all 0.3s;"></div>
+              </div>
+              <div id="pwStrengthMeterText" style="font-size:10px; font-weight:700; color:#EF4444; margin-top:4px;">Độ mạnh: Chưa nhập</div>
             </div>
-            <div class="bg-brand-neutralBg rounded-lg p-3 border border-brand-borderLight space-y-0.5">
-              <div class="text-[10px] font-bold text-brand-darkText/50 uppercase tracking-wider">Mã Vận Đơn</div>
-              <div class="flex items-center gap-1.5">
-                <span id="opd-waybill" class="font-bold text-brand-primaryBlue font-mono-code"></span>
-                <button id="opd-copy-waybill" class="hidden p-0.5 text-brand-darkText/40 hover:text-brand-primaryBlue transition-colors" title="Sao chép Mã vận đơn">
-                  <i class="ph ph-copy text-sm"></i>
+
+            <div class="form-group" style="margin-bottom:14px;">
+              <label>Xác Nhận Mật Khẩu:</label>
+              <input type="password" id="txtOwnerConfirmPass" class="field" placeholder="Nhập lại mật khẩu..." style="margin-top:4px;">
+            </div>
+
+            <button id="btnSaveOwnerPass" class="btn btn-primary" style="width:100%;"><i class="ph ph-shield-check"></i> Lưu Mật Khẩu</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 7: AI QUOTA & SUBSCRIPTION                           -->
+      <!-- ======================================================== -->
+      <section id="tab-subscription" class="tab-content">
+        <div class="page-hdr">
+          <div>
+            <h1>Hạn Ngạch AI & Gói Cước Dịch Vụ</h1>
+            <p>Theo dõi mức tiêu thụ AI tokens và kích hoạt mã bản quyền nâng cấp.</p>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <!-- Current Plan Card -->
+          <div class="card">
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-crown text-indigo-500"></i> Gói Cước Hiện Tại Của Shop</h3>
+            
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:18px; font-weight:800; color:var(--primary);" id="subPlanName">GÓI PRO</span>
+                <span class="badge" style="background:#ECFDF5; color:#059669; font-weight:700;" id="subPlanStatus">Đang Hoạt Động</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-s);" id="subPlanExpiry">Hạn sử dụng: Vĩnh viễn (Theo chu kỳ)</p>
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+              <label style="font-weight:700;">Tiến Độ Hạn Ngạch AI Tháng Này:</label>
+              <div style="height:10px; background:#E2E8F0; border-radius:5px; margin-top:8px; overflow:hidden;">
+                <div id="subQuotaBar" style="height:100%; width:0%; background:linear-gradient(90deg, #4F46E5, #818CF8); transition:width 0.5s;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:12px; font-weight:600;">
+                <span id="subQuotaUsedText">0 lượt đã dùng</span>
+                <span id="subQuotaLimitText">Hạn mức: 1,000 lượt</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- License Code Redemption -->
+          <div class="card">
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-ticket text-indigo-500"></i> Nạp Mã Bản Quyền (Redeem License Key)</h3>
+            <p style="font-size:12px; color:var(--text-s); margin-bottom:16px;">
+              Nhập mã kích hoạt do Master Admin cấp để mở rộng số lượng nhân viên, thêm hạn mức AI và gia hạn thời gian sử dụng.
+            </p>
+
+            <div class="form-group" style="margin-bottom:14px;">
+              <label>Mã Kích Hoạt (License / Giftcode):</label>
+              <input type="text" id="txtRedeemCode" class="field" placeholder="Ví dụ: PRO-6M-ABCD-EFGH" style="margin-top:6px; font-family:monospace; font-weight:700; text-transform:uppercase;">
+            </div>
+
+            <button id="btnRedeemLicense" class="btn btn-primary" style="width:100%;">
+              <i class="ph ph-check-circle"></i> Kích Hoạt Mã Ngay
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 8: QUICK PARSE WEB TOOL                              -->
+      <!-- ======================================================== -->
+      <section id="tab-quick-parse" class="tab-content">
+        <div class="page-hdr">
+          <div>
+            <h1>Công Cụ Bóc Tách Đơn Nhanh Trên Web</h1>
+            <p>Dán đoạn chat/tin nhắn đặt hàng để kiểm tra AI chuẩn hóa địa chỉ và lưu đơn nháp.</p>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <!-- Input raw text -->
+          <div class="card">
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:10px;"><i class="ph ph-chat-text text-indigo-500"></i> Đoạn Chat Đơn Hàng Gốc</h3>
+            <textarea id="txtRawOrderInput" class="field" style="width:100%; height:220px; font-size:13px; line-height:1.5; resize:none;" placeholder="Dán nội dung tin nhắn Zalo, Facebook hoặc tin nhắn SMS khách gửi...
+Ví dụ:
+Anh gửi cho em cây kim quýt về 128 Lê Văn Sỹ, P10, Phú Nhuận, HCM nhé. SĐT: 0908112233. Thu hộ em 650k tiền cây nha anh"></textarea>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+              <button class="btn btn-secondary btn-sm" id="btnSampleText">Dán Mẫu Thử</button>
+              <button class="btn btn-primary" id="btnRunQuickParse"><i class="ph ph-magic-wand"></i> Bóc Tách Bằng AI</button>
+            </div>
+          </div>
+
+          <!-- Parsed Result Card -->
+          <div class="card">
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:10px;"><i class="ph ph-check-square-offset text-indigo-500"></i> Kết Quả Chuẩn Hóa Địa Chỉ & Thông Tin</h3>
+            
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div>
+                <label style="font-size:11px; font-weight:700; color:var(--text-s);">Tên Người Nhận:</label>
+                <input type="text" id="resCustomerName" class="field" style="margin-top:2px;" placeholder="Chưa có kết quả">
+              </div>
+
+              <div>
+                <label style="font-size:11px; font-weight:700; color:var(--text-s);">Số Điện Thoại:</label>
+                <input type="text" id="resCustomerPhone" class="field" style="margin-top:2px;" placeholder="Chưa có kết quả">
+              </div>
+
+              <div>
+                <label style="font-size:11px; font-weight:700; color:var(--text-s);">Địa Chỉ Chi Tiết (Chuẩn Hóa):</label>
+                <input type="text" id="resCustomerAddress" class="field" style="margin-top:2px;" placeholder="Chưa có kết quả">
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <div>
+                  <label style="font-size:11px; font-weight:700; color:var(--text-s);">Tiền Thu Hộ COD:</label>
+                  <input type="text" id="resCodAmount" class="field" style="margin-top:2px;" placeholder="0 đ">
+                </div>
+                <div>
+                  <label style="font-size:11px; font-weight:700; color:var(--text-s);">Mã Đơn Hàng:</label>
+                  <input type="text" id="resOrderCode" class="field" style="margin-top:2px;" placeholder="Tự động tạo">
+                </div>
+              </div>
+
+              <div style="margin-top:8px;">
+                <button class="btn btn-primary" id="btnSaveQuickParseDraft" style="width:100%;" disabled>
+                  <i class="ph ph-floppy-disk"></i> Lưu Thành Đơn Nháp Vào Supabase
                 </button>
               </div>
             </div>
           </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-brand-neutralBg rounded-lg p-3 border border-brand-borderLight space-y-0.5">
-              <div class="text-[10px] font-bold text-brand-darkText/50 uppercase tracking-wider">Nhà Vận Chuyển</div>
-              <div id="opd-platform" class="font-semibold text-brand-darkText"></div>
-            </div>
-            <div class="bg-brand-neutralBg rounded-lg p-3 border border-brand-borderLight space-y-0.5">
-              <div class="text-[10px] font-bold text-brand-darkText/50 uppercase tracking-wider">Thời Gian / Máy</div>
-              <div id="opd-time" class="text-brand-darkText/80"></div>
-              <div id="opd-device" class="text-brand-darkText/50 text-[10px]"></div>
-            </div>
-          </div>
-
-          <div>
-            <div class="text-[10px] font-bold text-brand-darkText/50 uppercase tracking-wider mb-1">Tin nhắn gốc</div>
-            <pre id="opd-raw-text" class="p-2.5 bg-brand-neutralBg rounded-md border border-brand-borderLight font-mono-code text-[11px] text-brand-darkText/80 whitespace-pre-wrap break-words max-h-44 overflow-y-auto">--</pre>
-          </div>
         </div>
+      </section>
 
-        <!-- Footer Actions -->
-        <div class="p-4 border-t border-brand-borderLight flex items-center gap-2 shrink-0 flex-wrap">
-          <button id="opd-btn-edit" class="btn btn-primary">
-            <i class="ph ph-pencil-simple text-sm"></i> Chỉnh Sửa
-          </button>
-          <button id="opd-btn-copy-all" class="btn btn-outline">
-            <i class="ph ph-copy text-sm"></i> Sao Chép Thông Tin
-          </button>
-          <button id="opd-btn-delete" class="btn btn-danger ml-auto">
-            <i class="ph ph-trash text-sm"></i> Xóa
-          </button>
+    </main>
+  </div>
+
+  <!-- MODALS CONTAINER -->
+  
+  <!-- 1. Add Staff Modal -->
+  <div class="modal-overlay" id="modalAddStaff">
+    <div class="modal-box">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:15px; font-weight:800;"><i class="ph ph-user-plus text-indigo-500"></i> Thêm Nhân Viên Vào Shop</h3>
+        <button class="btn btn-secondary btn-sm" id="btnCloseAddStaffModal" style="border:none;"><i class="ph ph-x text-lg"></i></button>
+      </div>
+      <div style="padding:20px;">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Email Hoặc Tên Đăng Nhập Của Nhân Viên:</label>
+          <input type="text" id="txtStaffIdentifier" class="field" placeholder="Ví dụ: nhanvien1@gmail.com hoặc nhanvien1" style="margin-top:4px;">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Vai Trò Trong Shop:</label>
+          <select id="selectStaffRole" class="field" style="margin-top:4px;">
+            <option value="STAFF" selected>Nhân Viên Bóc Đơn (STAFF) - Chỉ bóc đơn & lên đơn</option>
+            <option value="MANAGER">Quản Lý (MANAGER) - Xem đơn, duyệt đơn & xem khách</option>
+            <option value="VIEWER">Người Xem (VIEWER) - Chỉ xem báo cáo</option>
+          </select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="btn btn-secondary" id="btnCancelAddStaff">Hủy Bỏ</button>
+          <button class="btn btn-primary" id="btnConfirmAddStaff"><i class="ph ph-check"></i> Xác Nhận Thêm</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- DUMMY ELEMENTS FOR PREVENTING APP.JS NULL ERRORS -->
-    <div style="display:none;" id="dummy-container">
-      <div id="nav-tab-shops"></div>
-      <div id="nav-tab-users"></div>
-      <div id="nav-tab-audit"></div>
-      <div id="right-nav-shops"></div>
-      <div id="right-nav-users"></div>
-      <div id="right-nav-audit"></div>
-      <div id="section-shops"></div>
-      <div id="section-users"></div>
-      <div id="section-audit"></div>
-      <div id="create-shop-btn"></div>
-      <div id="btn-add-user"></div>
-      <div id="btn-refresh-audit"></div>
-      <div id="user-role-modal"></div>
-      <div id="create-shop-modal"></div>
-      <div id="edit-shop-modal"></div>
+  <!-- 2. Add Blacklist Phone Modal -->
+  <div class="modal-overlay" id="modalAddBlacklist">
+    <div class="modal-box">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:15px; font-weight:800; color:#EF4444;"><i class="ph ph-warning-octagon"></i> Thêm Số Điện Thoại Bom Hàng</h3>
+        <button class="btn btn-secondary btn-sm" id="btnCloseBlacklistModal" style="border:none;"><i class="ph ph-x text-lg"></i></button>
+      </div>
+      <div style="padding:20px;">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Số Điện Thoại Cảnh Báo:</label>
+          <input type="text" id="txtBlacklistPhone" class="field" placeholder="Ví dụ: 0911222333" style="margin-top:4px;">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Lý Do Cảnh Báo / Ghi Chú:</label>
+          <input type="text" id="txtBlacklistReason" class="field" placeholder="Ví dụ: Bom hàng 2 lần tại Thủ Đức, số ảo" style="margin-top:4px;">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="btn btn-secondary" id="btnCancelBlacklist">Hủy</button>
+          <button class="btn btn-primary" id="btnConfirmAddBlacklist" style="background:#EF4444; border-color:#EF4444;"><i class="ph ph-shield-warning"></i> Đưa Vào Blacklist</button>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- SCRIPTS -->
   <script src="supabase-config.js"></script>
   <script src="auth.session.js"></script>
   <script src="auth.service.js"></script>
   <script src="storage.js"></script>
-  <script src="parser.js"></script>
-  <script src="shops.js"></script>
-  <script src="shop-settings.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

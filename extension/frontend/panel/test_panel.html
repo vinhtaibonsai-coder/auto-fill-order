@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Autofill Panel</title>
+  <style>
+    body {
+      background-color: #0f172a;
+      margin: 0;
+      padding: var(--space-xl, 32px);
+      font-family: sans-serif;
+      color: #f8fafc;
+    }
+    .preview-header {
+      max-width: 600px;
+      margin: 40px auto;
+      text-align: center;
+    }
+    .preview-header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .preview-header p {
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-header">
+    <h1>Floating Panel UI Preview</h1>
+    <p>Visual testing for the upgraded chrome extension floating panel.</p>
+  </div>
+  
+  <!-- Injected Toast Container (used by panel.js/toast.js) -->
+  <div id="vnpost-toast-container"></div>
+
+  <!-- Mock Toast System -->
+  <script>
+    globalThis.showVnpostToast = (msg, type) => {
+      const container = document.getElementById('vnpost-toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `vnpost-toast vnpost-toast--${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    };
+  </script>
+
+  <!-- Load Stylesheet Variable and Panel JS -->
+  <script src="ui/styling/styles.js"></script>
+  <script src="ui/panel/panel.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Mock chrome.storage.local and onChanged if not available (non-extension environment)
+      if (typeof chrome === 'undefined') {
+        const listeners = [];
+        globalThis.chrome = {
+          storage: {
+            local: {
+              get: (keys, cb) => {
+                cb({ panelMinimized: false, panelTheme: 'dark' });
+              },
+              set: (data) => {
+                console.log('chrome.storage.local.set', data);
+              }
+            },
+            onChanged: {
+              addListener: (cb) => {
+                listeners.push(cb);
+              },
+              _trigger: (changes, areaName) => {
+                listeners.forEach(cb => cb(changes, areaName));
+              }
+            }
+          }
+        };
+      }
+
+      // Mock OrderStorage for async cache testing
+      let mockApiKey = "";
+      globalThis.OrderStorage = {
+        getCacheValue: (key) => {
+          if (key === 'groqApiKey') return mockApiKey;
+          return null;
+        }
+      };
+
+      // Create Panel
+      createInputPanel(
+        { id: 'vnpost', title: 'VNPost Autofill', themeColor: '#0056b3' },
+        () => { showVnpostToast('⚡ Đã bấm nút Phân tích đơn hàng', 'success'); },
+        (platform) => { showVnpostToast('📥 Đã bấm nút Nhập đơn cho ' + platform, 'success'); },
+        () => { showVnpostToast('🗑️ Đã xóa dữ liệu đơn hàng', 'success'); },
+        (addr) => { showVnpostToast('📍 Đã chọn gợi ý địa chỉ: ' + addr, 'success'); },
+        () => { showVnpostToast('⚙️ Mở trang cấu hình', 'success'); },
+        (field, val) => { showVnpostToast(`📝 Đã sửa ${field} thành: ${val}`, 'success'); },
+        () => { showVnpostToast('💾 Đã lưu đơn hàng thành công', 'success'); }
+      );
+      
+      // Simulate API Key synchronization after 2 seconds
+      setTimeout(() => {
+        mockApiKey = "gsk_groq_mock_key_123456789";
+        showVnpostToast('🔑 API key đã được đồng bộ từ Cloud!', 'info');
+        if (chrome && chrome.storage && chrome.storage.onChanged && chrome.storage.onChanged._trigger) {
+          chrome.storage.onChanged._trigger({ groqApiKey: { newValue: mockApiKey } }, 'local');
+        }
+      }, 2000);
+
+      // Fill with dummy order data to inspect layout alignment
+      displayParsedData({
+        name: 'Nguyễn Văn A',
+        phone: '0987654321',
+        orderCode: 'VN-POST-99212A',
+        address: '123 Đường Lê Lợi, Phường Bến Thành, Quận 1, Thành phố Hồ Chí Minh',
+        codAmount: 1250000,
+        collectFee: true
+      });
+    });
+  </script>
+</body>
+</html>

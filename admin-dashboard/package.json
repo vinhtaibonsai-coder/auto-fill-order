@@ -1,0 +1,9 @@
+{
+  "name": "auto-fill-admin-dashboard",
+  "version": "2.0.0",
+  "description": "Master Admin & Shop Management Dashboard for Auto Fill Order",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve ."
+  }
+}

@@ -208,17 +208,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fallback nếu RPC chưa chạy
     try {
-      const { data: shops } = await sb.from('shops').select('id, status').is('deleted_at', null);
+      const { data: shops } = await sb.from('shops').select('id, status');
       const totalShops = shops ? shops.length : 0;
       const activeShops = shops ? shops.filter(s => s.status === 'active').length : 0;
 
       const { data: users } = await sb.from('profiles').select('id');
       const totalUsers = users ? users.length : 1;
 
-      const { data: orders } = await sb.from('orders').select('id', { count: 'exact' });
-      const totalOrders = orders ? orders.length : 0;
+      const [ordersRes, submittedRes] = await Promise.all([
+        sb.from('orders').select('id', { count: 'exact', head: true }),
+        sb.from('submitted_orders').select('id', { count: 'exact', head: true })
+      ]);
+      const totalOrders = (submittedRes?.count || 0) + (ordersRes?.count || 0);
 
-      const { data: devices } = await sb.from('extension_devices').select('id').eq('revoked', false);
+      const { data: devices } = await sb.from('extension_devices').select('id');
       const activeDevs = devices ? devices.length : 1;
 
       document.getElementById('metric-total-shops').textContent = totalShops;
@@ -571,7 +574,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const { data: members, error } = await sb
         .from('shop_members')
-        .select('id, user_id, role_id, roles(code)')
+        .select('id, user_id, role')
         .eq('shop_id', shopId);
 
       if (error) throw error;
@@ -1148,15 +1151,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     tbody.innerHTML = pageItems.map(l => {
-      const details = l.old_value || l.new_value
-        ? `${l.old_value || '—'} ➔ ${l.new_value || '—'}`
-        : 'Không có thông tin chi tiết';
+      let detailsObj = {};
+      try {
+        detailsObj = (typeof l.details === 'object' && l.details !== null)
+          ? l.details
+          : (typeof l.details === 'string' ? JSON.parse(l.details || '{}') : {});
+      } catch (_) {}
+
+      const actor = detailsObj.user_email || l.actor_id || l.user_id || 'Hệ thống';
+      const device = detailsObj.device_name ? `💻 ${detailsObj.device_name}` : '';
+      const msg = detailsObj.message || (l.old_value || l.new_value ? `${l.old_value || '—'} ➔ ${l.new_value || '—'}` : 'Chi tiết sự kiện');
+      const cat = detailsObj.category || 'AUDIT';
+
+      const badgeColors = {
+        OPERATION: '#10b981',
+        SECURITY: '#f59e0b',
+        ERROR: '#ef4444',
+        AUDIT: '#3b82f6'
+      };
+      const color = badgeColors[cat] || '#3b82f6';
+
       return `
-        <tr>
-          <td style="color: var(--text-s); font-size:11px">${new Date(l.created_at).toLocaleString('vi-VN')}</td>
-          <td style="font-weight: 700; color: var(--primary);">${escapeHtml(l.action)}</td>
-          <td style="font-family: monospace; font-size: 11px;">${escapeHtml(l.actor_id || 'System')}</td>
-          <td style="font-size: 11px; color: var(--text-s);">${escapeHtml(details)}</td>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="color: var(--text-s); font-size:11px; font-family: monospace;">${new Date(l.created_at).toLocaleString('vi-VN')}</td>
+          <td>
+            <span style="font-size:10px; font-weight:700; background:${color}15; color:${color}; padding:2px 6px; border-radius:4px; margin-right:4px;">${cat}</span>
+            <span style="font-weight: 700; color: var(--text-p); font-size:12px;">${escapeHtml(l.action)}</span>
+          </td>
+          <td style="font-size: 11px;">
+            <div style="font-weight:600; color: var(--text-p);">${escapeHtml(actor)}</div>
+            ${device ? `<div style="font-size:10px; color:var(--text-s);">${escapeHtml(device)}</div>` : ''}
+          </td>
+          <td style="font-size: 11px; color: var(--text-p); line-height: 1.4;">${escapeHtml(msg)}</td>
         </tr>
       `;
     }).join('');
@@ -1259,7 +1285,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  let _allUsers = [];
   let _userShopsLoaded = false;
 
   async function loadUserShopsFilter() {

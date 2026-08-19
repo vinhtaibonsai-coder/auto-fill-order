@@ -13,6 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleSmartAddress = document.getElementById('toggle-smart-address');
   const btnSaveShopFeatures = document.getElementById('btn-save-shop-features');
 
+  // Carrier Config
+  const btnSaveCarrierTokens = document.getElementById('btn-save-carrier-tokens');
+  const inputVnpostCustCode = document.getElementById('vnpost-cust-code');
+  const inputVnpostApiToken = document.getElementById('vnpost-api-token');
+  const inputJtCustCode = document.getElementById('jt-cust-code');
+  const inputJtApiKey = document.getElementById('jt-api-key');
+
   // Members
   const shopMembersTbody = document.getElementById('shop-members-tbody');
   const btnAddShopMember = document.getElementById('btn-add-shop-member');
@@ -85,6 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data) {
         toggleAiParsing.checked = data.ai_parsing_enabled !== false;
         toggleSmartAddress.checked = data.smart_address_enabled !== false;
+        if (inputVnpostCustCode) inputVnpostCustCode.value = data.vnpost_customer_code || '';
+        if (inputVnpostApiToken) inputVnpostApiToken.value = data.vnpost_api_token || '';
+        if (inputJtCustCode) inputJtCustCode.value = data.jt_customer_code || '';
+        if (inputJtApiKey) inputJtApiKey.value = data.jt_api_key || '';
       } else {
         toggleAiParsing.checked = true;
         toggleSmartAddress.checked = true;
@@ -124,6 +135,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (btnSaveCarrierTokens) {
+    btnSaveCarrierTokens.addEventListener('click', async () => {
+      if (!currentShopId) return;
+      
+      if (!isValidUUID(currentShopId)) {
+        alert('❌ Cấu hình API chỉ khả dụng ở chế độ Online (Đám mây)!');
+        return;
+      }
+
+      btnSaveCarrierTokens.innerHTML = 'Đang lưu...';
+      btnSaveCarrierTokens.disabled = true;
+
+      try {
+        const { error } = await sb.from('shop_feature_flags').upsert({
+          shop_id: currentShopId,
+          vnpost_customer_code: inputVnpostCustCode ? inputVnpostCustCode.value.trim() : '',
+          vnpost_api_token: inputVnpostApiToken ? inputVnpostApiToken.value.trim() : '',
+          jt_customer_code: inputJtCustCode ? inputJtCustCode.value.trim() : '',
+          jt_api_key: inputJtApiKey ? inputJtApiKey.value.trim() : '',
+          updated_at: new Date().toISOString()
+        });
+        if (error) throw error;
+        alert('✅ Đã lưu cấu hình API thành công!');
+      } catch (err) {
+        alert('❌ Lỗi lưu cấu hình API: ' + err.message + '\n(Lưu ý: Đảm bảo bạn đã chạy file migration SQL để thêm các cột lưu trữ!)');
+      } finally {
+        btnSaveCarrierTokens.innerHTML = 'Lưu Cấu Hình API';
+        btnSaveCarrierTokens.disabled = false;
+      }
+    });
+  }
+
   // ==========================================
   // LOAD MEMBERS
   // ==========================================
@@ -144,8 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
           id,
           status,
           user_id,
-          role_id,
-          roles ( code, name ),
+          role,
           profiles ( full_name, email )
         `)
         .eq('shop_id', currentShopId)
@@ -161,8 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
       shopMembersTbody.innerHTML = data.map(m => {
         const email = m.profiles?.email || 'N/A';
         const name = m.profiles?.full_name || 'N/A';
-        const roleName = m.roles?.name || m.roles?.code || 'Member';
         
+        let roleName = 'Nhân viên';
+        if (m.role === 'SHOP_OWNER') roleName = 'Chủ Shop';
+        else if (m.role === 'SHOP_MANAGER') roleName = 'Quản lý Shop';
+        else if (m.role === 'VIEWER') roleName = 'Khách xem';
+
         let statusBadge = 'bg-green-100 text-green-700';
         if (m.status === 'suspended') statusBadge = 'bg-yellow-100 text-yellow-700';
         
@@ -173,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="p-4 font-medium">${roleName}</td>
           <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${statusBadge}">${m.status}</span></td>
           <td class="p-4 text-right">
-            ${m.roles?.code !== 'SHOP_OWNER' && currentRole === 'SHOP_OWNER' ? `
+            ${m.role !== 'SHOP_OWNER' && currentRole === 'SHOP_OWNER' ? `
               <button class="text-rose-500 hover:underline font-bold mr-3 text-[11px]" onclick="window.removeShopMember(${m.id})">Xoá</button>
             ` : ''}
           </td>
@@ -239,12 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const userId = profiles[0].id;
 
-        // 2. Lấy role_id từ roles table
-        const { data: roleData, error: roleErr } = await sb.from('roles').select('id').eq('code', roleCode).single();
-        if (roleErr || !roleData) throw new Error('Lỗi lấy thông tin quyền hạn.');
-        const roleId = roleData.id;
-
-        // 3. Kiểm tra xem đã có trong shop chưa
+        // 2. Kiểm tra xem đã có trong shop chưa
         const { data: existing, error: checkErr } = await sb.from('shop_members')
           .select('id, removed_at')
           .eq('shop_id', currentShopId)
@@ -255,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (existing && existing.length > 0) {
           // Cập nhật lại quyền nếu đã tồn tại
           const { error: updErr } = await sb.from('shop_members').update({
-            role_id: roleId,
+            role: roleCode,
             status: 'active',
             removed_at: null
           }).eq('id', existing[0].id);
@@ -265,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const { error: insErr } = await sb.from('shop_members').insert({
             shop_id: currentShopId,
             user_id: userId,
-            role_id: roleId,
+            role: roleCode,
             status: 'active'
           });
           if (insErr) throw insErr;

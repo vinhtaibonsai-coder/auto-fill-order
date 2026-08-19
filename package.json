@@ -4,7 +4,8 @@
     "build": "vite build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:security": "node tests/security/rls-isolation.test.mjs && node tests/security/ai-gateway.test.mjs"
+    "test:security": "node tests/security/rls-isolation.test.mjs && node tests/security/ai-gateway.test.mjs",
+    "sync:ext": "node -e \"const fs=require('fs'),path=require('path');function cp(s,d){if(fs.statSync(s).isDirectory()){if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});fs.readdirSync(s).forEach(c=>cp(path.join(s,c),path.join(d,c)));}else{fs.copyFileSync(s,d);}}['manifest.json','src','frontend'].forEach(p=>cp(p,path.join('extension',p)));console.log('✅ Extension folder synced successfully!');\""
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.33",

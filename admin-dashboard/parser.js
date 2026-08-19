@@ -353,6 +353,20 @@
       lines.forEach(l => {
         const low = l.toLowerCase();
 
+        // Bỏ qua dòng nếu dòng đó chỉ chứa Tên người nhận và/hoặc Số điện thoại
+        let tempLine = l.trim().toLowerCase();
+        if (name) {
+          tempLine = tempLine.replace(name.toLowerCase().trim(), '');
+        }
+        phones.forEach(p => {
+          tempLine = tempLine.replace(p.toLowerCase().trim(), '');
+        });
+        tempLine = tempLine.replace(/^(?:sđt|sdt|đt|dt|tel|phone|lh|liên\s*hệ|người\s*nhận|tên\s*khách|khách\s*hàng|tên|họ\s*tên|kh)[:\s\-•,]+/i, '').trim();
+        tempLine = tempLine.replace(/^[-\|\:\s\.\,\/]+|[-\|\:\s\.\,\/]+$/g, '').trim();
+        if (tempLine.length === 0) {
+          return;
+        }
+
         // Trích xuất COD
         if (low.includes('cod') || low.includes('thu hộ') || (low.includes('tiền') && /\d/.test(low))) {
           const parsedCod = OrderProcessor.parseCOD(low);

@@ -29,7 +29,16 @@
 
   const OrderStorage = {
     isExtensionAvailable() {
-      return typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local;
+      try {
+        return typeof chrome !== 'undefined' && 
+               chrome.runtime && 
+               chrome.runtime.id && 
+               chrome.storage && 
+               chrome.storage.local && 
+               !!chrome.runtime.getManifest();
+      } catch (e) {
+        return false;
+      }
     },
 
     async initCache() {
