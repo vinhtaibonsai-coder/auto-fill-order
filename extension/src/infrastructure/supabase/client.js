@@ -707,7 +707,8 @@
         tracking_code: o.trackingCode || '',
         submitted_at: o.submittedAt || new Date().toISOString(),
         submitted_date: o.submittedDate || '',
-        device_name: o.deviceName || this._deviceName || ''
+        device_name: o.deviceName || this._deviceName || '',
+        carrier_account: o.carrierAccount || o.carrier_account || ''
       };
       if (shopId) rec.shop_id = shopId;
       return rec;
@@ -786,7 +787,8 @@
       trackingCode: o.tracking_code || o.trackingCode || '',
       submittedAt: o.submitted_at || o.submittedAt || '',
       submittedDate: o.submitted_date || o.submittedDate || '',
-      deviceName: o.device_name || o.deviceName || ''
+      deviceName: o.device_name || o.deviceName || '',
+      carrierAccount: o.carrier_account || o.carrierAccount || ''
     }));
   };
 
