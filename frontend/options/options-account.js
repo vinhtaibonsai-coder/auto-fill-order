@@ -236,6 +236,9 @@ async function initAccountUI() {
     if (dropdownRoleBadge) dropdownRoleBadge.textContent = roleLabel;
     if (dropdownShopName) dropdownShopName.textContent = shopName;
 
+    const optHeaderShopName = document.getElementById('optionsHeaderShopName');
+    if (optHeaderShopName) optHeaderShopName.textContent = shopName;
+
     if (btnProfileLogout) btnProfileLogout.style.display = 'inline-flex';
   }
 
