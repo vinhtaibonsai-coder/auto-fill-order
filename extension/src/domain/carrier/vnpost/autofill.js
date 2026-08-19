@@ -289,8 +289,36 @@
       if (name && nameEl) setInputValue(nameEl, name);
       if (address && address !== "không tìm thấy" && addrEl) setInputValue(addrEl, address);
 
+      // Điền mã đơn hàng của shop vào form VNPost
+      let orderCodeEl = document.querySelector('#form-create-order_customerOrderCode') ||
+                        document.querySelector('#form-create-order_orderCode') ||
+                        document.querySelector('input#customerOrderCode') ||
+                        document.querySelector('input#orderCode') ||
+                        document.querySelector('input[placeholder*="mã đơn" i]') ||
+                        document.querySelector('input[placeholder*="Mã đơn" i]');
+      if (orderCode && orderCodeEl) {
+        setInputValue(orderCodeEl, orderCode);
+      }
+
+      // Điền tên hàng hóa / nội dung hàng hóa vào form VNPost (ví dụ: "Lũa Thuỷ Sinh")
+      let goodsNameEl = document.querySelector('#form-create-order_goodsName') ||
+                        document.querySelector('#form-create-order_itemName') ||
+                        document.querySelector('#form-create-order_productName') ||
+                        document.querySelector('input[placeholder*="tên hàng" i]') ||
+                        document.querySelector('input[placeholder*="Tên hàng" i]') ||
+                        document.querySelector('input[placeholder*="nội dung hàng" i]') ||
+                        document.querySelector('input[placeholder*="Nội dung hàng" i]') ||
+                        document.querySelector('textarea[placeholder*="nội dung hàng" i]') ||
+                        document.querySelector('textarea[placeholder*="Nội dung hàng" i]') ||
+                        document.querySelector('input[placeholder*="tên sản phẩm" i]') ||
+                        document.querySelector('input[placeholder*="Tên sản phẩm" i]');
+
+      const defaultGoodsName = globalThis.parsedDataStore?.productItem || globalThis.parsedDataStore?.defaultGoodsName || 'Hàng hóa';
+      if (goodsNameEl) {
+        setInputValue(goodsNameEl, defaultGoodsName);
+      }
+
       if (noteEl) {
-        const defaultGoodsName = globalThis.parsedDataStore?.defaultGoodsName || 'Hàng hóa';
         let noteText = orderCode ? "Đơn hàng: " + orderCode : defaultGoodsName;
         if (globalThis.parsedDataStore?.extraNote) {
           noteText += (noteText ? " | " : "") + globalThis.parsedDataStore.extraNote;
