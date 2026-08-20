@@ -132,24 +132,8 @@ const AuthService = {
 
   async login(email, password) {
     const { url, anonKey } = await this._getSupabaseUrlAndKey();
-    const lowerEmail = (email || '').toLowerCase().trim();
-    const pwd = password || '';
     if (!url || !anonKey || anonKey === 'YOUR_SUPABASE_ANON_KEY') {
-      if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
-        throw new Error('Thiếu cấu hình kết nối máy chủ trên bản Production.');
-      }
-      if (lowerEmail === 'admin@vietautofill.com' && pwd !== 'Admin@123456') {
-        throw new Error('Email hoặc mật khẩu không đúng!');
-      }
-      if (
-        (lowerEmail === 'test_owner_alpha@test.com' || 
-         lowerEmail === 'test_owner_beta@test.com' || 
-         lowerEmail === 'test_owner_gamma@test.com') && 
-        pwd !== 'Test@123456'
-      ) {
-        throw new Error('Email hoặc mật khẩu không đúng!');
-      }
-      return await this._createLocalDevSession(email, 'Chủ Shop');
+      throw new Error('Thiếu cấu hình kết nối máy chủ Supabase. Vui lòng thiết lập trong Cài đặt.');
     }
 
     try {
@@ -200,7 +184,11 @@ const AuthService = {
         permissions: rbacData.permissions,
         role: rbacData.role,
         features: rbacData.features,
-        shop_name: rbacData.shop_name
+        shop_name: rbacData.shop_name,
+        max_devices: rbacData.max_devices,
+        max_users: rbacData.max_users,
+        monthly_order_limit: rbacData.monthly_order_limit,
+        custom_prompt_rules: rbacData.custom_prompt_rules
       };
 
       if (typeof AuthSession !== 'undefined') {
@@ -358,6 +346,37 @@ const AuthService = {
     return { ok: true, user: data };
   },
 
+  // Đổi mật khẩu cho nhân viên (dành cho Chủ Shop)
+  async changeEmployeePassword(employeeUserId, newPassword) {
+    const { url, anonKey } = await this._getSupabaseUrlAndKey();
+    if (!url || !anonKey) throw new Error('Chưa cấu hình Supabase Cloud!');
+
+    const token = typeof AuthSession !== 'undefined' ? AuthSession._cachedToken : null;
+    if (!token) throw new Error('Bạn cần đăng nhập để thực hiện đổi mật khẩu nhân viên!');
+
+    const endpoint = `${url.replace(/\/$/, '')}/rest/v1/rpc/owner_reset_member_password`;
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_target_user_id: employeeUserId,
+        p_new_password: newPassword
+      })
+    });
+
+    const resData = await resp.json();
+    if (!resp.ok) {
+      const errMsg = resData.message || resData.msg || 'Đổi mật khẩu nhân viên thất bại!';
+      throw new Error(errMsg);
+    }
+
+    return { ok: true, message: resData.message };
+  },
+
   async logout() {
     if (typeof AuthSession !== 'undefined') {
       await AuthSession.clearSession();
@@ -411,6 +430,21 @@ const AuthService = {
   // Lấy role + permissions + features từ RPC get_my_extension_session
   async _fetchUserRBAC(userId, token, anonKey, url) {
     try {
+      // Retrieve device_id and device_name
+      let deviceId = null;
+      let deviceName = null;
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          const r = await new Promise(res => chrome.storage.local.get(['fbDeviceId', 'fbDeviceName'], res));
+          deviceId = r.fbDeviceId;
+          deviceName = r.fbDeviceName;
+        }
+        if (!deviceId && typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud._getDeviceId === 'function') {
+          deviceId = await SupabaseCloud._getDeviceId().catch(() => null);
+          deviceName = await SupabaseCloud._getDeviceName().catch(() => null);
+        }
+      } catch (_) {}
+
       const endpoint = `${url.replace(/\/$/, '')}/rest/v1/rpc/get_my_extension_session`;
       const resp = await fetch(endpoint, {
         method: 'POST',
@@ -419,10 +453,41 @@ const AuthService = {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+          p_device_id: deviceId,
+          p_device_name: deviceName
+        })
       });
 
-      // 1. Lấy profile và phân quyền từ Database
+      let data = null;
+      if (resp.ok) {
+        try {
+          const resJson = await resp.json();
+          data = Array.isArray(resJson) ? resJson[0] : resJson;
+        } catch (_) {}
+      }
+
+      // Nếu có dữ liệu phiên trả về từ RPC -> Ưu tiên tuyệt đối (Zero-trust Server-enforced)
+      if (data && !data.error) {
+        let perms = data.permissions;
+        if (typeof perms === 'string') {
+          try { perms = JSON.parse(perms); } catch (_) { perms = []; }
+        }
+        return {
+          active_shop_id: data.shop_id,
+          permissions: Array.isArray(perms) ? perms : [],
+          role: data.role || 'SHOP_STAFF',
+          features: data.features || { all: true },
+          shop_name: data.shop_name || 'Shop của bạn',
+          max_devices: data.max_devices || 5,
+          max_users: data.max_users || 5,
+          monthly_order_limit: data.monthly_order_limit || 5000,
+          custom_prompt_rules: data.custom_prompt_rules || '',
+          device_limit_exceeded: !!data.device_limit_exceeded
+        };
+      }
+
+      // 1. Lấy profile và phân quyền từ Database (Fallback khi RPC lỗi)
       let profile = null;
       try {
         const pResp = await fetch(`${url.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${userId}&select=*`, {
@@ -467,19 +532,24 @@ const AuthService = {
       // Xử lý permissions: nếu là Admin thì toàn quyền [*], nếu nhân viên thì cấp quyền nghiệp vụ
       let perms = isAdminUser ? ['*'] : this._getDefaultPermissionsForRole(finalRole);
 
-      const dynamicShopId = dbShop ? dbShop.id : (data && data.shop_id ? data.shop_id : `shop_${userId.replace(/-/g, '').slice(0, 10)}`);
-      const dynamicShopName = dbShop ? dbShop.name : (data && data.shop_name ? data.shop_name : (profile?.full_name ? `Shop ${profile.full_name}` : 'Shop của bạn'));
+      const dynamicShopId = dbShop ? dbShop.id : `shop_${userId.replace(/-/g, '').slice(0, 10)}`;
+      const dynamicShopName = dbShop ? dbShop.name : (profile?.full_name ? `Shop ${profile.full_name}` : 'Shop của bạn');
 
       return {
         active_shop_id: dynamicShopId,
         permissions: perms,
         role: finalRole,
-        features: data?.features || { all: true },
-        shop_name: dynamicShopName
+        features: { all: true },
+        shop_name: dynamicShopName,
+        max_devices: 5,
+        max_users: 5,
+        monthly_order_limit: 5000,
+        custom_prompt_rules: '',
+        device_limit_exceeded: false
       };
     } catch (e) {
       console.warn("Lỗi fetch RBAC:", e);
-      return { active_shop_id: null, permissions: ['*'], role: 'SYSTEM_ADMIN', features: {}, shop_name: 'Shop của bạn' };
+      return { active_shop_id: null, permissions: ['*'], role: 'SYSTEM_ADMIN', features: {}, shop_name: 'Shop của bạn', device_limit_exceeded: false };
     }
   },
 

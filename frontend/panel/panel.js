@@ -922,6 +922,160 @@
     }
   }
 
+  function createDeviceLimitExceededPanel(platform, limit, onSettingsClickHandler) {
+    try {
+      if (typeof document === 'undefined') return;
+      const platformObj = normalizePlatform(platform);
+      let host = document.getElementById('vnpost-autofill-shadow-host');
+      const existingPanel = host ? getVnpostEl('vnpost-autofill-panel') : null;
+      if (existingPanel && existingPanel.dataset && existingPanel.dataset.panelType === 'device-limit') {
+        return; // Already showing device limit exceeded panel
+      }
+      if (!host) {
+        host = document.createElement('div');
+        host.id = 'vnpost-autofill-shadow-host';
+        document.body.appendChild(host);
+      }
+
+      const root = host.shadowRoot || host.attachShadow({ mode: 'open' });
+      const oldPanel = root.querySelector('#vnpost-autofill-panel');
+      if (oldPanel) oldPanel.remove();
+
+      if (!root.querySelector('#vnpost-shadow-style')) {
+        const styleEl = document.createElement('style');
+        styleEl.id = 'vnpost-shadow-style';
+        styleEl.textContent = typeof PANEL_CSS !== 'undefined' ? PANEL_CSS : '';
+        root.appendChild(styleEl);
+      }
+
+      const panel = document.createElement('div');
+      panel.id = 'vnpost-autofill-panel';
+      panel.dataset.panelType = 'device-limit';
+      
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local) {
+        try {
+          chrome.storage.local.get(['antigravity_ui_theme'], (res) => {
+            if (chrome.runtime.lastError) return;
+            if (!res || res.antigravity_ui_theme !== 'dark') {
+              panel.classList.add('light-mode');
+            } else {
+              panel.classList.remove('light-mode');
+            }
+          });
+        } catch (_) {}
+      } else {
+        panel.classList.add('light-mode');
+      }
+      const themeColor = platformObj.themeColor || (platformObj.id === "vnpost" ? "#0056b3" : "#4f46e5");
+      panel.style.setProperty('--theme-color', themeColor);
+
+      let _limitVersion = 'v1';
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) {
+          _limitVersion = 'v' + (chrome.runtime.getManifest().version || '1');
+        }
+      } catch (_) {}
+
+      panel.innerHTML = `
+        <div class="minimized-icon">${PANEL_ICONS.user}</div>
+        <div id="vnpost-panel-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="vnpost-panel-header-text"></span>
+            <span class="badge-version">${_limitVersion} (Hạn ngạch)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button id="vnpost-btn-theme" title="Chuyển chế độ Sáng/Tối">${PANEL_ICONS.theme}</button>
+            <button id="vnpost-btn-minimize">${PANEL_ICONS.minimize}</button>
+          </div>
+        </div>
+
+        <div id="vnpost-panel-body">
+          <div class="panel-login-box">
+            <div class="panel-login-title" style="color: #ef4444; display: flex; align-items: center; gap: 6px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Vượt Giới Hạn Thiết Bị
+            </div>
+            <div class="panel-login-subtitle" style="margin-bottom: 12px; font-size: 12px;">
+              Cửa hàng của bạn đã đạt giới hạn tối đa <strong>${limit}</strong> thiết bị hoạt động đồng thời.
+            </div>
+
+            <div class="panel-login-error" style="display: block; margin-bottom: 12px; font-size: 11px;">
+              Vui lòng mở Options (Cài đặt) để xem danh sách máy đang kết nối hoặc liên hệ với Chủ Shop/Quản trị viên để nâng cấp hạn ngạch.
+            </div>
+
+            <button type="button" id="panel-btn-open-settings" class="panel-login-btn" style="background-color: var(--theme-color, #4f46e5); color: #fff; margin-top: 4px;">
+              💻 Quản lý thiết bị (Options)
+            </button>
+            
+            <button type="button" id="panel-btn-logout-limit" class="panel-login-btn" style="background-color: #ef4444; color: #fff; margin-top: 8px;">
+              🚪 Đăng xuất tài khoản
+            </button>
+          </div>
+        </div>
+      `;
+
+      root.appendChild(panel);
+      const _headerEl = root.getElementById('vnpost-panel-header-text');
+      if (_headerEl) _headerEl.textContent = platformObj.title || '';
+      makeElementDraggable(panel, root.getElementById("vnpost-panel-header"));
+
+      // Gắn sự kiện theme toggle
+      const btnTheme = root.getElementById('vnpost-btn-theme');
+      if (btnTheme) {
+        btnTheme.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isNowLight = panel.classList.toggle('light-mode');
+          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ antigravity_ui_theme: isNowLight ? 'light' : 'dark' });
+          }
+        });
+      }
+
+      // Gắn sự kiện thu nhỏ
+      root.getElementById('vnpost-btn-minimize').addEventListener('click', () => {
+        panel.classList.toggle('minimized');
+      });
+
+      const btnSettings = root.getElementById('panel-btn-open-settings');
+      if (btnSettings && onSettingsClickHandler) {
+        btnSettings.addEventListener('click', (e) => {
+          e.preventDefault();
+          onSettingsClickHandler();
+        });
+      }
+
+      const btnLogout = root.getElementById('panel-btn-logout-limit');
+      if (btnLogout) {
+        btnLogout.addEventListener('click', async (e) => {
+          e.preventDefault();
+          btnLogout.disabled = true;
+          btnLogout.textContent = '⏳ Đang đăng xuất...';
+          try {
+            if (typeof AuthService !== 'undefined' && typeof AuthService.logout === 'function') {
+              await AuthService.logout();
+              setTimeout(() => {
+                const recheckFn = (typeof globalThis !== 'undefined' && globalThis.checkUrlAndInject) ||
+                                  (typeof window !== 'undefined' && window.checkUrlAndInject);
+                if (typeof recheckFn === 'function') {
+                  recheckFn();
+                }
+              }, 80);
+            }
+          } catch (err) {
+            alert('Lỗi đăng xuất: ' + err.message);
+          } finally {
+            btnLogout.disabled = false;
+            btnLogout.textContent = '🚪 Đăng xuất tài khoản';
+          }
+        });
+      }
+
+    } catch (e) {
+      console.warn("Lỗi tạo panel giới hạn thiết bị:", e);
+    }
+  }
+
   globalThis.createLoginRequiredPanel = createLoginRequiredPanel;
+  globalThis.createDeviceLimitExceededPanel = createDeviceLimitExceededPanel;
 })();
 

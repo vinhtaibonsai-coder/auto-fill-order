@@ -114,6 +114,25 @@
           return;
         }
 
+        // Check if device limit is exceeded
+        let session = null;
+        try {
+          if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSession === 'function') {
+            session = await AuthSession.getSession();
+          }
+        } catch (_) {}
+
+        if (session && session.device_limit_exceeded === true) {
+          try {
+            if (typeof createDeviceLimitExceededPanel === 'function') {
+              createDeviceLimitExceededPanel(platform, session.max_devices || 5, openSettingsPage);
+            }
+          } catch (limitErr) {
+            console.warn('[checkUrlAndInject] Error creating device limit panel:', limitErr);
+          }
+          return;
+        }
+
         globalThis.afTriggerFillForm = triggerFillForm;
         globalThis.afHandleSaveOrder = handleSaveOrder;
 
