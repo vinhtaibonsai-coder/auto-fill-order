@@ -69,20 +69,20 @@
 
   function findFieldInput(labelPatterns, fallbacks, isTextarea = false) {
     if (typeof document === 'undefined') return null;
-    let foundEl = null;
+    
     // 1. Tìm thông qua nhãn chứa từ khóa
-    document.querySelectorAll('label, span').forEach(lbl => {
+    const labels = document.querySelectorAll('label, span');
+    for (const lbl of labels) {
       const text = (lbl.innerText || '').trim();
       if (text && labelPatterns.some(p => p.test(text))) {
-        const container = lbl.closest('.ant-form-item, .el-form-item') || lbl.parentElement?.parentElement;
+        const container = lbl.closest('.ant-form-item, .el-form-item, .form-group') || lbl.parentElement?.parentElement;
         if (container) {
-          foundEl = container.querySelector(isTextarea ? 'textarea' : 'input');
-          if (!foundEl && isTextarea) foundEl = container.querySelector('input'); // fallback
-          if (!foundEl && !isTextarea) foundEl = container.querySelector('textarea'); // fallback
+          const el = container.querySelector(isTextarea ? 'textarea' : 'input') ||
+                     (isTextarea ? container.querySelector('input') : container.querySelector('textarea'));
+          if (el) return el;
         }
       }
-    });
-    if (foundEl) return foundEl;
+    }
 
     // 2. Tìm qua danh sách bộ chọn fallback
     for (const sel of fallbacks) {

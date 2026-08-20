@@ -68,7 +68,7 @@
   function getCurrentPlatform() {
     const url = typeof window !== 'undefined' ? window.location.href.toLowerCase() : '';
     if (url.includes('my.vnpost.vn/order/domestic/create')) return PLATFORMS.vnpost;
-    if (url.includes('khachhang.jtexpress.vn/ordercreate')) return PLATFORMS.jt;
+    if (url.includes('jtexpress.vn') && (url.includes('ordercreate') || url.includes('order/create') || url.includes('web/order/create') || url.includes('order-create'))) return PLATFORMS.jt;
     if (url.includes('ghn.vn')) return PLATFORMS.ghn;
     if (url.includes('ghtk.vn')) return PLATFORMS.ghtk;
     if (url.includes('viettelpost.vn')) return PLATFORMS.viettel;
@@ -1384,13 +1384,19 @@
         if (addrEl && addrEl.value) address = addrEl.value.trim();
 
         // 4. Mã đơn hàng của Shop (Trực tiếp từ ô nhập trên VNPost)
-        const orderCodeEl = document.querySelector('#form-create-order_customerOrderCode') ||
-                            document.querySelector('#form-create-order_orderCode') ||
-                            document.querySelector('input#customerOrderCode') ||
-                            document.querySelector('input#orderCode') ||
-                            document.querySelector('input[placeholder*="mã đơn" i]') ||
-                            document.querySelector('input[placeholder*="Mã đơn" i]') ||
-                            document.querySelector('input[placeholder*="Mã khách hàng" i]');
+        let orderCodeEl = document.querySelector('#form-create-order_customerOrderCode') ||
+                          document.querySelector('#form-create-order_orderCode') ||
+                          document.querySelector('input#customerOrderCode') ||
+                          document.querySelector('input#orderCode');
+        if (!orderCodeEl) {
+          const candidates = document.querySelectorAll('input[placeholder*="mã đơn" i], input[placeholder*="Mã đơn" i], input[placeholder*="Mã khách hàng" i]');
+          for (const cand of candidates) {
+            if (!cand.closest('header, .header, .topbar, .ant-layout-header, .search-box, .search-container, [class*="search" i]')) {
+              orderCodeEl = cand;
+              break;
+            }
+          }
+        }
         if (orderCodeEl && orderCodeEl.value && orderCodeEl.value.trim()) {
           orderCode = orderCodeEl.value.trim();
         }
@@ -1447,7 +1453,16 @@
         const phoneEl = document.querySelector('input[placeholder*="số điện thoại" i]');
         const nameEl = document.querySelector('input[placeholder*="tên người nhận" i]');
         const addrEl = document.querySelector('input[placeholder*="địa chỉ" i]') || document.querySelector('input[placeholder*="Số nhà/ đường/ ngõ"]');
-        const orderCodeEl = document.querySelector('input[placeholder*="Mã đơn" i]') || document.querySelector('input[placeholder*="Mã tham chiếu" i]');
+        
+        let orderCodeEl = null;
+        const jtCandidates = document.querySelectorAll('input[placeholder*="Mã đơn" i], input[placeholder*="Mã tham chiếu" i]');
+        for (const cand of jtCandidates) {
+          if (!cand.closest('header, .header, .topbar, .ant-layout-header, .search-box, .search-container, [class*="search" i]')) {
+            orderCodeEl = cand;
+            break;
+          }
+        }
+        
         const goodsInp = document.querySelector('textarea[placeholder*="tên sản phẩm" i]') || document.querySelector('input[placeholder*="tên sản phẩm" i]');
         
         let codInp = document.querySelector('input[placeholder*="Nhập số tiền" i]') || document.querySelector('#money');

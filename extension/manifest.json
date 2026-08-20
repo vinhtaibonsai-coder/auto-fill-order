@@ -31,7 +31,9 @@
       "matches": [
         "https://my.vnpost.vn/*",
         "https://shop.jtexpress.vn/*",
-        "https://khachhang.jtexpress.vn/*"
+        "https://khachhang.jtexpress.vn/*",
+        "https://vip.jtexpress.vn/*",
+        "https://*.jtexpress.vn/*"
       ],
       "js": [
         "src/application/config.js",
