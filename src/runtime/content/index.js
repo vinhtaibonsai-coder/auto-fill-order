@@ -1360,7 +1360,7 @@
 
   // ─── TÁCH HÀM SCRAPE DOM RA PHẠM VI TOÀN CỤC ĐỂ TÁI SỬ DỤNG ───
   function scrapeOrderFromDOM(plat) {
-    let name = '', phone = '', address = '', orderCode = '', codAmount = 0, collectFee = false, carrierAccount = '', productItem = '', extraNote = '';
+    let name = '', phone = '', address = '', orderCode = '', codAmount = 0, collectFee = false, carrierAccount = '', productItem = '', extraNote = '', weight = 0;
     try {
       carrierAccount = detectCarrierAccount(plat);
       if (plat === 'vnpost') {
@@ -1452,10 +1452,16 @@
           codAmount = parseInt(codEl.value.replace(/\D/g, ''), 10) || 0;
         }
 
-        // 8. Thu phí ship
-        const shipFeeBox = document.querySelector('input.ant-checkbox-input[aria-label*="cước" i]') ||
-                           document.querySelector('input.ant-checkbox-input');
         if (shipFeeBox) collectFee = !!shipFeeBox.checked;
+
+        // 9. Cân nặng (khối lượng)
+        const weightEl = document.querySelector('#form-create-order_weight') ||
+                         document.querySelector('input#weight') ||
+                         document.querySelector('input[placeholder*="khối lượng" i]') ||
+                         document.querySelector('input[placeholder*="Khối lượng" i]');
+        if (weightEl && weightEl.value) {
+          weight = parseInt(weightEl.value.replace(/\D/g, ''), 10) || 0;
+        }
 
       } else if (plat === 'jt') {
         const phoneEl = document.querySelector('input[placeholder*="số điện thoại" i]');
@@ -1490,11 +1496,18 @@
         if (orderCodeEl && orderCodeEl.value) orderCode = orderCodeEl.value.trim();
         if (goodsInp && goodsInp.value) productItem = goodsInp.value.trim();
         if (codInp && codInp.value) codAmount = parseInt(codInp.value.replace(/\D/g, ''), 10) || 0;
+
+        const weightInp = document.querySelector('input[placeholder*="trọng lượng" i]') || 
+                          document.querySelector('input[placeholder*="Trọng lượng" i]') ||
+                          document.querySelector('#weight');
+        if (weightInp && weightInp.value) {
+          weight = parseInt(weightInp.value.replace(/\D/g, ''), 10) || 0;
+        }
       }
     } catch (e) {
       console.warn('Lỗi khi cào dữ liệu từ DOM:', e);
     }
-    return { name, phone, address, orderCode, productItem, extraNote, codAmount, collectFee, carrierAccount };
+    return { name, phone, address, orderCode, productItem, extraNote, codAmount, collectFee, carrierAccount, weight };
   }
 
   // ─── NHÚNG INTERCEPTOR VÀ LẮNG NGHE TẠO ĐƠN (GÕ TAY) ───
@@ -1556,7 +1569,8 @@
           collectFee: data.collectFee || false,
           platform: platform || '',
           carrierAccount: data.carrierAccount || detectCarrierAccount(platform) || '',
-          extraNote: data.extraNote || ''
+          extraNote: data.extraNote || '',
+          weight: data.weight || 0
         };
 
         if (data.id) orderToSave.id = data.id;
@@ -1573,6 +1587,8 @@
             platform: platform || '',
             carrierAccount: saved.carrierAccount || orderToSave.carrierAccount || detectCarrierAccount(platform) || '',
             extraNote: saved.extraNote || orderToSave.extraNote || '',
+            productNote: data.productItem || '',
+            weight: data.weight || 0,
             trackingCode: trackingCode || '',
             savedOrderId: saved.id
           };

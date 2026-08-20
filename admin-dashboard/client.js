@@ -707,7 +707,10 @@
         tracking_code: o.trackingCode || '',
         submitted_at: o.submittedAt || new Date().toISOString(),
         submitted_date: o.submittedDate || '',
-        device_name: o.deviceName || this._deviceName || ''
+        device_name: o.deviceName || this._deviceName || '',
+        carrier_account: o.carrierAccount || o.carrier_account || '',
+        product_note: o.productNote || o.product_note || '',
+        weight: Number(o.weight) || 0
       };
       if (shopId) rec.shop_id = shopId;
       return rec;
@@ -743,7 +746,9 @@
       submitted_at: order.submittedAt || new Date().toISOString(),
       submitted_date: order.submittedDate || '',
       device_name: order.deviceName || this._deviceName || '',
-      carrier_account: order.carrierAccount || order.carrier_account || ''
+      carrier_account: order.carrierAccount || order.carrier_account || '',
+      product_note: order.productNote || order.product_note || '',
+      weight: Number(order.weight) || 0
     };
     if (shopId) rec.shop_id = shopId;
 
@@ -786,7 +791,10 @@
       trackingCode: o.tracking_code || o.trackingCode || '',
       submittedAt: o.submitted_at || o.submittedAt || '',
       submittedDate: o.submitted_date || o.submittedDate || '',
-      deviceName: o.device_name || o.deviceName || ''
+      deviceName: o.device_name || o.deviceName || '',
+      carrierAccount: o.carrier_account || o.carrierAccount || '',
+      productNote: o.product_note || o.productNote || '',
+      weight: Number(o.weight) || 0
     }));
   };
 
