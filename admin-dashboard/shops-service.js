@@ -62,6 +62,15 @@ const ShopService = (function () {
     localStorage.setItem('current_shop_id', shopId);
     localStorage.setItem(STORAGE_ACTIVE_SHOP_NAME, shopName);
 
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['vnpost_session'], r => {
+        const sess = r.vnpost_session || {};
+        sess.active_shop_id = shopId;
+        chrome.storage.local.set({ vnpost_session: sess });
+      });
+      chrome.storage.local.set({ activeShopId: shopId });
+    }
+
     currentActiveShop = { id: shopId, name: shopName };
 
     // Bắn Custom Event để các tab / biểu đồ tự động cập nhật

@@ -505,8 +505,8 @@ function renderDashboardKPIs() {
   let drafts = [...allDraftOrders];
 
   if (activeShopId && activeShopId !== 'all') {
-    submitted = submitted.filter(o => o.shop_id === activeShopId || !o.shop_id);
-    drafts = drafts.filter(o => o.shop_id === activeShopId || !o.shop_id);
+    submitted = submitted.filter(o => o.shop_id === activeShopId);
+    drafts = drafts.filter(o => o.shop_id === activeShopId);
   }
 
   const totalSubmitted = submitted.length;
@@ -625,7 +625,7 @@ function renderRecentOrdersStream() {
 
   let stream = [...allSubmittedOrders];
   if (activeShopId && activeShopId !== 'all') {
-    stream = stream.filter(o => o.shop_id === activeShopId || !o.shop_id);
+    stream = stream.filter(o => o.shop_id === activeShopId);
   }
 
   const recent = stream.slice(0, 5);
@@ -822,7 +822,7 @@ function filterSubmittedOrders() {
   let list = [...allSubmittedOrders];
 
   if (activeShopId && activeShopId !== 'all') {
-    list = list.filter(o => o.shop_id === activeShopId || !o.shop_id);
+    list = list.filter(o => o.shop_id === activeShopId);
   }
 
   filteredSubmittedOrders = list.filter(o => {

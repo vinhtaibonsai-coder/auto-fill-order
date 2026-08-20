@@ -685,13 +685,15 @@
   // ─── SUBMITTED ORDERS MANAGEMENT ───
   SupabaseCloud.pushSubmittedOrders = async function(orders) {
     if (!isBackground) {
+      const shopId = await this._getActiveShopId();
+      const mapped = orders.map(o => ({ ...o, shopId: o.shopId || shopId, shop_id: o.shop_id || shopId }));
       return new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'pushSubmittedOrders', orders }, resolve);
+        chrome.runtime.sendMessage({ action: 'pushSubmittedOrders', orders: mapped }, resolve);
       });
     }
 
     if (!Array.isArray(orders) || orders.length === 0) return;
-    const shopId = await this._getActiveShopId();
+    const shopId = orders[0]?.shopId || orders[0]?.shop_id || await this._getActiveShopId();
     
     const records = orders.map(o => {
       const rec = {
@@ -725,13 +727,14 @@
 
   SupabaseCloud.pushSubmittedOrder = async function(order) {
     if (!isBackground) {
+      const shopId = await this._getActiveShopId();
       return new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'pushSubmittedOrder', order }, resolve);
+        chrome.runtime.sendMessage({ action: 'pushSubmittedOrder', order: { ...order, shopId: order.shopId || shopId, shop_id: order.shop_id || shopId } }, resolve);
       });
     }
 
     const id = order.id || 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    const shopId = await this._getActiveShopId();
+    const shopId = order.shopId || order.shop_id || await this._getActiveShopId();
     const rec = {
       id: id,
       saved_order_id: order.savedOrderId || '',
