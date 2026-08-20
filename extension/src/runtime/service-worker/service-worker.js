@@ -957,10 +957,27 @@ async function autoFetchJtWaybillInBackground(order) {
               const code = item.billCode || item.waybillNo || item.trackingNo || item.txLogisticId || item.code || null;
               if (code && /^[A-Z0-9]{8,22}$/i.test(String(code))) {
                 const waybill = String(code).trim();
-                if (typeof SupabaseCloud !== 'undefined') {
-                  await SupabaseCloud.pushSubmittedOrder({ ...order, id: orderId, trackingCode: waybill, tracking_code: waybill, waybill_code: waybill }).catch(() => {});
+
+                // Xác thực xem item này có thực sự khớp với đơn hàng cần tra cứu không
+                const itemPhone = String(item.receiverPhone || item.receiverMobile || item.recipientPhone || item.recipientMobile || item.phone || item.mobile || '').replace(/\D/g, '');
+                const targetPhone = String(order.phone || '').replace(/\D/g, '');
+                
+                const itemOrderCode = String(item.txLogisticId || item.shopOrderCode || item.customerOrderCode || item.orderCode || item.orderNo || '').trim().toLowerCase();
+                const targetOrderCode = String(order.orderCode || order.order_code || '').trim().toLowerCase();
+
+                const itemName = String(item.receiverName || item.recipientName || item.name || '').replace(/[\s\-\.,]/g, '').toLowerCase();
+                const targetName = String(order.name || '').replace(/[\s\-\.,]/g, '').toLowerCase();
+
+                const phoneMatched = targetPhone && itemPhone && (itemPhone.includes(targetPhone) || targetPhone.includes(itemPhone));
+                const codeMatched = targetOrderCode && itemOrderCode && (itemOrderCode === targetOrderCode || itemOrderCode.includes(targetOrderCode) || targetOrderCode.includes(itemOrderCode));
+                const nameMatched = targetName && targetName.length > 2 && itemName && (itemName.includes(targetName) || targetName.includes(itemName));
+
+                if (phoneMatched || codeMatched || nameMatched) {
+                  if (typeof SupabaseCloud !== 'undefined') {
+                    await SupabaseCloud.pushSubmittedOrder({ ...order, id: orderId, trackingCode: waybill, tracking_code: waybill, waybill_code: waybill }).catch(() => {});
+                  }
+                  return waybill;
                 }
-                return waybill;
               }
             }
           }
@@ -998,10 +1015,27 @@ async function autoFetchVnpostWaybillInBackground(order) {
               const code = item.itemCode || item.code || item.trackingCode || item.maVanDon || item.shipmentNumber || null;
               if (code && /^[A-Z0-9]{8,22}$/i.test(String(code))) {
                 const waybill = String(code).trim();
-                if (typeof SupabaseCloud !== 'undefined') {
-                  await SupabaseCloud.pushSubmittedOrder({ ...order, id: orderId, trackingCode: waybill, tracking_code: waybill, waybill_code: waybill }).catch(() => {});
+
+                // Xác thực xem item này có thực sự khớp với đơn hàng cần tra cứu không
+                const itemPhone = String(item.receiverPhone || item.receiverMobile || item.phone || item.mobile || '').replace(/\D/g, '');
+                const targetPhone = String(order.phone || '').replace(/\D/g, '');
+                
+                const itemOrderCode = String(item.customerOrderCode || item.orderCode || item.code || item.maDonHang || '').trim().toLowerCase();
+                const targetOrderCode = String(order.orderCode || order.order_code || '').trim().toLowerCase();
+
+                const itemName = String(item.receiverName || item.name || '').replace(/[\s\-\.,]/g, '').toLowerCase();
+                const targetName = String(order.name || '').replace(/[\s\-\.,]/g, '').toLowerCase();
+
+                const phoneMatched = targetPhone && itemPhone && (itemPhone.includes(targetPhone) || targetPhone.includes(itemPhone));
+                const codeMatched = targetOrderCode && itemOrderCode && (itemOrderCode === targetOrderCode || itemOrderCode.includes(targetOrderCode) || targetOrderCode.includes(itemOrderCode));
+                const nameMatched = targetName && targetName.length > 2 && itemName && (itemName.includes(targetName) || targetName.includes(itemName));
+
+                if (phoneMatched || codeMatched || nameMatched) {
+                  if (typeof SupabaseCloud !== 'undefined') {
+                    await SupabaseCloud.pushSubmittedOrder({ ...order, id: orderId, trackingCode: waybill, tracking_code: waybill, waybill_code: waybill }).catch(() => {});
+                  }
+                  return waybill;
                 }
-                return waybill;
               }
             }
           }

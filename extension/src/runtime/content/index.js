@@ -1268,6 +1268,10 @@
           const orderCodeMatch = normOrderCode && normalizedText.includes(normOrderCode);
 
           if (phoneMatch || nameMatch || orderCodeMatch) {
+            window.__processedWaybills = window.__processedWaybills || new Set();
+            if (window.__processedWaybills.has(waybillCode)) return;
+            window.__processedWaybills.add(waybillCode);
+
             OrderStorage.updateSubmittedOrderTracking(sub.savedOrderId || sub.id, waybillCode).then(ok => {
               if (ok) showVnpostToast('📦 Đã tự động cập nhật mã vận đơn J&T: ' + waybillCode, 'success');
             });
@@ -1317,6 +1321,10 @@
           const orderCodeMatch = normOrderCode && normalizedText.includes(normOrderCode);
 
           if (phoneMatch || nameMatch || orderCodeMatch) {
+            window.__processedWaybills = window.__processedWaybills || new Set();
+            if (window.__processedWaybills.has(waybillCode)) return;
+            window.__processedWaybills.add(waybillCode);
+
             const orderId = sub.savedOrderId || sub.id;
             // Trích xuất tên/SĐT từ row để cập nhật vào đơn nếu đang bị thiếu
             let rowName = sub.name || '';
