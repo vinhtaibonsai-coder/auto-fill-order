@@ -857,13 +857,11 @@
       if (adminLoginLink) {
         adminLoginLink.addEventListener('click', (e) => {
           e.preventDefault();
-          let url = 'https://xlgovgynbsahuykyjzcx.supabase.co/';
-          try {
-            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.runtime.getURL) {
-              url = chrome.runtime.getURL('admin-dashboard/login.html');
-            }
-          } catch (_) {}
-          window.open(url, '_blank');
+          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ action: 'openAdmin' });
+          } else {
+            window.open('https://xlgovgynbsahuykyjzcx.supabase.co/', '_blank');
+          }
         });
       }
 

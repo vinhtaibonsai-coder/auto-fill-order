@@ -360,38 +360,80 @@ const OPTIONS_PAGE_URL = chrome.runtime.getURL('frontend/options/options.html');
 
 async function _focusOrCreateOptionsTab(sendResponse) {
   try {
-    const tabs = await chrome.tabs.query({});
-    const existing = tabs.find(t => t.url && t.url.startsWith(OPTIONS_PAGE_URL));
-    if (existing) {
-      // Tab đã mở → chỉ focus, KHÔNG reload (giữ nguyên dữ liệu đã load)
-      await chrome.tabs.update(existing.id, { active: true });
-      if (existing.windowId) {
-        await chrome.windows.update(existing.windowId, { focused: true });
-      }
-      if (sendResponse) sendResponse({ ok: true, reused: true });
-    } else {
-      // Chưa mở → tạo mới
-      if (typeof chrome.runtime.openOptionsPage === 'function') {
-        chrome.runtime.openOptionsPage(() => {
-          if (sendResponse) sendResponse({ ok: true, reused: false });
+    if (typeof chrome !== 'undefined' && chrome.tabs && typeof chrome.tabs.query === 'function') {
+      const tabs = await new Promise(resolve => {
+        chrome.tabs.query({}, (res) => {
+          if (chrome.runtime.lastError) resolve([]);
+          else resolve(res || []);
         });
-      } else {
-        chrome.tabs.create({ url: OPTIONS_PAGE_URL }, () => {
-          if (sendResponse) sendResponse({ ok: true, reused: false });
-        });
+      });
+      
+      const existing = tabs.find(t => t.url && t.url.startsWith(OPTIONS_PAGE_URL));
+      if (existing) {
+        await chrome.tabs.update(existing.id, { active: true });
+        if (existing.windowId) {
+          await chrome.windows.update(existing.windowId, { focused: true });
+        }
+        if (sendResponse) {
+          try { sendResponse({ ok: true, reused: true }); } catch (_) {}
+        }
+        return;
       }
     }
   } catch (e) {
-    // Fallback an toàn
-    if (typeof chrome.runtime.openOptionsPage === 'function') {
-      chrome.runtime.openOptionsPage(() => {
-        if (sendResponse) sendResponse({ ok: true, reused: false });
+    console.warn("Lỗi khi tìm tab options:", e);
+  }
+
+  // Fallback
+  if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.openOptionsPage === 'function') {
+    chrome.runtime.openOptionsPage(() => {
+      if (chrome.runtime.lastError) {
+        if (typeof chrome.tabs !== 'undefined' && chrome.tabs.create) {
+          chrome.tabs.create({ url: OPTIONS_PAGE_URL }, () => {
+            if (sendResponse) { try { sendResponse({ ok: true, reused: false }); } catch (_) {} }
+          });
+        }
+      } else {
+        if (sendResponse) { try { sendResponse({ ok: true, reused: false }); } catch (_) {} }
+      }
+    });
+  } else if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+    chrome.tabs.create({ url: OPTIONS_PAGE_URL }, () => {
+      if (sendResponse) { try { sendResponse({ ok: true, reused: false }); } catch (_) {} }
+    });
+  }
+}
+
+async function _focusOrCreateAdminTab(sendResponse) {
+  const adminUrl = chrome.runtime.getURL('admin-dashboard/login.html');
+  try {
+    if (typeof chrome !== 'undefined' && chrome.tabs && typeof chrome.tabs.query === 'function') {
+      const tabs = await new Promise(resolve => {
+        chrome.tabs.query({}, (res) => {
+          if (chrome.runtime.lastError) resolve([]);
+          else resolve(res || []);
+        });
       });
-    } else {
-      chrome.tabs.create({ url: OPTIONS_PAGE_URL }, () => {
-        if (sendResponse) sendResponse({ ok: true, reused: false });
-      });
+      const existing = tabs.find(t => t.url && (t.url.startsWith(adminUrl) || t.url.includes('admin-dashboard/admin.html')));
+      if (existing) {
+        await chrome.tabs.update(existing.id, { active: true });
+        if (existing.windowId) {
+          await chrome.windows.update(existing.windowId, { focused: true });
+        }
+        if (sendResponse) {
+          try { sendResponse({ ok: true }); } catch (_) {}
+        }
+        return;
+      }
     }
+  } catch (e) {
+    console.warn("Lỗi khi tìm tab admin:", e);
+  }
+
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+    chrome.tabs.create({ url: adminUrl }, () => {
+      if (sendResponse) { try { sendResponse({ ok: true }); } catch (_) {} }
+    });
   }
 }
 
@@ -408,6 +450,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // ─── 1. XỬ LÝ MỞ TRANG CÀI ĐẶT ───
   if (message.action === 'openOptions') {
     _focusOrCreateOptionsTab(sendResponse);
+    return true;
+  }
+
+  // ─── 1b. XỬ LÝ MỞ TRANG QUẢN TRỊ ───
+  if (message.action === 'openAdmin') {
+    _focusOrCreateAdminTab(sendResponse);
     return true;
   }
 

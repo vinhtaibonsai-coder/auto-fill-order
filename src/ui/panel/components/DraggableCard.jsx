@@ -42,8 +42,8 @@ export default function DraggableCard({ children, onClose, title, isAuth = false
 
   const openAdmin = () => {
     try {
-      if (typeof chrome !== 'undefined' && chrome?.runtime?.id && typeof chrome.runtime.getURL === 'function') {
-        window.open(chrome.runtime.getURL('admin-dashboard/admin.html'));
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.id && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ action: 'openAdmin' });
       } else {
         alert("Extension context đã được cập nhật. Vui lòng tải lại trang (F5).");
       }
@@ -54,8 +54,8 @@ export default function DraggableCard({ children, onClose, title, isAuth = false
 
   const openOptions = () => {
     try {
-      if (typeof chrome !== 'undefined' && chrome?.runtime?.id && typeof chrome.runtime.getURL === 'function') {
-        window.open(chrome.runtime.getURL('frontend/options/options.html'));
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.id && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ action: 'openOptions' });
       } else {
         alert("Extension context đã được cập nhật. Vui lòng tải lại trang (F5).");
       }

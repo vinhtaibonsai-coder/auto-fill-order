@@ -44,7 +44,11 @@ export default function LoginForm({ onLoginSuccess }) {
 
   const handleOpenOptions = (e) => {
     e.preventDefault();
-    if (chrome.runtime && chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ action: 'openOptions' });
+    } else {
+      alert("Extension context đã được cập nhật. Vui lòng tải lại trang (F5).");
+    }
   };
 
   return (
