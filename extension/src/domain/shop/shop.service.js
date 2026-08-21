@@ -39,6 +39,12 @@ const ShopService = {
         }).catch(() => null)
       ]);
 
+      // Kiểm tra phản hồi có OK không. Nếu không, bỏ qua để tránh hiểu nhầm là không có shop trên Cloud
+      if ((isSystemAdmin && (!allShopsRes || !allShopsRes.ok)) || !ownerRes || !ownerRes.ok || !memberRes || !memberRes.ok) {
+        console.warn('[ShopService] Lỗi kết nối hoặc phản hồi không hợp lệ từ Cloud. Bỏ qua đồng bộ.');
+        return false;
+      }
+
       const allShops = (allShopsRes && allShopsRes.ok) ? await allShopsRes.json().catch(() => []) : [];
       const ownerShops = (ownerRes && ownerRes.ok) ? await ownerRes.json().catch(() => []) : [];
       const memberData = (memberRes && memberRes.ok) ? await memberRes.json().catch(() => []) : [];
@@ -92,7 +98,11 @@ const ShopService = {
         const localShops = await OrderStorage.getShops();
         if (localShops && localShops.length > 0) {
           const shopToPush = localShops[0];
-          await this.createShop(shopToPush);
+          // CHỈ đẩy lên Cloud nếu shop này thực sự là shop offline (không có supabaseShopId)
+          // và không phải là shop mặc định hệ thống (tránh tự động nhân bản trùng lặp)
+          if (shopToPush && !shopToPush.supabaseShopId && shopToPush.id !== 'c201e6bc-8986-4f91-b900-e319865d1907') {
+            await this.createShop(shopToPush);
+          }
         }
       }
     } catch (e) {
@@ -123,6 +133,12 @@ const ShopService = {
     const currentUser = typeof AuthService !== 'undefined' ? await AuthService.getCurrentUser() : null;
     const userId = currentUser ? currentUser.id : null;
 
+    // Lấy token thật của người dùng để thực hiện request dưới tư cách chính họ (tránh lỗi RLS)
+    const token = typeof AuthSession !== 'undefined'
+      ? AuthSession._cachedToken || (await AuthSession.getSession())?.access_token
+      : null;
+    const authHeader = token ? `Bearer ${token}` : `Bearer ${anonKey}`;
+
     // 1. Lưu local storage
     let savedShop = null;
     if (typeof OrderStorage !== 'undefined') {
@@ -137,7 +153,7 @@ const ShopService = {
           method: 'POST',
           headers: {
             'apikey': anonKey,
-            'Authorization': `Bearer ${anonKey}`,
+            'Authorization': authHeader,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },

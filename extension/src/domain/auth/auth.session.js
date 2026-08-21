@@ -5,22 +5,82 @@
 const AuthSession = {
   _sessionKey: 'vnpost_session',
 
+  _cachedToken: null,
+
+  _updateCachedToken(session) {
+    this._cachedToken = session ? session.access_token : null;
+  },
+
+  async _checkAndRefreshSession(session) {
+    if (!session || !session.refresh_token || !session.expires_at) {
+      this._updateCachedToken(session);
+      return session;
+    }
+
+    // Check if token is expired or expiring in 5 minutes
+    if (Date.now() + 300000 < session.expires_at) {
+      this._updateCachedToken(session);
+      return session;
+    }
+
+    try {
+      const config = (typeof globalThis !== 'undefined' ? globalThis.SUPABASE_CONFIG : null) || {
+        url: 'https://xlgovgynbsahuykyjzcx.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsZ292Z3luYnNhaHV5a3lqemN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODg2MTksImV4cCI6MjEwMDE2NDYxOX0.AytQ0MPBklNajTadr2KyNwk-UP7JQZJ-UWdTGtIEyeM'
+      };
+
+      const resp = await fetch(`${config.url}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: {
+          'apikey': config.anonKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refresh_token: session.refresh_token })
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        session.access_token = data.access_token;
+        session.refresh_token = data.refresh_token;
+        session.expires_at = Date.now() + (data.expires_in || 3600) * 1000;
+        if (data.user) {
+          session.user = {
+            ...session.user,
+            ...data.user
+          };
+        }
+        await this.saveSession(session);
+        console.log('[AuthSession] Token refreshed successfully.');
+      } else {
+        console.warn('[AuthSession] Token refresh failed, status:', resp.status);
+      }
+    } catch (err) {
+      console.warn('[AuthSession] Error refreshing token:', err);
+    }
+    this._updateCachedToken(session);
+    return session;
+  },
+
   async getSession() {
     return new Promise(resolve => {
       try {
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.get([this._sessionKey], res => {
-            resolve(res[this._sessionKey] || null);
+          chrome.storage.local.get([this._sessionKey], async res => {
+            const sess = res[this._sessionKey] || null;
+            const finalSess = await AuthSession._checkAndRefreshSession(sess);
+            resolve(finalSess);
           });
         } else {
           const raw = localStorage.getItem(this._sessionKey);
-          resolve(raw ? JSON.parse(raw) : null);
+          const sess = raw ? JSON.parse(raw) : null;
+          AuthSession._checkAndRefreshSession(sess).then(resolve);
         }
       } catch (e) { resolve(null); }
     });
   },
 
   async saveSession(sessionData) {
+    this._updateCachedToken(sessionData);
     return new Promise(resolve => {
       try {
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -34,6 +94,7 @@ const AuthSession = {
   },
 
   async clearSession() {
+    this._cachedToken = null;
     return new Promise(resolve => {
       try {
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -70,6 +131,30 @@ const AuthSession = {
     }
   }
 };
+
+// Auto-initialize and sync cached token
+if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+  chrome.storage.local.get([AuthSession._sessionKey], res => {
+    AuthSession._updateCachedToken(res[AuthSession._sessionKey]);
+  });
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes[AuthSession._sessionKey]) {
+      AuthSession._updateCachedToken(changes[AuthSession._sessionKey].newValue);
+    }
+  });
+} else if (typeof window !== 'undefined' && window.localStorage) {
+  try {
+    const raw = localStorage.getItem(AuthSession._sessionKey);
+    AuthSession._updateCachedToken(raw ? JSON.parse(raw) : null);
+  } catch (_) {}
+  window.addEventListener('storage', (e) => {
+    if (e.key === AuthSession._sessionKey) {
+      try {
+        AuthSession._updateCachedToken(e.newValue ? JSON.parse(e.newValue) : null);
+      } catch (_) {}
+    }
+  });
+}
 
 if (typeof globalThis !== 'undefined') {
   globalThis.AuthSession = AuthSession;

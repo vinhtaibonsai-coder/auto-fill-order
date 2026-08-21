@@ -139,6 +139,37 @@ BEGIN
         RAISE WARNING '[FAIL] v21 chưa apply (get_system_config_value/upsert_system_config)';
     END IF;
 
+    -- (I) v48: submitted_orders & history RLS enabled
+    IF EXISTS (
+        SELECT 1 FROM pg_tables 
+        WHERE schemaname='public' 
+          AND tablename='submitted_orders' 
+          AND rowsecurity = true
+    ) AND EXISTS (
+        SELECT 1 FROM pg_tables 
+        WHERE schemaname='public' 
+          AND tablename='history' 
+          AND rowsecurity = true
+    ) THEN
+        v_pass := v_pass + 1;
+    ELSE
+        v_fail := v_fail + 1;
+        RAISE WARNING '[FAIL] v48: submitted_orders hoặc history chưa bật RLS';
+    END IF;
+
+    -- (J) v49: unique shop owner index exists
+    IF EXISTS (
+        SELECT 1 FROM pg_indexes 
+        WHERE schemaname='public' 
+          AND tablename='shop_members' 
+          AND indexname='uq_active_shop_owner_per_shop'
+    ) THEN
+        v_pass := v_pass + 1;
+    ELSE
+        v_fail := v_fail + 1;
+        RAISE WARNING '[FAIL] v49: Thiếu index uq_active_shop_owner_per_shop trên shop_members';
+    END IF;
+
     RAISE NOTICE '== KẾT QUẢ: PASS=% FAIL=% ==', v_pass, v_fail;
     IF v_fail > 0 THEN
         RAISE EXCEPTION 'SECURITY TEST THẤT BẠI: %', v_fail;

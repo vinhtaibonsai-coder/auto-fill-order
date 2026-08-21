@@ -139,6 +139,9 @@ const ShopService = (function () {
         }
       }
 
+      // Xác định danh sách shop cuối cùng được quyền truy cập
+      let finalList = isSysAdmin ? availableShops : permittedShops;
+
       // 4. Chỉ tự động khởi tạo Shop nếu toàn bộ Database chưa có bất kỳ Shop nào
       if (availableShops.length === 0 && userSession?.id) {
         let defaultName = 'Shop Lũa Thủy Sinh';
@@ -164,6 +167,7 @@ const ShopService = (function () {
           }).catch(() => {});
         }
       } else if (finalList.length === 0 && availableShops.length > 0) {
+        // Fallback chỉ khi không có shop được gán cụ thể (để đảm bảo không bị lỗi giao diện)
         finalList = availableShops;
       }
 

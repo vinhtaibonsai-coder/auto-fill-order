@@ -1180,7 +1180,7 @@
             labelText: (labelText || '').trim().replace(/\s+/g, ' ')
           };
         });
-        Logger.error("Chẩn đoán DOM J&T (Diagnostics)", JSON.stringify(diagnosticInfo, null, 2));
+        Logger.log("Chẩn đoán DOM J&T (Diagnostics)", diagnosticInfo);
       }
     } catch (e) {
       console.warn("Diagnostics run error:", e);

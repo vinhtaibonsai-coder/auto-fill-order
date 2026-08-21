@@ -3,7 +3,8 @@
     groqApiKey: "",
     groqModelName: "llama-3.3-70b-versatile",
     customAiPrompt: "",
-    blacklistPhones: []
+    blacklistPhones: [],
+    activeShop: null
   };
 
   // Lắng nghe thay đổi từ chrome.storage để tự động đồng bộ cache
@@ -12,6 +13,7 @@
       if (areaName === 'local') {
         const shouldReinit = Object.keys(changes).some(k => 
           k.startsWith('activeShop') || 
+          k.startsWith('current_shop_id') || 
           k.startsWith('groqApiKey') || 
           k.startsWith('groqModelName') || 
           k.startsWith('customAiPrompt') || 
@@ -109,6 +111,12 @@
       const keyModelName = await this._getScopedKey('groqModelName');
       const keyPrompt = await this._getScopedKey('customAiPrompt');
       const keyBlacklist = await this._getScopedKey('blacklistPhones');
+
+      try {
+        configCache.activeShop = await this.getActiveShop();
+      } catch (_) {
+        configCache.activeShop = null;
+      }
 
       return new Promise((resolve) => {
         if (this.isExtensionAvailable()) {
@@ -1419,10 +1427,18 @@
       return new Promise((resolve) => {
         try {
           if (this.isExtensionAvailable()) {
-            chrome.storage.local.set({ [activeShopKey]: String(shopId) }, () => resolve(true));
+            chrome.storage.local.set({ [activeShopKey]: String(shopId) }, () => {
+              this.getActiveShop().then(shop => {
+                configCache.activeShop = shop;
+                resolve(true);
+              }).catch(() => resolve(true));
+            });
           } else {
             localStorage.setItem(activeShopKey, String(shopId));
-            resolve(true);
+            this.getActiveShop().then(shop => {
+              configCache.activeShop = shop;
+              resolve(true);
+            }).catch(() => resolve(true));
           }
         } catch (e) { resolve(false); }
       });
