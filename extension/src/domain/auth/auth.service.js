@@ -397,7 +397,9 @@ const AuthService = {
     }
 
     // Phase 3.1: Session/logout nhất quán giữa mọi context
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+    // Chỉ gửi tin nhắn PERFORM_LOGOUT nếu không ở trong Service Worker (background context)
+    const isBackground = typeof window === 'undefined';
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       try {
         await new Promise(resolve => {
           chrome.runtime.sendMessage({ action: 'PERFORM_LOGOUT' }, resolve);
