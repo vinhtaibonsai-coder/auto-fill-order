@@ -1522,11 +1522,32 @@
       script.onload = () => { console.log('[Auto Fill] Interceptor injected.'); };
       (document.head || document.documentElement).appendChild(script);
 
+      function isCarrierTrackingCode(code) {
+        if (!code) return false;
+        const s = String(code).trim();
+        if (s.toUpperCase().startsWith('DH')) return false;
+        
+        // VNPost tracking code patterns
+        const vnpostRegex = /^[A-Z]{2}\d{9,13}VN$/i;
+        const vnpostRegex2 = /^C\d{9,13}VN$/i;
+        const vnpostRegex3 = /^MP\d{8,12}VN$/i;
+        
+        // J&T tracking code patterns
+        const jtRegex = /^8\d{11,14}$/i;
+        
+        return vnpostRegex.test(s) || vnpostRegex2.test(s) || vnpostRegex3.test(s) || jtRegex.test(s);
+      }
+
       window.addEventListener('message', (event) => {
         if (event.source !== window || !event.data || event.data.type !== 'AF_ORDER_CREATED') return;
         
         console.log('[Auto Fill] Nhận sự kiện tạo đơn gõ tay!', event.data);
         const trackingCode = event.data.trackingCode;
+        if (!trackingCode || !isCarrierTrackingCode(trackingCode)) {
+          console.log('[Auto Fill] Bỏ qua bắt đơn từ form do không có mã vận đơn hợp lệ:', trackingCode);
+          return;
+        }
+
         const platform = getCurrentPlatform();
         if (!platform) return;
 

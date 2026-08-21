@@ -4,12 +4,44 @@
 
   console.log('[Auto Fill] Interceptor loaded into MAIN world.');
 
+  function isCarrierTrackingCode(code) {
+    if (!code) return false;
+    const s = String(code).trim();
+    if (s.toUpperCase().startsWith('DH')) return false;
+    
+    // VNPost tracking code patterns
+    const vnpostRegex = /^[A-Z]{2}\d{9,13}VN$/i;
+    const vnpostRegex2 = /^C\d{9,13}VN$/i;
+    const vnpostRegex3 = /^MP\d{8,12}VN$/i;
+    
+    // J&T tracking code patterns
+    const jtRegex = /^8\d{11,14}$/i;
+    
+    return vnpostRegex.test(s) || vnpostRegex2.test(s) || vnpostRegex3.test(s) || jtRegex.test(s);
+  }
+
   function extractTrackingCode(body) {
     if (!body) return null;
-    let code = body.orderId || body.orderCode || body.trackingCode || body.maVanDon || body.shipmentNumber || body.itemCode || body.barcode || body.code || body.id || null;
-    if (code && /^[A-Z0-9]{8,22}$/i.test(String(code))) {
-      return String(code);
+    
+    // Check specific fields first
+    let candidates = [
+      body.trackingCode,
+      body.maVanDon,
+      body.shipmentNumber,
+      body.itemCode,
+      body.barcode,
+      body.orderId,
+      body.orderCode,
+      body.code,
+      body.id
+    ];
+    
+    for (let c of candidates) {
+      if (c && isCarrierTrackingCode(String(c))) {
+        return String(c).trim();
+      }
     }
+    
     // Deep search in nested objects for VNPost / J&T specific structures
     try {
       const str = typeof body === 'string' ? body : JSON.stringify(body);
