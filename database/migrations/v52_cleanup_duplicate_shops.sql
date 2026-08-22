@@ -40,11 +40,6 @@ BEGIN
               AND id <> v_keep_shop_id
               AND deleted_at IS NULL;
 
-            -- Cập nhật profile của chủ shop để gắn chặt với duy nhất shop được giữ lại
-            UPDATE public.profiles
-            SET shop_id = v_keep_shop_id
-            WHERE id = r_owner.owner_id;
-
             -- Loại bỏ quyền thành viên của chủ shop tại các shop đã bị xóa tạm
             DELETE FROM public.shop_members
             WHERE user_id = r_owner.owner_id
