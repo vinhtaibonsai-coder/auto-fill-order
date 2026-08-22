@@ -229,15 +229,15 @@ async function section4_fileStructure() {
         'admin-dashboard/app.js',
         'admin-dashboard/supabase-config.js',
         'manifest.json',
-        'backend/content/index.js',
-        'src/backend/auth/auth.service.js',
-        'src/backend/auth/auth.session.js',
-        'src/backend/permission/permission.service.js',
-        'src/backend/audit/audit.service.js',
-        'src/backend/shop/shop.service.js',
-        'src/backend/shop/invite.service.js',
-        'src/backend/member/member.service.js',
-        'src/backend/realtime/realtime.service.js',
+        'src/runtime/content/index.js',
+        'src/domain/auth/auth.service.js',
+        'src/domain/auth/auth.session.js',
+        'src/domain/permission/permission.service.js',
+        'src/domain/audit/audit.service.js',
+        'src/domain/shop/shop.service.js',
+        'src/domain/shop/invite.service.js',
+        'src/domain/member/member.service.js',
+        'src/domain/realtime/realtime.service.js',
         'database/migrations/v3_enterprise_schema.sql',
         'database/migrations/v3_1_rbac_schema.sql',
         'database/migrations/v4_saas_architecture.sql',
@@ -291,7 +291,7 @@ async function section6_sourceCode() {
     const baseDir = path.join(__dirname, '..');
 
     await test('auth.service.js exports required functions', () => {
-        const content = fs.readFileSync(path.join(baseDir, 'src/backend/auth/auth.service.js'), 'utf-8');
+        const content = fs.readFileSync(path.join(baseDir, 'src/domain/auth/auth.service.js'), 'utf-8');
         const required = ['signIn', 'signUp', 'signOut'];
         for (const fn of required) {
             assert.ok(content.includes(fn), `auth.service.js missing: ${fn}`);
@@ -299,17 +299,17 @@ async function section6_sourceCode() {
     });
 
     await test('auth.session.js handles session management', () => {
-        const content = fs.readFileSync(path.join(baseDir, 'src/backend/auth/auth.session.js'), 'utf-8');
+        const content = fs.readFileSync(path.join(baseDir, 'src/domain/auth/auth.session.js'), 'utf-8');
         assert.ok(content.includes('session'), 'auth.session.js should handle sessions');
     });
 
     await test('permission.service.js exports RBAC logic', () => {
-        const content = fs.readFileSync(path.join(baseDir, 'src/backend/permission/permission.service.js'), 'utf-8');
+        const content = fs.readFileSync(path.join(baseDir, 'src/domain/permission/permission.service.js'), 'utf-8');
         assert.ok(content.includes('role') || content.includes('permission'), 'permission.service.js should handle roles/permissions');
     });
 
     await test('shop.service.js has CRUD operations', () => {
-        const content = fs.readFileSync(path.join(baseDir, 'src/backend/shop/shop.service.js'), 'utf-8');
+        const content = fs.readFileSync(path.join(baseDir, 'src/domain/shop/shop.service.js'), 'utf-8');
         const operations = ['create', 'delete', 'update'];
         let found = 0;
         for (const op of operations) {
@@ -319,7 +319,7 @@ async function section6_sourceCode() {
     });
 
     await test('audit.service.js logs actions', () => {
-        const content = fs.readFileSync(path.join(baseDir, 'src/backend/audit/audit.service.js'), 'utf-8');
+        const content = fs.readFileSync(path.join(baseDir, 'src/domain/audit/audit.service.js'), 'utf-8');
         assert.ok(content.includes('log') || content.includes('audit'), 'audit.service.js should handle logging');
     });
 

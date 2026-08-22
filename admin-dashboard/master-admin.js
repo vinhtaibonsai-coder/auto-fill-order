@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const sb = getSupabaseClient();
+  let _userShopsLoaded = false;
 
   // ─── 2. CHUYỂN TAB SIDEBAR (Đồng bộ class nav-item active từ options.html) ─
   const tabButtons = {
@@ -301,13 +302,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         data = uniqueShops;
       }
-
-      // Lọc theo từ khóa tìm kiếm
-      const searchKeyword = (document.getElementById('input-search-admin-shops')?.value || '').toLowerCase().trim();
-      if (data && searchKeyword) {
-        data = data.filter(s => (s.name || '').toLowerCase().includes(searchKeyword));
+      // Truy vấn toàn bộ Profiles từ Supabase để ánh xạ chính xác từng Owner
+      if (sb) {
+        const { data: profs } = await sb.from('profiles').select('id, email, full_name, role');
+        if (profs && profs.length > 0) {
+          profs.forEach(p => { 
+            if (p.id) profilesMap[p.id] = p;
+            if (p.email) profilesMap[p.email] = p;
+          });
+        }
       }
 
+      // Lọc theo từ khóa tìm kiếm (tên shop hoặc email/tên chủ shop)
+      const searchKeyword = (document.getElementById('input-search-admin-shops')?.value || '').toLowerCase().trim();
+      if (data && searchKeyword) {
+        data = data.filter(s => {
+          const nameMatch = (s.name || '').toLowerCase().includes(searchKeyword);
+          const owner = (s.owner_id ? profilesMap[s.owner_id] : null) || 
+                        (s.owner_email ? profilesMap[s.owner_email] : null);
+          const ownerNameMatch = owner && (owner.full_name || '').toLowerCase().includes(searchKeyword);
+          const ownerEmailMatch = owner && (owner.email || '').toLowerCase().includes(searchKeyword);
+          
+          const fallbackNameMatch = (s.owner_name || '').toLowerCase().includes(searchKeyword);
+          const fallbackEmailMatch = (s.owner_email || '').toLowerCase().includes(searchKeyword);
+          
+          return nameMatch || ownerNameMatch || ownerEmailMatch || fallbackNameMatch || fallbackEmailMatch;
+        });
+      }
       if (!data || data.length === 0) {
         tbody.innerHTML = `
           <tr>
@@ -319,17 +340,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           </tr>
         `;
         return;
-      }
-
-      // Truy vấn toàn bộ Profiles từ Supabase để ánh xạ chính xác từng Owner
-      if (sb) {
-        const { data: profs } = await sb.from('profiles').select('id, email, full_name, role');
-        if (profs && profs.length > 0) {
-          profs.forEach(p => { 
-            if (p.id) profilesMap[p.id] = p;
-            if (p.email) profilesMap[p.email] = p;
-          });
-        }
       }
 
       tbody.innerHTML = data.map(s => {
@@ -478,22 +488,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // Delete Shop Admin (Soft-delete)
+  // Delete Shop Admin (Soft-delete shop + delete members completely)
   window.deleteShopAdmin = async function (shopId, shopName) {
     if (!shopId || !sb) return;
-    const confirmMsg = `⚠️ Bạn có chắc chắn muốn XÓA Cửa hàng "${shopName}" (Xóa mềm)?`;
-    if (!confirm(confirmMsg)) return;
 
     try {
-      const user = await AuthService.getCurrentUser();
-      const actorId = user ? user.id : null;
-      const { error } = await sb.from('shops')
-        .update({ deleted_at: new Date().toISOString(), deleted_by: actorId })
-        .eq('id', shopId);
+      // 1. Kiểm tra số lượng đơn hàng của Shop trong hệ thống
+      let orderCount = 0;
+      let submittedCount = 0;
+      
+      try {
+        const { count: ordC } = await sb.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shopId);
+        orderCount = ordC || 0;
+      } catch (_) {}
+
+      try {
+        const { count: subC } = await sb.from('submitted_orders').select('id', { count: 'exact', head: true }).eq('shop_id', shopId);
+        submittedCount = subC || 0;
+      } catch (_) {}
+
+      const totalOrders = orderCount + submittedCount;
+      
+      // 2. Hiển thị cảnh báo tương ứng dựa trên dữ liệu đơn hàng
+      let confirmMsg = '';
+      if (totalOrders > 0) {
+        confirmMsg = `⚠️ CỬA HÀNG ĐANG CÓ ${totalOrders} ĐƠN HÀNG TRÊN HỆ THỐNG!\n\nNếu xóa cửa hàng "${shopName.toUpperCase()}":\n- Toàn bộ dữ liệu cửa hàng sẽ được ẩn đi (xóa mềm).\n- TOÀN BỘ tài khoản chủ shop & nhân viên liên quan sẽ bị XÓA VĨNH VIỄN khỏi hệ thống.\n\nBạn có chắc chắn muốn thực hiện hành động này không?`;
+      } else {
+        confirmMsg = `⚠️ CẢNH BÁO XÓA CỬA HÀNG: "${shopName.toUpperCase()}"!\n\nHành động này sẽ:\n- Ẩn cửa hàng khỏi hệ thống (xóa mềm).\n- XÓA VĨNH VIỄN tất cả tài khoản chủ shop & nhân viên liên kết với cửa hàng này.\n\nBạn có chắc chắn muốn tiếp tục?`;
+      }
+
+      if (!confirm(confirmMsg)) return;
+
+      // Xác nhận thêm một lần nữa nếu shop có đơn hàng
+      if (totalOrders > 0) {
+        if (!confirm('⚠️ Xác nhận lại lần cuối: Bạn thực sự muốn XÓA VĨNH VIỄN các tài khoản người dùng thuộc cửa hàng này? (Hành động này không thể hoàn tác)')) {
+          return;
+        }
+      }
+
+      // 3. Gọi RPC thực hiện xóa đồng bộ
+      const { data, error } = await sb.rpc('admin_delete_shop_and_members', { p_shop_id: shopId });
       if (error) throw error;
-      alert(`✅ Đã xóa Cửa hàng "${shopName}" thành công!`);
+
+      const deletedUsers = data?.deleted_users_count || 0;
+      alert(`✅ Đã xóa cửa hàng "${shopName}" thành công!\n(Đã xóa vĩnh viễn ${deletedUsers} tài khoản liên kết)`);
+      
+      // 4. Reload danh sách
       loadShops();
+      if (typeof loadUsers === 'function') {
+        loadUsers();
+      }
     } catch (e) {
+      console.error(e);
       alert(`❌ Lỗi xóa Shop: ${e.message}`);
     }
   };
@@ -676,7 +722,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadUserDropdown(selectEl, selectedId) {
     selectEl.innerHTML = '<option value="">Đang tải danh sách người dùng...</option>';
     try {
-      const { data: profiles } = await sb.from('profiles').select('id, email, full_name').order('full_name');
+      const { data: profiles, error } = await sb.from('profiles').select('id, email, full_name').order('full_name');
+      if (error) throw error;
       let userList = profiles || [];
 
       // Nếu có selectedId nhưng chưa có trong danh sách profiles, bổ sung ngay vào đầu
@@ -687,28 +734,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
           userList.unshift({
             id: selectedId,
-            email: 'tai@luathuysinh.vn',
-            full_name: 'Nguyễn Văn Tài (Chủ Shop)'
+            email: 'chushop@luathuysinh.vn',
+            full_name: 'Chủ Shop'
           });
         }
       }
 
       if (userList.length === 0) {
         userList = [
-          { id: selectedId || 'owner_001', email: 'tai@luathuysinh.vn', full_name: 'Nguyễn Văn Tài (Chủ Shop)' }
+          { id: selectedId || 'owner_001', email: 'chushop@luathuysinh.vn', full_name: 'Chủ Shop' }
         ];
       }
 
       selectEl.innerHTML = userList.map(u => {
         const name = u.full_name || u.email?.split('@')[0] || 'Người dùng';
-        const mail = u.email || 'tai@luathuysinh.vn';
-        const isSelected = u.id === selectedId || (selectedId && u.id === selectedId);
+        const mail = u.email || '—';
+        const isSelected = u.id === selectedId;
         return `<option value="${u.id}" ${isSelected ? 'selected' : ''}>👤 ${escapeHtml(name)} (${escapeHtml(mail)})</option>`;
       }).join('');
-    } catch (_) {
-      selectEl.innerHTML = `
-        <option value="${selectedId || ''}" selected>👤 Nguyễn Văn Tài (tai@luathuysinh.vn)</option>
-      `;
+    } catch (err) {
+      console.error('loadUserDropdown error:', err);
+      if (selectedId) {
+        selectEl.innerHTML = `<option value="${selectedId}" selected>👤 Chủ Shop (ID: ${selectedId.slice(0, 8)})</option>`;
+      } else {
+        selectEl.innerHTML = '<option value="">— Chọn Chủ sở hữu —</option>';
+      }
     }
   }
 
@@ -718,7 +768,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const { data: members, error } = await sb
         .from('shop_members')
         .select('id, user_id, role, created_at')
-        .eq('shop_id', shopId);
+        .eq('shop_id', shopId)
+        .is('removed_at', null);
 
       if (error) throw error;
 
@@ -863,17 +914,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     btnSaveShopInfo.disabled = true;
     btnSaveShopInfo.innerHTML = 'Đang lưu...';
-
+ 
     try {
+      // 1. Cập nhật thông tin shop và owner_id
       const { error } = await sb.from('shops').update({ name, status, owner_id: ownerId }).eq('id', id);
       if (error) throw error;
 
-      const { data: existingOwner } = await sb.from('shop_members').select('role').eq('shop_id', id).eq('user_id', ownerId).maybeSingle();
-      if (!existingOwner) {
-        await sb.rpc('admin_add_shop_member', {
-          p_shop_id: id, p_user_id: ownerId, p_role: 'SHOP_OWNER'
-        });
-      }
+      // 2. Hạ cấp các chủ sở hữu cũ của shop này trong shop_members xuống SHOP_MANAGER
+      await sb.from('shop_members')
+        .update({ role: 'SHOP_MANAGER' })
+        .eq('shop_id', id)
+        .eq('role', 'SHOP_OWNER')
+        .neq('user_id', ownerId);
+
+      // 3. Đảm bảo chủ sở hữu mới có quyền SHOP_OWNER trong shop_members
+      const { data: roleData } = await sb.from('roles').select('id').eq('code', 'SHOP_OWNER').maybeSingle();
+      const ownerRoleId = roleData ? roleData.id : null;
+
+      await sb.from('shop_members').upsert({
+        shop_id: id,
+        user_id: ownerId,
+        role: 'SHOP_OWNER',
+        role_id: ownerRoleId,
+        status: 'active',
+        removed_at: null
+      }, { onConflict: 'shop_id,user_id' });
 
       // Save shop quotas
       const maxDevices = parseInt(document.getElementById('edit-shop-max-devices').value, 10) || 5;
@@ -1515,7 +1580,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  let _userShopsLoaded = false;
 
   async function loadUserShopsFilter() {
     if (_userShopsLoaded) return;
@@ -1724,6 +1788,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const userEmail = btnToggleLock.getAttribute('data-user-email');
             const isLocked = btnToggleLock.getAttribute('data-locked') === 'true';
             toggleUserLock(userId, userEmail, isLocked);
+          }
+
+          if (btnDeleteUser) {
+            const userId = btnDeleteUser.getAttribute('data-user-id');
+            const userEmail = btnDeleteUser.getAttribute('data-user-email');
+            window.deleteUserAdmin(userId, userEmail);
           }
         });
       }
@@ -2105,21 +2175,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!confirm(`⚠️ Bạn có chắc muốn XÓA vĩnh viễn quyền truy cập của tài khoản ${userEmail}?`)) return;
 
     try {
-      let deleted = false;
-      try {
-        const { data, error } = await sb.rpc('admin_delete_user', { p_user_id: userId });
-        if (!error && data?.success) deleted = true;
-      } catch (_) {}
+      const { data, error } = await sb.rpc('admin_delete_user', { p_user_id: userId });
+      if (error) throw error;
 
-      if (!deleted) {
-        await sb.from('shop_members').delete().eq('user_id', userId);
-        await sb.from('profiles').delete().eq('id', userId);
+      if (data && data.success) {
+        alert(`✅ Đã xóa tài khoản ${userEmail} thành công!`);
+        loadUsers();
+      } else {
+        throw new Error(data?.message || 'Không thể xóa tài khoản.');
       }
-
-      alert(`✅ Đã xóa tài khoản ${userEmail} thành công!`);
-      loadUsers();
     } catch (err) {
-      alert(`❌ Lỗi xóa tài khoản: ${err.message}`);
+      console.error(err);
+      alert(`❌ Lỗi xóa tài khoản: ${err.message || err}`);
     }
   };
 

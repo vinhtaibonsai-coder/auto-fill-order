@@ -1452,6 +1452,11 @@
           codAmount = parseInt(codEl.value.replace(/\D/g, ''), 10) || 0;
         }
 
+        const shipFeeBox = document.querySelector('input#collectFee') || 
+                           document.querySelector('input[name="collectFee"]') || 
+                           document.querySelector('input#form-create-order_collectFee') ||
+                           document.querySelector('input[type="checkbox"][name*="collect" i]') ||
+                           document.querySelector('input[type="checkbox"][id*="collect" i]');
         if (shipFeeBox) collectFee = !!shipFeeBox.checked;
 
         // 9. Cân nặng (khối lượng)

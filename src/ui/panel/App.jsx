@@ -290,36 +290,47 @@ export default function App() {
           setState('REVIEW');
         });
       } else {
-        setTimeout(() => {
-          const mockAi = { 
-            name: 'Nguyễn Văn An', 
-            phone: '0901234567', 
-            address: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-            orderCode: 'DH123456',
-            codAmount: 150000,
-            extraNote: 'Ghi chú mẫu',
-            productItem: '5kg đỗ quyên'
-          };
-          
-          const mergedData = { ...editedData };
-          if (editedData.name === localData.name) mergedData.name = mockAi.name;
-          if (editedData.phone === localData.phone) mergedData.phone = mockAi.phone;
-          if (editedData.orderCode === localData.orderCode) mergedData.orderCode = mockAi.orderCode;
-          if (editedData.extraNote === localData.extraNote) mergedData.extraNote = mockAi.extraNote;
-          if (Number(editedData.codAmount) === Number(localData.codAmount)) mergedData.codAmount = mockAi.codAmount;
-          if (editedData.productItem === localData.productItem) mergedData.productItem = mockAi.productItem;
-          
-          let finalAddress = editedData.address !== localData.address ? editedData.address : mockAi.address;
+        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          setTimeout(() => {
+            const mockAi = { 
+              name: 'Nguyễn Văn An', 
+              phone: '0901234567', 
+              address: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
+              orderCode: 'DH123456',
+              codAmount: 150000,
+              extraNote: 'Ghi chú mẫu',
+              productItem: '5kg đỗ quyên'
+            };
+            
+            const mergedData = { ...editedData };
+            if (editedData.name === localData.name) mergedData.name = mockAi.name;
+            if (editedData.phone === localData.phone) mergedData.phone = mockAi.phone;
+            if (editedData.orderCode === localData.orderCode) mergedData.orderCode = mockAi.orderCode;
+            if (editedData.extraNote === localData.extraNote) mergedData.extraNote = mockAi.extraNote;
+            if (Number(editedData.codAmount) === Number(localData.codAmount)) mergedData.codAmount = mockAi.codAmount;
+            if (editedData.productItem === localData.productItem) mergedData.productItem = mockAi.productItem;
+            
+            let finalAddress = editedData.address !== localData.address ? editedData.address : mockAi.address;
 
+            setParsedData({
+              ...mergedData,
+              address: finalAddress,
+              warning: '',
+              confidence: 95,
+              confidenceThreshold: 90
+            }); 
+            setState('REVIEW');
+          }, 1000);
+        } else {
+          // In production, if extension messaging fails, degrade gracefully using local parsed data
+          triggerToast('⚠️ Không kết nối được dịch vụ AI. Sử dụng dữ liệu trích xuất cục bộ.', 'warning');
           setParsedData({
-            ...mergedData,
-            address: finalAddress,
-            warning: '',
-            confidence: 95,
+            ...editedData,
+            confidence: 50,
             confidenceThreshold: 90
-          }); 
+          });
           setState('REVIEW');
-        }, 1000);
+        }
       }
     } catch (err) {
       triggerToast('⚠️ Lỗi: Extension đã được cập nhật. Vui lòng nhấn F5 để tải lại trang web.', 'error');

@@ -338,6 +338,41 @@ export class AdminRepository {
     return true;
   }
 
+  /**
+   * Cập nhật Plan của Shop bằng cách cập nhật/tạo mới subscription tương ứng
+   */
+  static async updateShopPlan(shopId, newPlan) {
+    const configRes = await this._getConfig();
+    const headers = await this._getAuthHeaders(configRes);
+
+    // 1. Kiểm tra xem shop đã có subscription chưa
+    const checkRes = await fetch(`${configRes.url}/rest/v1/subscriptions?shop_id=eq.${shopId}&select=id`, {
+      method: 'GET',
+      headers: headers
+    });
+    if (!checkRes.ok) throw new Error(`Query Subscription Failed: ${checkRes.status}`);
+    const data = await checkRes.json();
+
+    if (data && data.length > 0) {
+      // 2. Cập nhật subscription hiện tại
+      const updateRes = await fetch(`${configRes.url}/rest/v1/subscriptions?id=eq.${data[0].id}`, {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify({ plan_code: newPlan, updated_at: new Date().toISOString() })
+      });
+      if (!updateRes.ok) throw new Error(`Update Subscription Failed: ${updateRes.status}`);
+    } else {
+      // 3. Tạo mới subscription
+      const insertRes = await fetch(`${configRes.url}/rest/v1/subscriptions`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ shop_id: shopId, plan_code: newPlan, status: 'active' })
+      });
+      if (!insertRes.ok) throw new Error(`Insert Subscription Failed: ${insertRes.status}`);
+    }
+    return true;
+  }
+
   // ==========================================
   // SUPPORT TICKETS
   // ==========================================

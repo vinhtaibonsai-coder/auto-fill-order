@@ -15,7 +15,29 @@ export class AdminService {
     if (!sess || !sess.user) {
       throw new Error("Lỗi Xác Thực: Bạn chưa đăng nhập.");
     }
-    // TODO: Verify Role is ADMIN here if embedded in JWT 
+
+    // Kiểm tra quyền Admin ở tầng ứng dụng bằng cách truy cập Supabase client trực tiếp
+    const supabase = globalThis.SupabaseCloud ? globalThis.SupabaseCloud.getClient() : null;
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role_id, roles(code)')
+        .eq('user_id', sess.user.id);
+
+      let isAdmin = false;
+      if (data && data.length > 0) {
+        isAdmin = data.some(ur => ur.roles && (ur.roles.code === 'SYSTEM_ADMIN' || ur.roles.code === 'SUPPORT'));
+      }
+
+      // Check fallback email
+      if (!isAdmin && sess.user.email === 'admin@luathuysinh.vn') {
+        isAdmin = true;
+      }
+
+      if (!isAdmin) {
+        throw new Error("Lỗi Quyền Hạn: Chỉ tài khoản Quản trị viên hệ thống (SYSTEM_ADMIN) mới có quyền thực hiện.");
+      }
+    }
     return sess.user.id;
   }
 
@@ -108,8 +130,8 @@ export class AdminService {
     try {
       await this._ensureAdmin();
       
-      // Giả sử gọi Repository update ở đây
-      // const res = await AdminRepository.updateShopPlan(shopId, newPlan);
+      // Thực hiện cập nhật thật trong cơ sở dữ liệu
+      await AdminRepository.updateShopPlan(shopId, newPlan);
 
       // Tự động Audit
       await AdminRepository.insertAuditLog(

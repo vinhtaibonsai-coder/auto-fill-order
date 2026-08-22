@@ -1,7 +1,7 @@
 {
   "total": 45,
-  "passed": 31,
-  "failed": 14,
+  "passed": 45,
+  "failed": 0,
   "skipped": 4,
   "tests": [
     {
@@ -12,7 +12,7 @@
     {
       "name": "master_admin config exists",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "test_shops has 3 entries",
@@ -67,126 +67,117 @@
     {
       "name": "File exists: admin-dashboard/login.html",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "45ms"
     },
     {
       "name": "File exists: admin-dashboard/admin.html",
       "status": "✅ PASS",
-      "duration": "2ms"
+      "duration": "7ms"
     },
     {
       "name": "File exists: admin-dashboard/index.html",
       "status": "✅ PASS",
-      "duration": "2ms"
+      "duration": "10ms"
     },
     {
       "name": "File exists: admin-dashboard/master-admin.js",
       "status": "✅ PASS",
-      "duration": "2ms"
+      "duration": "6ms"
     },
     {
       "name": "File exists: admin-dashboard/shops.js",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "7ms"
     },
     {
       "name": "File exists: admin-dashboard/app.js",
       "status": "✅ PASS",
-      "duration": "3ms"
+      "duration": "6ms"
     },
     {
       "name": "File exists: admin-dashboard/supabase-config.js",
       "status": "✅ PASS",
-      "duration": "3ms"
+      "duration": "4ms"
     },
     {
       "name": "File exists: manifest.json",
       "status": "✅ PASS",
-      "duration": "3ms"
+      "duration": "7ms"
     },
     {
-      "name": "File exists: backend/content/index.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\backend\\content\\index.js",
-      "duration": "1ms"
-    },
-    {
-      "name": "File exists: src/backend/auth/auth.service.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\auth\\auth.service.js",
-      "duration": "1ms"
-    },
-    {
-      "name": "File exists: src/backend/auth/auth.session.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\auth\\auth.session.js",
-      "duration": "0ms"
-    },
-    {
-      "name": "File exists: src/backend/permission/permission.service.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\permission\\permission.service.js",
-      "duration": "3ms"
-    },
-    {
-      "name": "File exists: src/backend/audit/audit.service.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\audit\\audit.service.js",
-      "duration": "1ms"
-    },
-    {
-      "name": "File exists: src/backend/shop/shop.service.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\shop\\shop.service.js",
-      "duration": "0ms"
-    },
-    {
-      "name": "File exists: src/backend/shop/invite.service.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\shop\\invite.service.js",
-      "duration": "1ms"
-    },
-    {
-      "name": "File exists: src/backend/member/member.service.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\member\\member.service.js",
-      "duration": "1ms"
-    },
-    {
-      "name": "File exists: src/backend/realtime/realtime.service.js",
-      "status": "❌ FAIL",
-      "error": "File not found: G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\realtime\\realtime.service.js",
-      "duration": "1ms"
-    },
-    {
-      "name": "File exists: database/migrations/v3_enterprise_schema.sql",
+      "name": "File exists: src/runtime/content/index.js",
       "status": "✅ PASS",
       "duration": "5ms"
     },
     {
-      "name": "File exists: database/migrations/v3_1_rbac_schema.sql",
+      "name": "File exists: src/domain/auth/auth.service.js",
       "status": "✅ PASS",
-      "duration": "3ms"
+      "duration": "5ms"
     },
     {
-      "name": "File exists: database/migrations/v4_saas_architecture.sql",
+      "name": "File exists: src/domain/auth/auth.session.js",
+      "status": "✅ PASS",
+      "duration": "11ms"
+    },
+    {
+      "name": "File exists: src/domain/permission/permission.service.js",
+      "status": "✅ PASS",
+      "duration": "5ms"
+    },
+    {
+      "name": "File exists: src/domain/audit/audit.service.js",
+      "status": "✅ PASS",
+      "duration": "8ms"
+    },
+    {
+      "name": "File exists: src/domain/shop/shop.service.js",
       "status": "✅ PASS",
       "duration": "4ms"
     },
     {
+      "name": "File exists: src/domain/shop/invite.service.js",
+      "status": "✅ PASS",
+      "duration": "4ms"
+    },
+    {
+      "name": "File exists: src/domain/member/member.service.js",
+      "status": "✅ PASS",
+      "duration": "6ms"
+    },
+    {
+      "name": "File exists: src/domain/realtime/realtime.service.js",
+      "status": "✅ PASS",
+      "duration": "7ms"
+    },
+    {
+      "name": "File exists: database/migrations/v3_enterprise_schema.sql",
+      "status": "✅ PASS",
+      "duration": "10ms"
+    },
+    {
+      "name": "File exists: database/migrations/v3_1_rbac_schema.sql",
+      "status": "✅ PASS",
+      "duration": "4ms"
+    },
+    {
+      "name": "File exists: database/migrations/v4_saas_architecture.sql",
+      "status": "✅ PASS",
+      "duration": "12ms"
+    },
+    {
       "name": "File exists: database/migrations/v5_master_admin_schema.sql",
       "status": "✅ PASS",
-      "duration": "3ms"
+      "duration": "5ms"
     },
     {
       "name": "File exists: database/migrations/v6_DEPRECATED_panel_accounts.sql",
       "status": "✅ PASS",
-      "duration": "3ms"
+      "duration": "10ms"
     },
     {
       "name": "Migration database/migrations/v3_enterprise_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "27ms"
+      "duration": "196ms"
     },
     {
       "name": "Migration database/migrations/v3_1_rbac_schema.sql contains required keywords",
@@ -196,74 +187,69 @@
     {
       "name": "Migration database/migrations/v4_saas_architecture.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "28ms"
+      "duration": "38ms"
     },
     {
       "name": "Migration database/migrations/v5_master_admin_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "22ms"
+      "duration": "182ms"
     },
     {
       "name": "Migration database/migrations/v6_DEPRECATED_panel_accounts.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "23ms"
+      "duration": "17ms"
     },
     {
       "name": "auth.service.js exports required functions",
-      "status": "❌ FAIL",
-      "error": "ENOENT: no such file or directory, open 'G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\auth\\auth.service.js'",
-      "duration": "1ms"
+      "status": "✅ PASS",
+      "duration": "166ms"
     },
     {
       "name": "auth.session.js handles session management",
-      "status": "❌ FAIL",
-      "error": "ENOENT: no such file or directory, open 'G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\auth\\auth.session.js'",
-      "duration": "1ms"
+      "status": "✅ PASS",
+      "duration": "119ms"
     },
     {
       "name": "permission.service.js exports RBAC logic",
-      "status": "❌ FAIL",
-      "error": "ENOENT: no such file or directory, open 'G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\permission\\permission.service.js'",
-      "duration": "3ms"
+      "status": "✅ PASS",
+      "duration": "30ms"
     },
     {
       "name": "shop.service.js has CRUD operations",
-      "status": "❌ FAIL",
-      "error": "ENOENT: no such file or directory, open 'G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\shop\\shop.service.js'",
-      "duration": "1ms"
+      "status": "✅ PASS",
+      "duration": "128ms"
     },
     {
       "name": "audit.service.js logs actions",
-      "status": "❌ FAIL",
-      "error": "ENOENT: no such file or directory, open 'G:\\Other computers\\My Computer\\WEBAPP\\ODER AUTO FILL\\src\\backend\\audit\\audit.service.js'",
-      "duration": "1ms"
+      "status": "✅ PASS",
+      "duration": "14ms"
     },
     {
       "name": "admin-dashboard/master-admin.js is non-empty",
       "status": "✅ PASS",
-      "duration": "60ms"
+      "duration": "309ms"
     },
     {
       "name": "admin-dashboard/login.html has login form",
       "status": "✅ PASS",
-      "duration": "11ms"
+      "duration": "34ms"
     },
     {
       "name": "No hardcoded Supabase service_role key in source",
       "status": "✅ PASS",
-      "duration": "26ms"
+      "duration": "60ms"
     },
     {
       "name": "No hardcoded passwords in source code",
       "status": "✅ PASS",
-      "duration": "122ms"
+      "duration": "461ms"
     },
     {
       "name": "manifest.json has minimum permissions",
       "status": "✅ PASS",
-      "duration": "47ms"
+      "duration": "60ms"
     }
   ],
-  "startTime": "2026-08-19T01:17:13.309Z",
-  "endTime": "2026-08-19T01:17:13.822Z"
+  "startTime": "2026-08-22T09:23:14.834Z",
+  "endTime": "2026-08-22T09:23:17.134Z"
 }
