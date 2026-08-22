@@ -41,10 +41,7 @@ BEGIN
         IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='audit_logs' AND column_name='actor_id') THEN
             EXECUTE 'UPDATE public.audit_logs SET actor_id = NULL WHERE actor_id = $1' USING v_user_record.user_id;
         END IF;
-        
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='orders' && column_name='created_by') THEN
-            -- Sửa cú pháp AND thay vì && trong SQL
-        END IF; -- (Sẽ viết chuẩn trong chuỗi EXECUTE)
+
         
         IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='orders' AND column_name='created_by') THEN
             EXECUTE 'UPDATE public.orders SET created_by = NULL WHERE created_by = $1' USING v_user_record.user_id;
