@@ -1,7 +1,7 @@
 -- =========================================================================
 -- v51_fix_shop_feature_flags_rls.sql
 -- Nâng cấp quyền cập nhật/thêm mới bảng shop_feature_flags cho cả vai trò MANAGER/SHOP_MANAGER
--- (tránh lỗi RLS khi người dùng là Manager/Shop Manager tiến hành lưu cấu hình).
+-- và các biến thể vai trò (tránh lỗi RLS khi lưu cấu hình).
 -- =========================================================================
 
 -- 1. Cập nhật chính sách UPDATE cho shop_feature_flags
@@ -13,8 +13,8 @@ CREATE POLICY "Shop owners update feature flags" ON public.shop_feature_flags
       SELECT 1 FROM public.shop_members sm
       WHERE sm.shop_id = shop_feature_flags.shop_id
         AND sm.user_id = auth.uid()
-        AND UPPER(sm.role) IN ('OWNER', 'SHOP_OWNER', 'MANAGER', 'SHOP_MANAGER')
-        AND sm.status = 'active'
+        AND UPPER(sm.role) IN ('OWNER', 'SHOP_OWNER', 'MANAGER', 'SHOP_MANAGER', 'ADMIN', 'SHOP_ADMIN')
+        AND LOWER(sm.status) = 'active'
         AND sm.removed_at IS NULL
     )
     OR EXISTS (
@@ -33,8 +33,8 @@ CREATE POLICY "Shop owners insert feature flags" ON public.shop_feature_flags
       SELECT 1 FROM public.shop_members sm
       WHERE sm.shop_id = shop_feature_flags.shop_id
         AND sm.user_id = auth.uid()
-        AND UPPER(sm.role) IN ('OWNER', 'SHOP_OWNER', 'MANAGER', 'SHOP_MANAGER')
-        AND sm.status = 'active'
+        AND UPPER(sm.role) IN ('OWNER', 'SHOP_OWNER', 'MANAGER', 'SHOP_MANAGER', 'ADMIN', 'SHOP_ADMIN')
+        AND LOWER(sm.status) = 'active'
         AND sm.removed_at IS NULL
     )
     OR EXISTS (
