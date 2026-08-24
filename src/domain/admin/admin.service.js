@@ -26,12 +26,7 @@ export class AdminService {
 
       let isAdmin = false;
       if (data && data.length > 0) {
-        isAdmin = data.some(ur => ur.roles && (ur.roles.code === 'SYSTEM_ADMIN' || ur.roles.code === 'SUPPORT'));
-      }
-
-      // Check fallback email
-      if (!isAdmin && sess.user.email === 'admin@luathuysinh.vn') {
-        isAdmin = true;
+        isAdmin = data.some(ur => ur.roles && ur.roles.code === 'SYSTEM_ADMIN');
       }
 
       if (!isAdmin) {
@@ -530,6 +525,21 @@ export class AdminService {
         'SUCCESS'
       );
       return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  static async activateAddressDataset(dataset, action, reason) {
+    try {
+      await this._ensureAdmin();
+      if (!dataset?.id || !dataset?.version || Number(dataset.total_records || 0) <= 0) {
+        throw new Error('Dataset chưa vượt qua bước validate.');
+      }
+      if (!['publish', 'rollback'].includes(action)) throw new Error('Hành động phát hành không hợp lệ.');
+      if (!reason?.trim()) throw new Error('Phải nhập lý do phát hành hoặc rollback.');
+      const result = await AdminRepository.activateAddressDataset(dataset.id, action, reason.trim());
+      return { success: true, data: result };
     } catch (e) {
       return { success: false, error: e.message };
     }

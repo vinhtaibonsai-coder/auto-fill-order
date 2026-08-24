@@ -1,0 +1,133 @@
+(function() {
+  if (window.__AF_INTERCEPTOR_LOADED__) return;
+  window.__AF_INTERCEPTOR_LOADED__ = true;
+
+  console.log('[Auto Fill] Interceptor loaded into MAIN world.');
+
+  function isCarrierTrackingCode(code) {
+    if (!code) return false;
+    const s = String(code).trim();
+    if (s.toUpperCase().startsWith('DH')) return false;
+    
+    // VNPost tracking code patterns
+    const vnpostRegex = /^[A-Z]{2}\d{9,13}VN$/i;
+    const vnpostRegex2 = /^C\d{9,13}VN$/i;
+    const vnpostRegex3 = /^MP\d{8,12}VN$/i;
+    
+    // J&T tracking code patterns
+    const jtRegex = /^8\d{11,14}$/i;
+    
+    return vnpostRegex.test(s) || vnpostRegex2.test(s) || vnpostRegex3.test(s) || jtRegex.test(s);
+  }
+
+  function extractTrackingCode(body) {
+    if (!body) return null;
+    
+    // Check specific fields first
+    let candidates = [
+      body.trackingCode,
+      body.maVanDon,
+      body.shipmentNumber,
+      body.itemCode,
+      body.barcode,
+      body.orderId,
+      body.orderCode,
+      body.code,
+      body.id
+    ];
+    
+    for (let c of candidates) {
+      if (c && isCarrierTrackingCode(String(c))) {
+        return String(c).trim();
+      }
+    }
+    
+    // Deep search in nested objects for VNPost / J&T specific structures
+    try {
+      const str = typeof body === 'string' ? body : JSON.stringify(body);
+      const codeMatch = str.match(/\b([A-Z]{2}\d{9,13}VN|C\d{9,13}VN|MP\d{8,12}VN|E[A-Z]\d{8,12}VN|8\d{11,14})\b/i);
+      if (codeMatch && codeMatch[1]) {
+        return codeMatch[1].trim();
+      }
+    } catch(e) {}
+    
+    return null;
+  }
+
+  function handleInterceptedResponse(url, method, status, bodyText) {
+    try {
+      if (status >= 200 && status < 300 && method === 'POST') {
+        const u = url.toLowerCase();
+        // Check if this is an order creation endpoint
+        if (u.includes('order') || u.includes('shipment') || u.includes('delivery') || u.includes('create')) {
+          // Bỏ qua các endpoint danh sách, truy vấn, in ấn, lịch sử, chi tiết
+          if (
+            u.includes('list') || u.includes('query') || u.includes('search') || 
+            u.includes('page') || u.includes('history') || u.includes('detail') || 
+            u.includes('export') || u.includes('print') || u.includes('check') ||
+            u.includes('track') || u.includes('verify')
+          ) {
+            return;
+          }
+
+          let body = null;
+          try { body = JSON.parse(bodyText); } catch(e) {}
+
+          // Check if response indicates error
+          if (!body || body.success === false || body.code === 400 || body.code === 500 || body.error || body.errorMessage) {
+            return;
+          }
+
+          const trackingCode = extractTrackingCode(body);
+          
+          // Even if trackingCode is null, we notify the content script to scrape the DOM,
+          // because sometimes the tracking code is not in the JSON but rendered in the DOM shortly after.
+          window.postMessage({
+            type: 'AF_ORDER_CREATED',
+            trackingCode: trackingCode,
+            url: url
+          }, '*');
+        }
+      }
+    } catch (err) {
+      console.warn('[Auto Fill] Interceptor error:', err);
+    }
+  }
+
+  // Intercept fetch
+  const origFetch = window.fetch;
+  window.fetch = async function(...args) {
+    const response = await origFetch.apply(this, args);
+    try {
+      const clone = response.clone();
+      const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
+      const method = (args[1] && args[1].method ? args[1].method : 'GET').toUpperCase();
+      
+      clone.text().then(bodyText => {
+        handleInterceptedResponse(url, method, response.status, bodyText);
+      }).catch(() => {});
+    } catch (e) {}
+    return response;
+  };
+
+  // Intercept XMLHttpRequest
+  const origXhrOpen = XMLHttpRequest.prototype.open;
+  const origXhrSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+    this._afMethod = (method || '').toUpperCase();
+    this._afUrl = url || '';
+    return origXhrOpen.call(this, method, url, ...rest);
+  };
+
+  XMLHttpRequest.prototype.send = function(...args) {
+    this.addEventListener('load', function() {
+      try {
+        const status = this.status;
+        const responseText = this.responseText;
+        handleInterceptedResponse(this._afUrl, this._afMethod, status, responseText);
+      } catch(e) {}
+    });
+    return origXhrSend.apply(this, args);
+  };
+})();

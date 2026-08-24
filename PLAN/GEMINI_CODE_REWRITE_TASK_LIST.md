@@ -152,13 +152,13 @@ Do not start large UI redesign work until MVP tasks are complete.
 
 ## Phase 13: Manual Verification
 
-- [x] T094 Reload unpacked extension in browser after build/sync.
-- [x] T095 Verify VNPost flow manually: paste order -> parse -> review -> autofill -> verify.
-- [x] T096 Verify J&T flow manually: paste order -> parse -> review -> autofill -> verify.
-- [x] T097 Verify low-confidence address requires review before autofill.
-- [x] T098 Verify offline/cloud failure does not make the extension unusable.
-- [x] T099 Verify admin user can access admin dashboard and normal shop user cannot.
-- [x] T100 Verify options pages respect role and shop scope.
+- [ ] T094 Reload unpacked extension in browser after build/sync. BLOCKED in terminal: requires a browser extension reload session.
+- [ ] T095 Verify VNPost flow manually: paste order -> parse -> review -> autofill -> verify. BLOCKED: requires logged-in VNPost page.
+- [ ] T096 Verify J&T flow manually: paste order -> parse -> review -> autofill -> verify. BLOCKED: requires logged-in J&T page.
+- [ ] T097 Verify low-confidence address requires review before autofill. BLOCKED: requires live extension panel/manual browser run.
+- [ ] T098 Verify offline/cloud failure does not make the extension unusable. BLOCKED: requires live browser extension runtime.
+- [ ] T099 Verify admin user can access admin dashboard and normal shop user cannot. BLOCKED: requires Supabase test credentials.
+- [ ] T100 Verify options pages respect role and shop scope. BLOCKED: requires Supabase test credentials/browser session.
 
 ## Phase 14: Final Documentation
 
@@ -216,4 +216,3 @@ Passes when a system admin can monitor shops, users, subscriptions, AI health, f
 - Surface ownership is documented.
 - Tests and build status are recorded.
 - VNPost and J&T are manually verified.
-

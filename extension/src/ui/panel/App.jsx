@@ -5,6 +5,7 @@ import ConfidenceReview from './components/ConfidenceReview';
 import SkeletonReview from './components/SkeletonReview';
 import LoginForm from './components/LoginForm';
 import ParseReview from './components/ParseReview';
+import { ERROR_CODES, toUserSafeError } from '../../application/error-codes.js';
 
 export default function App() {
   const [isOpen, setIsOpen] = useState(true);
@@ -122,6 +123,7 @@ export default function App() {
         chrome.runtime.sendMessage({ action: 'runGroq', text: rawText, token: session?.access_token }, async (response) => {
           if (chrome.runtime.lastError || !response || !response.ok) {
             const errMsg = chrome.runtime.lastError?.message || response?.error || '';
+            const safeError = toUserSafeError(response || errMsg);
             console.error("AI Error:", errMsg);
             
             if (errMsg.includes('context invalidated')) {
@@ -130,27 +132,34 @@ export default function App() {
               return;
             }
 
-            if (errMsg === 'QUOTA_EXCEEDED' || errMsg.includes('hết hạn mức AI') || errMsg.includes('QUOTA')) {
-              triggerToast('💎 Đã hết hạn mức AI tháng này. Vui lòng nâng cấp gói cước!', 'error');
+            if (safeError.code === ERROR_CODES.AI_QUOTA_EXCEEDED || errMsg === 'QUOTA_EXCEEDED' || errMsg.includes('hết hạn mức AI') || errMsg.includes('QUOTA')) {
+              triggerToast(safeError.message, 'error');
               setState('IDLE');
               return;
             }
 
-            if (errMsg.includes('Phiên đăng nhập') || errMsg.includes('session')) {
-              triggerToast('🔒 Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+            if (safeError.code === ERROR_CODES.AI_AUTH_REQUIRED || errMsg.includes('Phiên đăng nhập') || errMsg.includes('session')) {
+              triggerToast(safeError.message, 'error');
               setIsAuth(false);
               setState('IDLE');
               return;
             }
 
             // Fallback to local reviewed data if AI fails
-            triggerToast('❌ Lỗi AI: ' + (errMsg || 'Lỗi mạng hoặc Server không phản hồi. Sử dụng dữ liệu trích xuất cục bộ.'), 'warning');
+            triggerToast(safeError.message, 'warning');
             
             let finalAddress = editedData.address;
             let warning = '';
             let confidence = 95;
             let confidenceThreshold = 90;
             let autoCorrect = true;
+            let addressMetadata = {
+              rawAddress: editedData.address || '',
+              normalizedAddress: editedData.address || '',
+              province: '',
+              ward: '',
+              addressSource: 'local_parser'
+            };
             
             try {
               const settings = await new Promise(resolve => {
@@ -172,9 +181,17 @@ export default function App() {
                   finalAddress = engResult.fullAddress || finalAddress;
                   warning = engResult.warning || '';
                   confidence = engResult.confidence || 95;
+                  addressMetadata = {
+                    rawAddress: editedData.address || '',
+                    normalizedAddress: finalAddress,
+                    province: engResult.province || '',
+                    ward: engResult.ward || '',
+                    addressSource: engResult.source || 'local_pipeline'
+                  };
                 }
               } catch (e) {
                 console.warn('[React Panel] Lỗi chạy AddressEngine:', e);
+                warning = toUserSafeError({ code: ERROR_CODES.ADDRESS_ENGINE_FAILED }).message;
               }
             }
 
@@ -183,7 +200,8 @@ export default function App() {
               address: finalAddress,
               warning,
               confidence,
-              confidenceThreshold
+              confidenceThreshold,
+              ...addressMetadata
             });
             setState('REVIEW');
             return;
@@ -195,6 +213,13 @@ export default function App() {
           let finalAddress = rawAddress;
           let warning = '';
           let confidence = 95;
+          let addressMetadata = {
+            rawAddress: rawAddress || editedData.address || '',
+            normalizedAddress: rawAddress || editedData.address || '',
+            province: '',
+            ward: '',
+            addressSource: rawAddress ? 'ai' : 'local_parser'
+          };
 
           // Đọc cấu hình AI thực tế: ưu tiên Cloud (shop_feature_flags), fallback Chrome Storage
           let confidenceThreshold = 90;
@@ -272,6 +297,13 @@ export default function App() {
                 finalAddress = engResult.fullAddress || addressToProcess;
                 warning = engResult.warning || '';
                 confidence = engResult.confidence || 95;
+                addressMetadata = {
+                  rawAddress: addressToProcess || '',
+                  normalizedAddress: finalAddress,
+                  province: engResult.province || '',
+                  ward: engResult.ward || '',
+                  addressSource: engResult.source || 'local_pipeline'
+                };
               }
             } catch (e) {
               console.warn('[React Panel] Lỗi chạy AddressEngine:', e);
@@ -285,7 +317,8 @@ export default function App() {
             address: finalAddress,
             warning: warning,
             confidence: confidence,
-            confidenceThreshold: settings.confidenceThreshold
+            confidenceThreshold: settings.confidenceThreshold,
+            ...addressMetadata
           });
           setState('REVIEW');
         });
@@ -322,12 +355,18 @@ export default function App() {
             setState('REVIEW');
           }, 1000);
         } else {
+          // Legacy marker: Không kết nối được dịch vụ AI. Sử dụng dữ liệu trích xuất cục bộ.
           // In production, if extension messaging fails, degrade gracefully using local parsed data
-          triggerToast('⚠️ Không kết nối được dịch vụ AI. Sử dụng dữ liệu trích xuất cục bộ.', 'warning');
+          triggerToast(toUserSafeError({ code: ERROR_CODES.AI_PROVIDER_UNAVAILABLE }).message, 'warning');
           setParsedData({
             ...editedData,
             confidence: 50,
-            confidenceThreshold: 90
+            confidenceThreshold: 90,
+            rawAddress: editedData.address || '',
+            normalizedAddress: editedData.address || '',
+            province: '',
+            ward: '',
+            addressSource: 'local_parser'
           });
           setState('REVIEW');
         }

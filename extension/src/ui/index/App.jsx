@@ -8,7 +8,7 @@ const DEFAULT_SUPABASE = {
 };
 
 export default function App() {
-  // Tabs: dashboard | orders | parse | shops | staff | account
+  // Worker workspace tabs. Shop/team configuration belongs to Options.
   const [activeTab, setActiveTab] = useState('dashboard');
   const [parseText, setParseText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
@@ -23,6 +23,15 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [customers, setCustomers] = useState([]);
+
+  const openShopControl = () => {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.openOptionsPage) {
+      chrome.runtime.openOptionsPage();
+      return;
+    }
+
+    window.location.assign('options.html');
+  };
   
   // Current user & Shop management state
   const [currentUser, setCurrentUser] = useState({
@@ -611,7 +620,7 @@ export default function App() {
                 <span>⚡</span> TÁCH ĐƠN TIN NHẮN
               </button>
               <button
-                onClick={() => setActiveTab('shops')}
+                onClick={openShopControl}
                 style={{
                   padding: '14px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '12px',
                   fontWeight: 800, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
@@ -965,7 +974,7 @@ export default function App() {
       </main>
 
       {/* Modern Bottom / Mobile Nav Bar */}
-      <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', background: '#ffffff', borderTop: '1px solid #e2e8f0', position: 'sticky', bottom: 0, zIndex: 100, boxShadow: '0 -2px 10px rgba(0,0,0,0.03)' }}>
+      <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: '#ffffff', borderTop: '1px solid #e2e8f0', position: 'sticky', bottom: 0, zIndex: 100, boxShadow: '0 -2px 10px rgba(0,0,0,0.03)' }}>
         <button
           onClick={() => setActiveTab('dashboard')}
           style={{ padding: '10px 4px', border: 'none', background: 'none', color: activeTab === 'dashboard' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'dashboard' ? 800 : 500, fontSize: '11px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}
@@ -974,18 +983,11 @@ export default function App() {
           Dashboard
         </button>
         <button
-          onClick={() => setActiveTab('shops')}
-          style={{ padding: '10px 4px', border: 'none', background: 'none', color: activeTab === 'shops' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'shops' ? 800 : 500, fontSize: '11px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}
+          onClick={() => setActiveTab('parse')}
+          style={{ padding: '10px 4px', border: 'none', background: 'none', color: activeTab === 'parse' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'parse' ? 800 : 500, fontSize: '11px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}
         >
-          <span style={{ fontSize: '18px' }}>🏪</span>
-          Shop
-        </button>
-        <button
-          onClick={() => setActiveTab('staff')}
-          style={{ padding: '10px 4px', border: 'none', background: 'none', color: activeTab === 'staff' ? '#4f46e5' : '#64748b', fontWeight: activeTab === 'staff' ? 800 : 500, fontSize: '11px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}
-        >
-          <span style={{ fontSize: '18px' }}>👥</span>
-          Nhân viên
+          <span style={{ fontSize: '18px' }}>⚡</span>
+          Bóc tách
         </button>
         <button
           onClick={() => setActiveTab('orders')}

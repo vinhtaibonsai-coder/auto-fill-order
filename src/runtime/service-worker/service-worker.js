@@ -9,6 +9,7 @@ import '../../application/logger.js';
 import '../../application/api.js';
 import '../../application/queue.js';
 import '../../application/storage.js';
+import { ERROR_CODES, toUserSafeError } from '../../application/error-codes.js';
 const OrderStorage = globalThis.OrderStorage;
 
 const aiQueue = new PromiseQueue(2);
@@ -279,8 +280,16 @@ async function _callAiGateway(task, text, clientToken = null, clientShopId = nul
       
       // Bắt lỗi Auth từ Supabase Kong Gateway (Invalid JWT/Expired JWT)
       if (resp.status === 401 && errData.message && errData.message.toUpperCase().includes('JWT')) {
-        errData.error = 'AI_AUTH_REQUIRED';
+        errData.error = ERROR_CODES.AI_AUTH_REQUIRED;
       }
+
+      const safeError = toUserSafeError({
+        code: errData.error || ERROR_CODES.AI_UPSTREAM_ERROR,
+        message: errData.message
+      });
+      const error = new Error(safeError.message);
+      error.code = safeError.code;
+      throw error;
 
       const code = errData.error || 'AI_UPSTREAM_ERROR';
       const msg = errData.message || `Gateway lỗi HTTP ${resp.status}`;
@@ -306,7 +315,13 @@ async function _callAiGateway(task, text, clientToken = null, clientShopId = nul
       quota: responseData.quota 
     };
   } catch (e) {
+    if (e.name !== 'AbortError') {
+      const safeError = toUserSafeError(e);
+      return { ok: false, code: safeError.code, error: safeError.message };
+    }
     if (e.name === 'AbortError') {
+      const safeError = toUserSafeError({ code: ERROR_CODES.AI_TIMEOUT });
+      return { ok: false, code: safeError.code, error: safeError.message };
       return { ok: false, error: 'AI Gateway timeout (35s). Vui lòng thử lại.' };
     }
     return { ok: false, error: e.message || 'Lỗi không xác định từ AI Gateway.' };

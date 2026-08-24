@@ -66,6 +66,11 @@ export default function DeviceManagement() {
         body: JSON.stringify({ p_device_id: id, p_revoked: true })
       });
       if (res.ok) {
+        if (globalThis.AuditService?.logAction) {
+          await globalThis.AuditService.logAction('DEVICE_REVOKED', 'device', id, {
+            reason: 'Revoked from Shop Control'
+          });
+        }
         setDevices(prev => prev.filter(d => d.id !== id));
         setStatus('✅ Đã thu hồi thiết bị.');
         setTimeout(() => setStatus(''), 3000);

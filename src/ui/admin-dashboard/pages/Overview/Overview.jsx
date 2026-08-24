@@ -14,7 +14,10 @@ export default function Overview() {
     ai_requests_total: 0,
     ai_requests_today: 0,
     ai_tokens_today: 0,
-    ai_errors_today: 0
+    ai_errors_today: 0,
+    quota_risk_count: 0,
+    subscription_risk_count: 0,
+    mrr: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -69,6 +72,36 @@ export default function Overview() {
           </div>
           <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
             {loading ? '' : `${metrics.orders_today} Orders Today`}
+          </div>
+        </div>
+
+        <div className="card">
+          <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '8px' }}>Monthly Recurring Revenue</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--success)' }}>
+            {loading ? '...' : `${Number(metrics.mrr || 0).toLocaleString('vi-VN')} VND`}
+          </div>
+          <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Active paid subscriptions
+          </div>
+        </div>
+
+        <div className="card">
+          <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '8px' }}>Quota Risk</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: (metrics.quota_risk_count || 0) > 0 ? 'var(--warning, #eab308)' : 'var(--success)' }}>
+            {loading ? '...' : metrics.quota_risk_count}
+          </div>
+          <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Shops above 80% usage
+          </div>
+        </div>
+
+        <div className="card">
+          <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '8px' }}>Subscription Risk</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: (metrics.subscription_risk_count || 0) > 0 ? 'var(--danger, #ef4444)' : 'var(--success)' }}>
+            {loading ? '...' : metrics.subscription_risk_count}
+          </div>
+          <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Past due or canceling soon
           </div>
         </div>
       </div>

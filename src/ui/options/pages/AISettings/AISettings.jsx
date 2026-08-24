@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { OrderStorage } from '../../../../application/storage.js';
+import { OrderStorage } from '../../../../application/storage.esm.js';
 import { AuthService } from '../../../../domain/auth/auth.service.esm.js';
 import { AuthSession } from '../../../../domain/auth/auth.session.esm.js';
 

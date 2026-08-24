@@ -103,7 +103,7 @@ export default function Carriers() {
     setStatus(`Đang liên kết ${carrierId}...`);
     try {
       // Ưu tiên nhờ background tự động đăng nhập + tiêm cookie (nếu có handler)
-      if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
+      if (carrierId === 'vnpost' && typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
         try {
           const res = await new Promise(resolve => {
             chrome.runtime.sendMessage({ action: 'autoLoginVnpost', ...loginForm }, resolve);
@@ -115,6 +115,7 @@ export default function Carriers() {
       }
       await saveState(carrierId, true, loginForm.username);
       setCarriers(prev => prev.map(c => c.id === carrierId ? { ...c, connected: true, account: loginForm.username } : c));
+      setLoginForm(prev => ({ ...prev, password: '' }));
       setStatus(`✅ Đã liên kết tài khoản ${loginForm.username} lên Cloud.`);
       setTimeout(() => setStatus(''), 3000);
     } catch (err) {

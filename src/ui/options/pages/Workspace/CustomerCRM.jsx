@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { OrderStorage } from '../../../../application/storage.js';
+import { OrderStorage } from '../../../../application/storage.esm.js';
 
 export default function CustomerCRM() {
   const [customers, setCustomers] = useState([]);

@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthSession } from '../../domain/auth/auth.session.esm.js';
 import Overview from './pages/Overview/Overview';
-import OrderList from './pages/Workspace/OrderList';
-import CustomerCRM from './pages/Workspace/CustomerCRM';
-import History from './pages/Workspace/History';
-import Bulk from './pages/Workspace/Bulk';
 
 import ShopProfile from './pages/General/ShopProfile';
 import OrderSettings from './pages/General/OrderSettings';
@@ -51,6 +47,7 @@ export default function App() {
           const configRes = await globalThis.SupabaseCloud.loadConfig();
           const sess = await AuthSession.getSession();
           const token = sess ? sess.access_token : configRes.anonKey;
+          let resolvedUiRole = 'viewer';
 
           if (sess && sess.active_shop_id) {
             const res = await fetch(`${configRes.url}/rest/v1/shops?select=name&id=eq.${sess.active_shop_id}`, {
@@ -90,7 +87,8 @@ export default function App() {
                 const roleData = await rpcRes.json();
                 if (roleData && roleData.length > 0 && roleData[0].ui_role) {
                   setUserRole(roleData[0].real_role || 'VIEWER');
-                  setUiRole(roleData[0].ui_role);
+                  resolvedUiRole = roleData[0].ui_role;
+                  setUiRole(resolvedUiRole);
                 }
               }
             } catch (e) {
@@ -99,7 +97,7 @@ export default function App() {
           }
 
           // Fallback: role đã lưu trong session lúc login
-          if (uiRole === 'viewer' && sess && sess.role) {
+          if (resolvedUiRole === 'viewer' && sess && sess.role) {
             const r = sess.role;
             if (r === 'SYSTEM_ADMIN') {
               setUserRole('SYSTEM_ADMIN');
@@ -139,14 +137,6 @@ export default function App() {
     switch (activeTab) {
       case 'overview':
         return <Overview setActiveTab={setActiveTab} uiRole={uiRole} />;
-      case 'orders':
-        return <OrderList />;
-      case 'history':
-        return <History />;
-      case 'bulk':
-        return <Bulk />;
-      case 'customers':
-        return <CustomerCRM />;
       case 'address':
         return <AddressEngine />;
       case 'team':
@@ -192,15 +182,9 @@ export default function App() {
         <nav className="nav-menu">
           <button className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
 
-          <div className="nav-section-title">Workspace</div>
-          <button className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>Quản lý Đơn hàng</button>
-          <button className={`nav-item ${activeTab === 'bulk' ? 'active' : ''}`} onClick={() => setActiveTab('bulk')}>Tách hàng loạt</button>
-          <button className={`nav-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Lịch sử tách</button>
-          <button className={`nav-item ${activeTab === 'customers' ? 'active' : ''}`} onClick={() => setActiveTab('customers')}>Khách hàng</button>
-
           {isConfigAllowed && (
             <>
-              <div className="nav-section-title">Config (SaaS)</div>
+              <div className="nav-section-title">Cấu hình cửa hàng</div>
               <button className={`nav-item ${activeTab === 'shop-profile' ? 'active' : ''}`} onClick={() => setActiveTab('shop-profile')}>Shop Profile</button>
               <button className={`nav-item ${activeTab === 'team' ? 'active' : ''}`} onClick={() => setActiveTab('team')}>Team & Roles</button>
               <button className={`nav-item ${activeTab === 'permission-matrix' ? 'active' : ''}`} onClick={() => setActiveTab('permission-matrix')}>Ma trận RBAC</button>

@@ -533,6 +533,18 @@ export class AdminRepository {
     return true;
   }
 
+  static async activateAddressDataset(datasetId, action, reason) {
+    const configRes = await this._getConfig();
+    const headers = await this._getAuthHeaders(configRes);
+    const res = await fetch(`${configRes.url}/rest/v1/rpc/activate_address_dataset`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ p_dataset_id: datasetId, p_action: action, p_reason: reason })
+    });
+    if (!res.ok) throw new Error(`Activate Address Dataset Failed: ${res.status} - ${await res.text()}`);
+    return await res.json();
+  }
+
   // ==========================================
   // SECURITY / AUDIT LOGS
   // ==========================================

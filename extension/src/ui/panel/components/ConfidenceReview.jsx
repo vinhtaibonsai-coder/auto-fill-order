@@ -20,11 +20,17 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
     warning: data?.warning || '',
     suggestedAddress: data?.suggestedAddress || '',
     confidence: data?.confidence || 95,
-    confidenceThreshold: data?.confidenceThreshold || 90
+    confidenceThreshold: data?.confidenceThreshold || 90,
+    rawAddress: data?.rawAddress || data?.address || '',
+    normalizedAddress: data?.normalizedAddress || data?.address || '',
+    province: data?.province || '',
+    ward: data?.ward || '',
+    addressSource: data?.addressSource || 'unknown'
   });
   
   const [currentText, setCurrentText] = useState(rawText || '');
   const [showRawText, setShowRawText] = useState(true);
+  const [lowConfidenceReviewed, setLowConfidenceReviewed] = useState(false);
 
   useEffect(() => {
     setFormData({
@@ -37,10 +43,18 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
       warning: data?.warning || '',
       suggestedAddress: data?.suggestedAddress || '',
       confidence: data?.confidence || 95,
-      confidenceThreshold: data?.confidenceThreshold || 90
+      confidenceThreshold: data?.confidenceThreshold || 90,
+      rawAddress: data?.rawAddress || data?.address || '',
+      normalizedAddress: data?.normalizedAddress || data?.address || '',
+      province: data?.province || '',
+      ward: data?.ward || '',
+      addressSource: data?.addressSource || 'unknown'
     });
     setCurrentText(rawText || '');
+    setLowConfidenceReviewed(false);
   }, [data, rawText]);
+
+  const needsReview = Number(formData.confidence) < Number(formData.confidenceThreshold || 90);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -168,6 +182,13 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
           </div>
         </div>
 
+        <div style={{ fontSize: '11px', color: '#475569', background: '#f8fafc', borderRadius: '8px', padding: '8px', marginBottom: '8px', lineHeight: 1.5 }}>
+          <div><strong>Địa chỉ gốc:</strong> {formData.rawAddress || 'Chưa có'}</div>
+          <div><strong>Địa chỉ chuẩn hóa:</strong> {formData.normalizedAddress || formData.address || 'Chưa có'}</div>
+          <div><strong>Tỉnh/Thành:</strong> {formData.province || 'Chưa xác định'} · <strong>Phường/Xã:</strong> {formData.ward || 'Chưa xác định'}</div>
+          <div><strong>Nguồn:</strong> {formData.addressSource}</div>
+        </div>
+
         <div className="af-grid-item pink" style={{ marginBottom: '12px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className="af-grid-item-label" style={{ color: '#be123c', fontSize: '12px', textTransform: 'none' }}>Thu hộ COD</div>
           <input 
@@ -196,8 +217,19 @@ export default function ConfidenceReview({ data, rawText, onParse, onConfirm, on
 
       </div>
 
+      {needsReview && (
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '9px', border: '1px solid #fcd34d', borderRadius: '8px', background: '#fffbeb', color: '#92400e', fontSize: '11px', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={lowConfidenceReviewed}
+            onChange={(event) => setLowConfidenceReviewed(event.target.checked)}
+          />
+          Tôi đã đối chiếu các trường có độ tin cậy thấp với nội dung đơn gốc.
+        </label>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <button id="btnFillForm" className="af-btn-fill" onClick={handleConfirm}>
+        <button id="btnFillForm" className="af-btn-fill" onClick={handleConfirm} disabled={needsReview && !lowConfidenceReviewed}>
           <span style={{ display: 'inline-flex', alignItems: 'center' }}><ArrowDownToLine size={14} /></span> Nhập đơn
         </button>
         <button className="af-btn-save" onClick={() => {

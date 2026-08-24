@@ -19,7 +19,7 @@
     "http://127.0.0.1/*"
   ],
   "options_ui": {
-    "page": "frontend/options/options.html",
+    "page": "options.html",
     "open_in_tab": true
   },
   "background": {
@@ -71,6 +71,7 @@
         "frontend/panel/styling/styles.js",
         "frontend/panel/toast/toast.js",
         "frontend/panel/panel.js",
+        "src/runtime/content/carrier-runtime.js",
         "src/runtime/content/index.js"
       ],
       "run_at": "document_end",

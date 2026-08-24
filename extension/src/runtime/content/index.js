@@ -57,36 +57,10 @@
     return document.getElementById(id);
   }
 
-  const PLATFORMS = {
-    vnpost: { id: 'vnpost', title: 'VNPost', themeColor: '#0056b3' },
-    jt: { id: 'jt', title: 'J&T Express', themeColor: '#e11d48' },
-    ghn: { id: 'ghn', title: 'GHN', themeColor: '#f97316' },
-    ghtk: { id: 'ghtk', title: 'GHTK', themeColor: '#16a34a' },
-    viettel: { id: 'viettel', title: 'ViettelPost', themeColor: '#dc2626' }
-  };
-
-  function getCurrentPlatform() {
-    const url = typeof window !== 'undefined' ? window.location.href.toLowerCase() : '';
-    if (url.includes('my.vnpost.vn/order/domestic/create')) return PLATFORMS.vnpost;
-    if (url.includes('jtexpress.vn') && (url.includes('ordercreate') || url.includes('order/create') || url.includes('web/order/create') || url.includes('order-create'))) return PLATFORMS.jt;
-    if (url.includes('ghn.vn')) return PLATFORMS.ghn;
-    if (url.includes('ghtk.vn')) return PLATFORMS.ghtk;
-    if (url.includes('viettelpost.vn')) return PLATFORMS.viettel;
-    return null;
-  }
-
-  function detectCarrierAccount(platform) {
-    const plat = platform || getCurrentPlatform();
-    const platId = typeof plat === 'object' && plat ? plat.id : plat;
-    if (platId === 'vnpost' && globalThis.VNPOST_SELECTORS && typeof globalThis.VNPOST_SELECTORS.getAccountName === 'function') {
-      return globalThis.VNPOST_SELECTORS.getAccountName();
-    }
-    if (platId === 'jt' && globalThis.JT_SELECTORS && typeof globalThis.JT_SELECTORS.getAccountName === 'function') {
-      return globalThis.JT_SELECTORS.getAccountName();
-    }
-    return '';
-  }
-  globalThis.detectCarrierAccount = detectCarrierAccount;
+  const carrierRuntime = globalThis.AutoFillCarrierRuntime || {};
+  const PLATFORMS = carrierRuntime.PLATFORMS || {};
+  const getCurrentPlatform = carrierRuntime.getCurrentPlatform || (() => null);
+  const detectCarrierAccount = carrierRuntime.detectCarrierAccount || (() => '');
 
   async function checkUrlAndInject() {
     const platform = getCurrentPlatform();
