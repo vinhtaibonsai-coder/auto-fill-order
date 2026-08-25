@@ -12,7 +12,7 @@
     {
       "name": "master_admin config exists",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "test_shops has 3 entries",
@@ -22,7 +22,7 @@
     {
       "name": "test_shops have required fields",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "test_quotas has valid values",
@@ -67,22 +67,22 @@
     {
       "name": "File exists: admin-dashboard/login.html",
       "status": "✅ PASS",
-      "duration": "40ms"
+      "duration": "4ms"
     },
     {
       "name": "File exists: admin-dashboard/admin.html",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: admin-dashboard/index.html",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: admin-dashboard/master-admin.js",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "2ms"
     },
     {
       "name": "File exists: admin-dashboard/shops.js",
@@ -97,27 +97,27 @@
     {
       "name": "File exists: admin-dashboard/supabase-config.js",
       "status": "✅ PASS",
-      "duration": "5ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: manifest.json",
       "status": "✅ PASS",
-      "duration": "3ms"
+      "duration": "6ms"
     },
     {
       "name": "File exists: src/runtime/content/index.js",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: src/domain/auth/auth.service.js",
       "status": "✅ PASS",
-      "duration": "6ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: src/domain/auth/auth.session.js",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: src/domain/permission/permission.service.js",
@@ -127,12 +127,12 @@
     {
       "name": "File exists: src/domain/audit/audit.service.js",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "5ms"
     },
     {
       "name": "File exists: src/domain/shop/shop.service.js",
       "status": "✅ PASS",
-      "duration": "6ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: src/domain/shop/invite.service.js",
@@ -142,17 +142,17 @@
     {
       "name": "File exists: src/domain/member/member.service.js",
       "status": "✅ PASS",
-      "duration": "5ms"
+      "duration": "2ms"
     },
     {
       "name": "File exists: src/domain/realtime/realtime.service.js",
       "status": "✅ PASS",
-      "duration": "5ms"
+      "duration": "2ms"
     },
     {
       "name": "File exists: database/migrations/v3_enterprise_schema.sql",
       "status": "✅ PASS",
-      "duration": "7ms"
+      "duration": "5ms"
     },
     {
       "name": "File exists: database/migrations/v3_1_rbac_schema.sql",
@@ -162,94 +162,94 @@
     {
       "name": "File exists: database/migrations/v4_saas_architecture.sql",
       "status": "✅ PASS",
-      "duration": "5ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: database/migrations/v5_master_admin_schema.sql",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "3ms"
     },
     {
       "name": "File exists: database/migrations/v6_DEPRECATED_panel_accounts.sql",
       "status": "✅ PASS",
-      "duration": "4ms"
+      "duration": "6ms"
     },
     {
       "name": "Migration database/migrations/v3_enterprise_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "82ms"
+      "duration": "31ms"
     },
     {
       "name": "Migration database/migrations/v3_1_rbac_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "92ms"
+      "duration": "19ms"
     },
     {
       "name": "Migration database/migrations/v4_saas_architecture.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "22ms"
+      "duration": "28ms"
     },
     {
       "name": "Migration database/migrations/v5_master_admin_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "27ms"
+      "duration": "39ms"
     },
     {
       "name": "Migration database/migrations/v6_DEPRECATED_panel_accounts.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "37ms"
+      "duration": "22ms"
     },
     {
       "name": "auth.service.js exports required functions",
       "status": "✅ PASS",
-      "duration": "74ms"
+      "duration": "52ms"
     },
     {
       "name": "auth.session.js handles session management",
       "status": "✅ PASS",
-      "duration": "78ms"
+      "duration": "8ms"
     },
     {
       "name": "permission.service.js exports RBAC logic",
       "status": "✅ PASS",
-      "duration": "20ms"
+      "duration": "9ms"
     },
     {
       "name": "shop.service.js has CRUD operations",
       "status": "✅ PASS",
-      "duration": "99ms"
+      "duration": "63ms"
     },
     {
       "name": "audit.service.js logs actions",
       "status": "✅ PASS",
-      "duration": "10ms"
+      "duration": "25ms"
     },
     {
       "name": "admin-dashboard/master-admin.js is non-empty",
       "status": "✅ PASS",
-      "duration": "221ms"
+      "duration": "87ms"
     },
     {
       "name": "admin-dashboard/login.html has login form",
       "status": "✅ PASS",
-      "duration": "182ms"
+      "duration": "21ms"
     },
     {
       "name": "No hardcoded Supabase service_role key in source",
       "status": "✅ PASS",
-      "duration": "47ms"
+      "duration": "17ms"
     },
     {
       "name": "No hardcoded passwords in source code",
       "status": "✅ PASS",
-      "duration": "603ms"
+      "duration": "188ms"
     },
     {
       "name": "manifest.json has minimum permissions",
       "status": "✅ PASS",
-      "duration": "33ms"
+      "duration": "8ms"
     }
   ],
-  "startTime": "2026-08-24T09:36:51.348Z",
-  "endTime": "2026-08-24T09:36:53.255Z"
+  "startTime": "2026-08-25T01:34:09.376Z",
+  "endTime": "2026-08-25T01:34:10.151Z"
 }

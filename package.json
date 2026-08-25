@@ -2,11 +2,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node tests/run-tests.js && node tests/unit/phase2-risk-fixes.test.mjs && node tests/unit/phase4-surface-boundaries.test.mjs && node tests/unit/phase5-panel-workflow.test.mjs && node tests/unit/phase6-options-controls.test.mjs && node tests/unit/phase7-admin-control-plane.test.mjs && node tests/unit/phase8-runtime-carrier.test.mjs && node tests/unit/phase11-security-tenant.test.mjs && node tests/unit/phase12-graceful-errors.test.mjs",
+    "test": "node tests/run-tests.js && node tests/unit/phase2-risk-fixes.test.mjs && node tests/unit/phase4-surface-boundaries.test.mjs && node tests/unit/phase5-panel-workflow.test.mjs && node tests/unit/phase6-options-controls.test.mjs && node tests/unit/phase7-admin-control-plane.test.mjs && node tests/unit/phase8-runtime-carrier.test.mjs && node tests/unit/phase11-security-tenant.test.mjs && node tests/unit/phase12-graceful-errors.test.mjs && node tests/unit/supabase-config-ui.test.mjs && node tests/unit/options-submitted-orders.test.mjs && node tests/unit/auth-token-lifecycle.test.mjs && node tests/unit/vercel-admin-deploy.test.mjs",
     "test:vitest": "vitest run",
     "test:watch": "vitest",
     "test:security": "node tests/security/rls-isolation.test.mjs && node tests/security/ai-gateway.test.mjs",
-    "sync:ext": "node scripts/sync-extension.js"
+    "sync:ext": "node scripts/sync-extension.js",
+    "deploy:vercel": "npx vercel --prod",
+    "deploy:vercel:preview": "npx vercel"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.33",

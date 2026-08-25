@@ -160,7 +160,22 @@
     return true;
   };
 
-  SupabaseCloud.signOut = async function() {
+  SupabaseCloud.signOut = async function(accessToken = null) {
+    try {
+      await this.loadConfig();
+      const cfg = this._getConfig();
+      const token = accessToken || await this._sessionToken().catch(() => null);
+      if (cfg.url && cfg.anonKey && token && !String(token).startsWith('local_dev_token_')) {
+        await fetch(`${cfg.url.replace(/\/$/, '')}/auth/v1/logout`, {
+          method: 'POST',
+          headers: {
+            'apikey': cfg.anonKey,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }).catch(() => {});
+      }
+    } catch (_) {}
     this.isConnected = false;
     return true;
   };

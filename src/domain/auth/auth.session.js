@@ -11,6 +11,27 @@ const AuthSession = {
     this._cachedToken = session ? session.access_token : null;
   },
 
+  async _loadSupabaseConfig() {
+    if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.loadConfig === 'function') {
+      return await SupabaseCloud.loadConfig();
+    }
+    if (typeof globalThis !== 'undefined' && globalThis.SUPABASE_CONFIG) {
+      return globalThis.SUPABASE_CONFIG;
+    }
+    if (typeof SUPABASE_CONFIG !== 'undefined') {
+      return SUPABASE_CONFIG;
+    }
+    return { url: '', anonKey: '' };
+  },
+
+  _isRefreshRejection(status, bodyText = '') {
+    const text = String(bodyText || '').toLowerCase();
+    return status === 400 || status === 401 || status === 403 ||
+      text.includes('invalid refresh token') ||
+      text.includes('refresh token not found') ||
+      text.includes('jwt expired');
+  },
+
   async _checkAndRefreshSession(session) {
     if (!session || !session.refresh_token || !session.expires_at) {
       this._updateCachedToken(session);
@@ -24,10 +45,11 @@ const AuthSession = {
     }
 
     try {
-      const config = (typeof globalThis !== 'undefined' ? globalThis.SUPABASE_CONFIG : null) || {
-        url: 'https://xlgovgynbsahuykyjzcx.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsZ292Z3luYnNhaHV5a3lqemN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODg2MTksImV4cCI6MjEwMDE2NDYxOX0.AytQ0MPBklNajTadr2KyNwk-UP7JQZJ-UWdTGtIEyeM'
-      };
+      const config = await this._loadSupabaseConfig();
+      if (!config || !config.url || !config.anonKey || config.url.includes('YOUR_SUPABASE')) {
+        this._updateCachedToken(session);
+        return session;
+      }
 
       const resp = await fetch(`${config.url}/auth/v1/token?grant_type=refresh_token`, {
         method: 'POST',
@@ -52,7 +74,12 @@ const AuthSession = {
         await this.saveSession(session);
         console.log('[AuthSession] Token refreshed successfully.');
       } else {
+        const text = await resp.text().catch(() => '');
         console.warn('[AuthSession] Token refresh failed, status:', resp.status);
+        if (this._isRefreshRejection(resp.status, text)) {
+          await this.clearSession();
+          return null;
+        }
       }
     } catch (err) {
       console.warn('[AuthSession] Error refreshing token:', err);
@@ -159,4 +186,3 @@ if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
 if (typeof globalThis !== 'undefined') {
   globalThis.AuthSession = AuthSession;
 }
-

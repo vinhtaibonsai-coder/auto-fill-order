@@ -325,6 +325,8 @@ export default function Overview({ setActiveTab, uiRole }) {
     const shopFilter = `shop_id=eq.${shop}`;
     const curRange = `created_at=gte.${toISO(cur.start)}&created_at=lte.${toISO(cur.end)}`;
     const prevRange = `created_at=gte.${toISO(prev.start)}&created_at=lte.${toISO(prev.end)}`;
+    const curSubmittedRange = `submitted_at=gte.${toISO(cur.start)}&submitted_at=lte.${toISO(cur.end)}`;
+    const prevSubmittedRange = `submitted_at=gte.${toISO(prev.start)}&submitted_at=lte.${toISO(prev.end)}`;
 
     const fetchRows = async (table, params) => {
       const res = await fetch(base + table + '?' + params, { headers });
@@ -333,13 +335,25 @@ export default function Overview({ setActiveTab, uiRole }) {
       return Array.isArray(data) ? data : [];
     };
 
+    const fetchRowsAny = async (table, paramsList) => {
+      let lastError = null;
+      for (const params of paramsList) {
+        try {
+          return await fetchRows(table, params);
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      throw lastError || new Error('Cannot load rows');
+    };
+
     const okOr = r => (r.status === 'fulfilled' ? r.value : null);
 
     const [ordersCur, ordersPrev, subsCur, subsPrev, aiCur, aiPrev] = await Promise.allSettled([
       fetchRows('orders', `${shopFilter}&deleted_at=is.null&${curRange}&select=id,cod_amount,status,created_at`),
       fetchRows('orders', `${shopFilter}&deleted_at=is.null&${prevRange}&select=id,cod_amount,status,created_at`),
-      fetchRows('submitted_orders', `${shopFilter}&${curRange}&select=id,cod_amount,status,submitted_at,created_at`),
-      fetchRows('submitted_orders', `${shopFilter}&${prevRange}&select=id,cod_amount,status,submitted_at,created_at`),
+      fetchRows('submitted_orders', `${shopFilter}&${curSubmittedRange}&select=id,cod_amount,status,submitted_at`),
+      fetchRows('submitted_orders', `${shopFilter}&${prevSubmittedRange}&select=id,cod_amount,status,submitted_at`),
       fetchRows('ai_usage_log', `${shopFilter}&request_type=eq.parse&status=eq.success&${curRange}&select=id`),
       fetchRows('ai_usage_log', `${shopFilter}&request_type=eq.parse&status=eq.success&${prevRange}&select=id`)
     ]);
@@ -460,8 +474,14 @@ export default function Overview({ setActiveTab, uiRole }) {
     }
 
     const [recentA, recentB] = await Promise.allSettled([
-      fetchRows('orders', `${shopFilter}&deleted_at=is.null&order=created_at.desc&limit=5&select=id,order_code,customer_name,phone,address,cod_amount,platform,status,created_at`),
-      fetchRows('submitted_orders', `${shopFilter}&order=submitted_at.desc&limit=5&select=id,order_code,tracking_code,customer_name,phone,address,cod_amount,platform,status,submitted_at,created_at`)
+      fetchRowsAny('orders', [
+        `${shopFilter}&deleted_at=is.null&order=created_at.desc&limit=5&select=id,order_code,name,phone,address,cod_amount,platform,status,created_at`,
+        `${shopFilter}&deleted_at=is.null&order=created_at.desc&limit=5&select=id,order_code,customer_name,phone,address,cod_amount,platform,status,created_at`
+      ]),
+      fetchRowsAny('submitted_orders', [
+        `${shopFilter}&order=submitted_at.desc&limit=5&select=id,order_code,tracking_code,name,phone,address,cod_amount,platform,status,submitted_at`,
+        `${shopFilter}&order=submitted_at.desc&limit=5&select=id,order_code,tracking_code,customer_name,phone,address,cod_amount,platform,status,submitted_at`
+      ])
     ]);
 
     if (alive()) {
@@ -476,7 +496,7 @@ export default function Overview({ setActiveTab, uiRole }) {
           type: 'draft',
           id: r.id,
           code: r.order_code || '#' + String(r.id).slice(0, 8),
-          customer: r.customer_name || '—',
+          customer: r.name || r.customer_name || '—',
           phone: r.phone || '—',
           address: r.address || '—',
           cod: Number(r.cod_amount) || 0,
@@ -492,7 +512,7 @@ export default function Overview({ setActiveTab, uiRole }) {
           type: 'submitted',
           id: r.id,
           code: r.order_code || '#' + String(r.id).slice(0, 8),
-          customer: r.customer_name || '—',
+          customer: r.name || r.customer_name || '—',
           phone: r.phone || '—',
           address: r.address || '—',
           cod: Number(r.cod_amount) || 0,

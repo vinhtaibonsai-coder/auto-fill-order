@@ -18,6 +18,8 @@ import AISettings from './pages/AISettings/AISettings';
 import Carriers from './pages/Carriers/Carriers';
 import Login from './pages/Auth/Login';
 import DatabaseManager from './pages/Database/DatabaseManager';
+import ServerSettings from './pages/Server/ServerSettings';
+import SubmittedOrders from './pages/Orders/SubmittedOrders';
 import { AuthService } from '../../domain/auth/auth.service.esm.js';
 
 const ComingSoon = ({ title }) => (
@@ -125,7 +127,7 @@ export default function App() {
   }
 
   const renderContent = () => {
-    if (!isConfigAllowed && ['team', 'permission-matrix', 'ai-settings', 'carriers', 'shop-profile', 'order-settings', 'sync', 'notifications', 'security', 'audit', 'subscription', 'devices', 'database', 'address'].includes(activeTab)) {
+    if (!isConfigAllowed && ['team', 'permission-matrix', 'ai-settings', 'carriers', 'shop-profile', 'order-settings', 'sync', 'notifications', 'security', 'audit', 'subscription', 'devices', 'database', 'address', 'server'].includes(activeTab)) {
       return (
         <div className="card" style={{ textAlign: 'center', padding: '60px', color: 'var(--danger)' }}>
           <h2>Access Denied</h2>
@@ -149,6 +151,10 @@ export default function App() {
         return <AISettings />;
       case 'database':
         return <DatabaseManager />;
+      case 'submitted-orders':
+        return <SubmittedOrders />;
+      case 'server':
+        return <ServerSettings />;
       case 'carriers':
         return <Carriers />;
       case 'shop-profile':
@@ -199,6 +205,9 @@ export default function App() {
               <button className={`nav-item ${activeTab === 'audit' ? 'active' : ''}`} onClick={() => setActiveTab('audit')}>Audit Logs</button>
               <button className={`nav-item ${activeTab === 'subscription' ? 'active' : ''}`} onClick={() => setActiveTab('subscription')}>Subscription</button>
               <button className={`nav-item ${activeTab === 'database' ? 'active' : ''}`} onClick={() => setActiveTab('database')}>Local Storage</button>
+              <button className={`nav-item ${activeTab === 'server' ? 'active' : ''}`} onClick={() => setActiveTab('server')}>Server Connection</button>
+              <div className="nav-section-title">Tra cứu vận hành</div>
+              <button className={`nav-item ${activeTab === 'submitted-orders' ? 'active' : ''}`} onClick={() => setActiveTab('submitted-orders')}>Đơn đã lên</button>
             </>
           )}
         </nav>

@@ -12,11 +12,15 @@ export default function AISettings() {
   const [budget, setBudget] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState('');
+  const getActiveShopId = async () => {
+    const activeShop = await OrderStorage.getActiveShop();
+    return activeShop ? String(activeShop.id || activeShop) : '';
+  };
 
   useEffect(() => {
     async function loadConfig() {
       try {
-        const activeShopId = await OrderStorage.getActiveShop();
+        const activeShopId = await getActiveShopId();
         const configRes = await globalThis.SupabaseCloud.loadConfig();
         const sess = await AuthSession.getSession();
         const token = sess ? sess.access_token : null;
@@ -67,7 +71,7 @@ export default function AISettings() {
   const handleSave = async () => {
     setSaveStatus('Đang lưu...');
     try {
-      const activeShopId = await OrderStorage.getActiveShop();
+      const activeShopId = await getActiveShopId();
       const configRes = await globalThis.SupabaseCloud.loadConfig();
       const sess = await AuthSession.getSession();
       const token = sess ? sess.access_token : null;

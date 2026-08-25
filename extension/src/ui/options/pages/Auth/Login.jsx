@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthService } from '../../../../domain/auth/auth.service.esm.js';
+import ServerSettings from '../Server/ServerSettings';
 
 export default function Login({ onLoginSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,6 +11,7 @@ export default function Login({ onLoginSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockActive, setCapsLockActive] = useState(false);
+  const [showServerSettings, setShowServerSettings] = useState(false);
 
   useEffect(() => {
     // Check if already logged in
@@ -219,6 +221,21 @@ export default function Login({ onLoginSuccess }) {
           >
             {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
           </button>
+        </div>
+
+        <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+          <button
+            type="button"
+            onClick={() => setShowServerSettings(v => !v)}
+            style={{ width: '100%', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '10px 12px', color: '#334155', fontWeight: 700, cursor: 'pointer' }}
+          >
+            {showServerSettings ? 'Ẩn cấu hình máy chủ' : 'Cấu hình máy chủ Supabase'}
+          </button>
+          {showServerSettings && (
+            <div style={{ marginTop: '12px' }}>
+              <ServerSettings compact />
+            </div>
+          )}
         </div>
       </div>
     </div>

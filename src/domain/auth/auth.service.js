@@ -378,6 +378,31 @@ const AuthService = {
   },
 
   async logout() {
+    let session = null;
+    if (typeof AuthSession !== 'undefined') {
+      try {
+        session = await AuthSession.getSession();
+      } catch (_) {
+        session = null;
+      }
+    }
+
+    if (session && session.access_token && !String(session.access_token).startsWith('local_dev_token_')) {
+      try {
+        const { url, anonKey } = await this._getSupabaseUrlAndKey();
+        if (url && anonKey) {
+          await fetch(`${url.replace(/\/$/, '')}/auth/v1/logout`, {
+            method: 'POST',
+            headers: {
+              'apikey': anonKey,
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          }).catch(() => {});
+        }
+      } catch (_) {}
+    }
+
     if (typeof AuthSession !== 'undefined') {
       await AuthSession.clearSession();
     }
@@ -808,4 +833,3 @@ if (typeof globalThis !== 'undefined') {
 if (typeof window !== 'undefined') {
   window.AuthService = AuthService;
 }
-
