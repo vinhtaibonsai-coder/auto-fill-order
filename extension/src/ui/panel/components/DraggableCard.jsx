@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-export default function DraggableCard({ children, onClose, title, isAuth = false, session, carrierAccount }) {
+export default function DraggableCard({ children, onClose, title, isAuth = false, session, carrierAccount, draftCount = 0, onToggleDraftQueue }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -115,17 +115,41 @@ export default function DraggableCard({ children, onClose, title, isAuth = false
             </span>
             {isAuth && (
               <>
-                <span title="Cửa hàng đang hoạt động" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                  🏪 {session?.shop_name || 'Mặc định'}
+                <span title="Cửa hàng đang hoạt động" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#4f46e5', fontWeight: 600 }}>
+                  🏪 {session?.shop_name || 'Cửa hàng'}
                 </span>
-                <span title="Nhân viên đang đăng nhập" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                  👤 {session?.user?.full_name || session?.user?.email || 'Ngoại tuyến'}
+                <span title="Nhân viên / Máy trạm" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#059669', fontWeight: 600 }}>
+                  👤 {session?.staff_name || session?.user?.full_name || session?.user?.email?.split('@')[0] || 'Máy trạm'}
                 </span>
               </>
             )}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {draftCount > 0 && (
+            <button 
+              type="button"
+              className="af-panel-header-btn has-drafts-active" 
+              title={`Hàng đợi có ${draftCount} đơn nháp sẵn sàng lên đơn`} 
+              onClick={onToggleDraftQueue}
+              style={{
+                position: 'relative',
+                background: 'rgba(239, 68, 68, 0.15)',
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                color: '#ef4444',
+                fontWeight: 700,
+                fontSize: '11px',
+                padding: '2px 7px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              📥 <strong>{draftCount}</strong>
+            </button>
+          )}
           <button className="af-panel-header-btn" title="Làm mới" onClick={() => window.location.reload()}>↻</button>
           <button className="af-panel-header-btn" title="Cài đặt" onClick={openOptions}>⚙</button>
           <button className="af-panel-header-btn" title="Thu nhỏ" onClick={onClose}>—</button>

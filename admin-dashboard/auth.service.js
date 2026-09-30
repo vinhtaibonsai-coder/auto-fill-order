@@ -14,6 +14,9 @@ const AuthService = {
 
   // Tạo phiên làm việc Nội bộ khi Supabase dính Rate Limit
   async _createLocalDevSession(email, fullName = 'Chủ Shop', username = null) {
+    if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
+      throw new Error('Local dev session is disabled in production.');
+    }
     const localUserId = 'usr_local_' + Math.floor(Math.random() * 1000000);
     const sessionData = {
       access_token: 'local_dev_token_' + Date.now(),
@@ -21,7 +24,8 @@ const AuthService = {
       expires_at: Date.now() + 30 * 24 * 3600 * 1000,
       user: { id: localUserId, email },
       active_shop_id: 'local_shop_01',
-      permissions: ['*']
+      permissions: ['*'],
+      auth_mode: 'local_dev'
     };
     const userObj = {
       id: localUserId,
@@ -42,13 +46,157 @@ const AuthService = {
     return { session: sessionData, profile: userObj, isLocalFallback: true };
   },
 
+  async isAuthenticated() {
+    try {
+      if (typeof AuthSession !== 'undefined' && typeof AuthSession.isAuthenticated === 'function') {
+        return await AuthSession.isAuthenticated();
+      }
+      if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSession === 'function') {
+        const sess = await AuthSession.getSession();
+        return !!(sess && ((sess.user && sess.access_token) || (sess.shop_access_key && sess.active_shop_id)));
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  },
+
+  // Kích hoạt tiện ích bằng Shop Access Key & Tên Nhân viên
+  async activateWithShopKey(shopKey, staffName = 'Nhân viên kho', deviceName = null) {
+    const cleanKey = (shopKey || '').trim().toUpperCase();
+    const cleanStaff = (staffName || '').trim() || 'Nhân viên kho';
+    if (!cleanKey) {
+      throw new Error('Vui lòng nhập mã Shop Access Key');
+    }
+
+    const { url, anonKey } = await this._getSupabaseUrlAndKey();
+    if (!url || !anonKey) {
+      throw new Error('Không thể kết nối máy chủ xác thực.');
+    }
+
+    // Tự sinh hoặc lấy deviceId duy nhất
+    let deviceId = 'dev_' + Math.random().toString(36).substring(2, 10);
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const stored = await new Promise(res => chrome.storage.local.get(['device_id', 'staff_name'], res));
+        if (stored && stored.device_id) deviceId = stored.device_id;
+      }
+    } catch (_) {}
+
+    const devName = deviceName || cleanStaff;
+
+    const resp = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/verify_shop_access_key`, {
+      method: 'POST',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_access_key: cleanKey,
+        p_device_id: deviceId,
+        p_device_name: devName,
+        p_staff_name: cleanStaff,
+        p_browser: 'Chrome',
+        p_os_info: (typeof navigator !== 'undefined' && navigator?.platform) || 'Windows'
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || 'Lỗi xác thực mã Shop Key');
+    }
+
+    const result = await resp.json();
+    if (!result || result.success === false) {
+      throw new Error(result?.message || 'Mã Shop Key không hợp lệ hoặc đã bị đổi');
+    }
+
+    // Tạo phiên làm việc dạng Shop Key Session
+    const sessionData = {
+      auth_type: 'shop_key',
+      shop_access_key: cleanKey,
+      active_shop_id: result.shop_id,
+      shop_name: result.shop_name,
+      staff_name: cleanStaff,
+      device_id: deviceId,
+      access_token: cleanKey,
+      quotas: {
+        daily_limit: result.daily_limit,
+        daily_used: result.daily_used,
+        monthly_limit: result.monthly_limit,
+        monthly_used: result.monthly_used
+      },
+      user: {
+        id: 'staff_' + deviceId,
+        email: cleanStaff + '@' + (result.shop_name || 'shop'),
+        full_name: cleanStaff,
+        role: 'STAFF'
+      },
+      activated_at: Date.now()
+    };
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({
+        device_id: deviceId,
+        staff_name: cleanStaff,
+        shop_access_key: cleanKey,
+        active_shop_id: result.shop_id,
+        shop_name: result.shop_name
+      });
+    }
+
+    if (typeof AuthSession !== 'undefined') {
+      await AuthSession.saveSession(sessionData);
+    }
+
+    if (typeof AuthEvents !== 'undefined') {
+      AuthEvents.emit('AUTH_STATE_CHANGED', {
+        isAuthenticated: true,
+        user: sessionData.user,
+        session: sessionData
+      });
+    }
+
+    return { success: true, session: sessionData };
+  },
+
+  // Kiểm tra thiết bị có bị thu hồi quyền truy cập (Kill-Switch) hay không
+  async validateDeviceSession(shopId, deviceId) {
+    try {
+      const { url, anonKey } = await this._getSupabaseUrlAndKey();
+      if (!url || !anonKey || !shopId || !deviceId) return { valid: true };
+
+      const resp = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/check_device_session_validity`, {
+        method: 'POST',
+        headers: {
+          'apikey': anonKey,
+          'Authorization': `Bearer ${anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_device_id: deviceId, p_shop_id: shopId })
+      });
+
+      if (!resp.ok) return { valid: true };
+      const res = await resp.json();
+      if (res && res.revoked === true) {
+        // Thiết bị đã bị khóa từ xa -> Tự động đăng xuất
+        await this.logout();
+        return { valid: false, revoked: true, message: res.message || 'Thiết bị này đã bị thu hồi quyền.' };
+      }
+      return res || { valid: true };
+    } catch (_) {
+      return { valid: true };
+    }
+  },
+
   // Kiểm tra identifier (email hoặc username) có tồn tại trong DB không
   async checkIdentifier(identifier) {
     identifier = (identifier || '').trim().toLowerCase();
     if (!identifier) return { exists: false, email: null, offline: false };
 
     const { url, anonKey } = await this._getSupabaseUrlAndKey();
-    if (!url || !anonKey) return { exists: false, email: null, offline: true };
+    if (!url || !anonKey || anonKey === 'YOUR_SUPABASE_ANON_KEY') return { exists: false, email: null, offline: true };
 
     try {
       const base = `${url.replace(/\/$/, '')}/rest/v1/profiles`;
@@ -88,7 +236,7 @@ const AuthService = {
     if (!identifier.includes('@')) {
       try {
         const { url, anonKey } = await this._getSupabaseUrlAndKey();
-        if (url && anonKey) {
+        if (url && anonKey && anonKey !== 'YOUR_SUPABASE_ANON_KEY') {
           const lookupEndpoint = `${url.replace(/\/$/, '')}/rest/v1/profiles?username=eq.${encodeURIComponent(identifier)}&select=email,username`;
           const lookupResp = await fetch(lookupEndpoint, {
             headers: {
@@ -107,23 +255,34 @@ const AuthService = {
     try {
       return await this.login(targetEmail, password);
     } catch (err) {
-      if (err.message && err.message.toLowerCase().includes('rate limit')) {
-        return await this._createLocalDevSession(targetEmail, identifier, identifier);
+      const msg = err.message || '';
+      // Nếu là lỗi nghiệp vụ xác thực (sai mật khẩu, sai email, chưa confirm...), THROW ngay chứ không fallback offline
+      if (
+        msg.includes('không đúng') || 
+        msg.includes('chưa được xác nhận') || 
+        msg.includes('đã được đăng ký') || 
+        msg.includes('không hợp lệ') || 
+        msg.includes('ít nhất 6 ký tự') ||
+        msg.toLowerCase().includes('invalid login credentials')
+      ) {
+        throw err;
+      }
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('supabase') || msg.toLowerCase().includes('401') || msg.toLowerCase().includes('403')) {
+        throw new Error('Supabase từ chối kết nối hoặc bị giới hạn tần suất. Chi tiết: ' + msg);
       }
       throw err;
     }
   },
 
-  // Đăng nhập trực tiếp bằng Email (đã được chuẩn hoá)
   async login(email, password) {
     const { url, anonKey } = await this._getSupabaseUrlAndKey();
-    if (!url || !anonKey) {
+    if (!url || !anonKey || anonKey === 'YOUR_SUPABASE_ANON_KEY') {
       throw new Error('Thiếu cấu hình kết nối máy chủ Supabase. Vui lòng thiết lập trong Cài đặt.');
     }
 
     try {
       const endpoint = `${url.replace(/\/$/, '')}/auth/v1/token?grant_type=password`;
-      const resp = await fetch(endpoint, {
+      let resp = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'apikey': anonKey,
@@ -132,15 +291,54 @@ const AuthService = {
         body: JSON.stringify({ email, password })
       });
 
-      const data = await resp.json();
+      let data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        if ((data.msg && data.msg.toLowerCase().includes('rate limit')) ||
-            (data.error_description && data.error_description.toLowerCase().includes('rate limit'))) {
-          return await this._createLocalDevSession(email, email.split('@')[0]);
+        // Tự động phục hồi tài khoản (Self-healing) nếu Supabase Auth trả về lỗi 500 do xung đột identity
+        if (resp.status === 500) {
+          try {
+            const repairRes = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/admin_repair_user_auth`, {
+              method: 'POST',
+              headers: {
+                'apikey': anonKey,
+                'Authorization': `Bearer ${anonKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ p_email: email, p_password: password })
+            });
+            if (repairRes.ok) {
+              const retryResp = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'apikey': anonKey, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+              });
+              if (retryResp.ok) {
+                const retryData = await retryResp.json();
+                if (retryData?.access_token) {
+                  data = retryData;
+                  resp = retryResp;
+                }
+              }
+            }
+          } catch (_) {}
         }
-        const rawMsg = data.error_description || data.msg || '';
-        const vnMsg = this._translateSupabaseError(rawMsg) || 'Đăng nhập thất bại. Kiểm tra lại Email/Mật khẩu!';
-        throw new Error(vnMsg);
+
+        if (!resp.ok) {
+          const rawMsg = data.error_description || data.msg || '';
+          if ((rawMsg.toLowerCase().includes('rate limit')) ||
+              (data.msg && data.msg.toLowerCase().includes('rate limit'))) {
+            throw new Error('Đăng nhập quá nhiều lần. Vui lòng thử lại sau 1 phút!');
+          }
+          // API key không hợp lệ hoặc chưa cấu hình → fallback offline
+          if (resp.status === 401 || resp.status === 403) {
+            const { url } = await this._getSupabaseUrlAndKey();
+            if (!url || !url.includes('supabase.co')) {
+              throw new Error('Cấu hình URL Supabase không hợp lệ. Vui lòng kiểm tra Cài đặt.');
+            }
+            throw new Error('Supabase từ chối kết nối (HTTP ' + resp.status + '). Vui lòng kiểm tra Anon Key trong phần Cài đặt.');
+          }
+          const vnMsg = this._translateSupabaseError(rawMsg) || 'Đăng nhập thất bại. Kiểm tra lại Email/Mật khẩu!';
+          throw new Error(vnMsg);
+        }
       }
 
       const profile = await this.fetchUserProfile(data.user.id, data.access_token);
@@ -158,12 +356,27 @@ const AuthService = {
         expires_at: Date.now() + (data.expires_in || 3600) * 1000,
         user: userObj,
         active_shop_id: rbacData.active_shop_id,
-        permissions: rbacData.permissions
+        permissions: rbacData.permissions,
+        role: rbacData.role,
+        features: rbacData.features,
+        shop_name: rbacData.shop_name,
+        max_devices: rbacData.max_devices,
+        max_users: rbacData.max_users,
+        monthly_order_limit: rbacData.monthly_order_limit,
+        custom_prompt_rules: rbacData.custom_prompt_rules
       };
 
       if (typeof AuthSession !== 'undefined') {
         await AuthSession.saveSession(sessionData);
-        // Note: Không gọi saveUser nữa, dồn hết vào saveSession
+        // Kéo danh sách Shop từ Cloud về Local Storage theo ID user
+        if (typeof ShopService !== 'undefined' && typeof ShopService.syncShopsFromCloud === 'function') {
+          await ShopService.syncShopsFromCloud();
+        }
+      }
+
+      // Tự động đồng bộ và đăng ký thiết bị ngay khi đăng nhập
+      if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.syncDeviceRecord === 'function') {
+        SupabaseCloud.syncDeviceRecord().catch(e => console.warn('[AuthService] syncDeviceRecord error:', e));
       }
       
       if (typeof AuthEvents !== 'undefined') {
@@ -172,8 +385,13 @@ const AuthService = {
 
       return { session: sessionData, profile: userObj };
     } catch (err) {
-      if (err.message && err.message.toLowerCase().includes('rate limit')) {
-        return await this._createLocalDevSession(email, email.split('@')[0]);
+      const msg = err.message || '';
+      // Không tự động fallback nếu là lỗi sai Anon Key (401/403) từ hàm trên đã throw
+      if (msg.includes('từ chối kết nối')) {
+        throw err;
+      }
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('failed to fetch')) {
+        throw new Error('Lỗi mạng hoặc bị giới hạn tần suất. Không thể kết nối tới Supabase (Failed to fetch).');
       }
       throw err;
     }
@@ -181,7 +399,10 @@ const AuthService = {
 
   async signup(email, password, fullName, username = null) {
     const { url, anonKey } = await this._getSupabaseUrlAndKey();
-    if (!url || !anonKey) {
+    if (!url || !anonKey || anonKey === 'YOUR_SUPABASE_ANON_KEY') {
+      if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
+        throw new Error('Thiếu cấu hình kết nối máy chủ trên bản Production.');
+      }
       return await this._createLocalDevSession(email, fullName, username);
     }
 
@@ -208,6 +429,9 @@ const AuthService = {
       if (!resp.ok) {
         if ((data.msg && data.msg.toLowerCase().includes('rate limit')) ||
             (data.error_description && data.error_description.toLowerCase().includes('rate limit'))) {
+          if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
+            throw new Error('Đăng ký quá nhiều lần. Vui lòng thử lại sau 1 phút!');
+          }
           return await this._createLocalDevSession(email, fullName, username);
         }
         const regRaw = data.msg || data.error_description || '';
@@ -239,8 +463,9 @@ const AuthService = {
 
       return await this.login(email, password);
     } catch (err) {
-      if (err.message && err.message.toLowerCase().includes('rate limit')) {
-        return await this._createLocalDevSession(email, fullName, username);
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('supabase') || msg.includes('401') || msg.includes('403')) {
+        throw new Error('Supabase từ chối kết nối hoặc bị giới hạn tần suất. Chi tiết: ' + msg);
       }
       throw err;
     }
@@ -301,25 +526,101 @@ const AuthService = {
     return { ok: true, user: data };
   },
 
+  // Đổi mật khẩu cho nhân viên (dành cho Chủ Shop)
+  async changeEmployeePassword(employeeUserId, newPassword) {
+    const { url, anonKey } = await this._getSupabaseUrlAndKey();
+    if (!url || !anonKey) throw new Error('Chưa cấu hình Supabase Cloud!');
+
+    const token = typeof AuthSession !== 'undefined' ? AuthSession._cachedToken : null;
+    if (!token) throw new Error('Bạn cần đăng nhập để thực hiện đổi mật khẩu nhân viên!');
+
+    const endpoint = `${url.replace(/\/$/, '')}/rest/v1/rpc/owner_reset_member_password`;
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_target_user_id: employeeUserId,
+        p_new_password: newPassword
+      })
+    });
+
+    const resData = await resp.json();
+    if (!resp.ok) {
+      const errMsg = resData.message || resData.msg || 'Đổi mật khẩu nhân viên thất bại!';
+      throw new Error(errMsg);
+    }
+
+    return { ok: true, message: resData.message };
+  },
+
   async logout() {
+    let session = null;
+    if (typeof AuthSession !== 'undefined') {
+      try {
+        session = await AuthSession.getSession();
+      } catch (_) {
+        session = null;
+      }
+    }
+
+    if (session && session.access_token && !String(session.access_token).startsWith('local_dev_token_')) {
+      try {
+        const { url, anonKey } = await this._getSupabaseUrlAndKey();
+        if (url && anonKey) {
+          await fetch(`${url.replace(/\/$/, '')}/auth/v1/logout`, {
+            method: 'POST',
+            headers: {
+              'apikey': anonKey,
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          }).catch(() => {});
+        }
+      } catch (_) {}
+    }
+
     if (typeof AuthSession !== 'undefined') {
       await AuthSession.clearSession();
     }
-    // Dọn dẹp toàn bộ key xác thực & session để đồng bộ đăng xuất cả index và admin
-    localStorage.removeItem('af_logged_user');
-    localStorage.removeItem('profile');
-    localStorage.removeItem('current_role');
-    localStorage.removeItem('current_shop_id');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.remove(['af_session', 'af_session_expires', 'af_session_token', 'af_session_refresh'], () => {});
+    
+    // Đồng bộ: Xoá toàn bộ LocalStorage của Admin Dashboard & Options nếu đang chạy chung Origin
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.removeItem('vnpost_session');
+        localStorage.removeItem('af_logged_user');
+        localStorage.removeItem('profile');
+        localStorage.removeItem('current_role');
+        localStorage.removeItem('current_shop_id');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('activeShop');
+        localStorage.removeItem('activeShopId');
+        localStorage.removeItem('shop_access_key');
+        localStorage.removeItem('staff_name');
+        localStorage.removeItem('shop_name');
+      } catch (_) {}
     }
 
     if (typeof AuthEvents !== 'undefined') {
       AuthEvents.emit('AUTH_STATE_CHANGED', { isAuthenticated: false, user: null, session: null });
     }
+
+    // Phase 3.1: Session/logout nhất quán giữa mọi context
+    // Gửi tin nhắn PERFORM_LOGOUT tới background Service Worker để broadcast ra toàn bộ tab mở
+    const isBackground = typeof window === 'undefined';
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'PERFORM_LOGOUT' }, resolve);
+        });
+      } catch (_) {}
+    }
+
     return { ok: true };
   },
 
@@ -342,74 +643,191 @@ const AuthService = {
     }
   },
 
+  // Lấy role + permissions + features từ RPC get_my_extension_session
   async _fetchUserRBAC(userId, token, anonKey, url) {
-    let active_shop_id = null;
-    let permissions = [];
     try {
-      // 1. Lấy Shop ID
-      const shopResp = await fetch(`${url.replace(/\/$/, '')}/rest/v1/shop_members?user_id=eq.${userId}&select=shop_id`, {
-        headers: { 'apikey': anonKey, 'Authorization': `Bearer ${token}` }
+      // Retrieve device_id and device_name
+      let deviceId = null;
+      let deviceName = null;
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          const r = await new Promise(res => chrome.storage.local.get(['fbDeviceId', 'fbDeviceName'], res));
+          deviceId = r.fbDeviceId;
+          deviceName = r.fbDeviceName;
+        }
+        if (!deviceId && typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud._getDeviceId === 'function') {
+          deviceId = await SupabaseCloud._getDeviceId().catch(() => null);
+          deviceName = await SupabaseCloud._getDeviceName().catch(() => null);
+        }
+      } catch (_) {}
+
+      const endpoint = `${url.replace(/\/$/, '')}/rest/v1/rpc/get_my_extension_session`;
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'apikey': anonKey,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          p_device_id: deviceId,
+          p_device_name: deviceName
+        })
       });
-      const shops = await shopResp.json();
-      if (shops && shops.length > 0) {
-        active_shop_id = shops[0].shop_id;
+
+      let data = null;
+      if (resp.ok) {
+        try {
+          const resJson = await resp.json();
+          data = Array.isArray(resJson) ? resJson[0] : resJson;
+        } catch (_) {}
       }
 
-      // 2. Tạm thời trả về full quyền cho System Admin, hoặc phân giải từ bảng permissions
-      // (Trong thực tế cần query role_permissions / user_roles. Ở đây trả về mảng cơ bản nếu có shop)
-      if (active_shop_id) {
-        permissions = ['orders.read', 'orders.create', 'orders.update', 'orders.delete', 'customers.read', 'customers.export'];
-      }
-      
-      // 3. Kiểm tra System Admin
-      const adminResp = await fetch(`${url.replace(/\/$/, '')}/rest/v1/user_roles?user_id=eq.${userId}&select=roles(code)`, {
-        headers: { 'apikey': anonKey, 'Authorization': `Bearer ${token}` }
-      });
-      const userRoles = await adminResp.json();
-      const isAdmin = userRoles?.some(r => r.roles?.code === 'SYSTEM_ADMIN');
-      
-      if (isAdmin) {
-        permissions = ['*']; // Full quyền
+      // Nếu có dữ liệu phiên trả về từ RPC -> Ưu tiên tuyệt đối (Zero-trust Server-enforced)
+      if (data && !data.error) {
+        let perms = data.permissions;
+        if (typeof perms === 'string') {
+          try { perms = JSON.parse(perms); } catch (_) { perms = []; }
+        }
+        return {
+          active_shop_id: data.shop_id,
+          permissions: Array.isArray(perms) ? perms : [],
+          role: data.role || 'SHOP_STAFF',
+          features: data.features || { all: true },
+          shop_name: data.shop_name || 'Shop của bạn',
+          max_devices: data.max_devices || 5,
+          max_users: data.max_users || 5,
+          monthly_order_limit: data.monthly_order_limit || 5000,
+          custom_prompt_rules: data.custom_prompt_rules || '',
+          device_limit_exceeded: !!data.device_limit_exceeded
+        };
       }
 
+      // 1. Lấy profile và phân quyền từ Database (Fallback khi RPC lỗi)
+      let profile = null;
+      try {
+        const pResp = await fetch(`${url.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${userId}&select=*`, {
+          headers: { 'apikey': anonKey, 'Authorization': `Bearer ${token}` }
+        });
+        if (pResp.ok) {
+          const pList = await pResp.json();
+          profile = (pList && pList.length > 0) ? pList[0] : null;
+        }
+      } catch (_) {}
+
+      // 2. Truy vấn Shop trực tiếp từ Database (shops hoặc shop_members)
+      let dbShop = null;
+      let memberRole = null;
+      try {
+        const [ownerShopRes, memberShopRes] = await Promise.all([
+          fetch(`${url.replace(/\/$/, '')}/rest/v1/shops?owner_id=eq.${userId}&select=*&order=created_at.asc,id.asc&limit=1`, {
+            headers: { 'apikey': anonKey, 'Authorization': `Bearer ${token}` }
+          }).catch(() => null),
+          fetch(`${url.replace(/\/$/, '')}/rest/v1/shop_members?user_id=eq.${userId}&select=role,shops(*)&order=created_at.asc&limit=1`, {
+            headers: { 'apikey': anonKey, 'Authorization': `Bearer ${token}` }
+          }).catch(() => null)
+        ]);
+
+        if (ownerShopRes && ownerShopRes.ok) {
+          const list = await ownerShopRes.json().catch(() => []);
+          if (list && list.length > 0) dbShop = list[0];
+        }
+        if (!dbShop && memberShopRes && memberShopRes.ok) {
+          const mList = await memberShopRes.json().catch(() => []);
+          if (mList && mList.length > 0) {
+            memberRole = mList[0].role;
+            dbShop = mList[0].shops;
+          }
+        }
+      } catch (_) {}
+
+      const userEmail = (profile?.email || '').toLowerCase();
+      const isAdminUser = profile?.role === 'SYSTEM_ADMIN' || profile?.role === 'admin' || userEmail.startsWith('admin@');
+      let finalRole = memberRole || (isAdminUser ? 'SYSTEM_ADMIN' : (profile?.role === 'manager' ? 'SHOP_MANAGER' : 'SHOP_STAFF'));
+
+      // Xử lý permissions: nếu là Admin thì toàn quyền [*], nếu nhân viên thì cấp quyền nghiệp vụ
+      let perms = isAdminUser ? ['*'] : this._getDefaultPermissionsForRole(finalRole);
+
+      const dynamicShopId = dbShop ? dbShop.id : `shop_${userId.replace(/-/g, '').slice(0, 10)}`;
+      const dynamicShopName = dbShop ? dbShop.name : (profile?.full_name ? `Shop ${profile.full_name}` : 'Shop của bạn');
+
+      return {
+        active_shop_id: dynamicShopId,
+        permissions: perms,
+        role: finalRole,
+        features: { all: true },
+        shop_name: dynamicShopName,
+        max_devices: 5,
+        max_users: 5,
+        monthly_order_limit: 5000,
+        custom_prompt_rules: '',
+        device_limit_exceeded: false
+      };
     } catch (e) {
       console.warn("Lỗi fetch RBAC:", e);
+      return { active_shop_id: null, permissions: ['*'], role: 'SYSTEM_ADMIN', features: {}, shop_name: 'Shop của bạn', device_limit_exceeded: false };
     }
+  },
+
+  // Matrix quyền mặc định theo Role Code
+  _getDefaultPermissionsForRole(roleCode) {
+    switch(roleCode) {
+      case 'SHOP_OWNER':
+        return ['orders.read', 'orders.create', 'orders.update', 'orders.delete', 'customers.read', 'customers.export', 'ai.parse', 'shop.settings'];
+      case 'SHOP_MANAGER':
+        return ['orders.read', 'orders.create', 'orders.update', 'orders.delete', 'customers.read', 'ai.parse'];
+      case 'SHOP_STAFF':
+      case 'EXTENSION_USER':
+        return ['orders.read', 'orders.create', 'orders.update', 'ai.parse'];
+      case 'VIEWER':
+        return ['orders.read'];
+      default:
+        return ['orders.read'];
+    }
+  },
+
+  // Refresh quyền (được gọi từ alarm mỗi 5 phút)
+  async refreshPermissions() {
+    if (typeof AuthSession === 'undefined') return { ok: false };
+    const session = await AuthSession.getSession();
+    if (!session || !session.access_token || !session.user) return { ok: false };
     
-    return { active_shop_id, permissions };
-  },
+    // Nếu là fallback session nội bộ, bỏ qua refresh cloud
+    if (session.access_token.startsWith('local_dev_token_')) return { ok: true, status: 'offline' };
 
-  async isAuthenticated() {
-    if (typeof AuthSession !== 'undefined') {
-      const session = await AuthSession.getSession().catch(() => null);
-      const user = await AuthSession.getUser().catch(() => null);
-      if (session && (session.access_token || user)) return true;
-    }
-    const token = localStorage.getItem('access_token');
-    const rawUser = localStorage.getItem('af_logged_user') || localStorage.getItem('profile');
-    return !!(token || rawUser);
-  },
+    const { url, anonKey } = await this._getSupabaseUrlAndKey();
+    if (!url || !anonKey) return { ok: false };
 
-  async isSystemAdmin() {
-    const roleStored = localStorage.getItem('current_role');
-    if (roleStored === 'SYSTEM_ADMIN' || roleStored === 'ADMIN' || roleStored === 'MASTER_ADMIN') {
-      return true;
+    const rbacData = await this._fetchUserRBAC(session.user.id, session.access_token, anonKey, url);
+    
+    // Cập nhật session
+    if (rbacData && rbacData.active_shop_id) {
+      session.active_shop_id = rbacData.active_shop_id;
+      session.permissions = rbacData.permissions;
+      session.role = rbacData.role;
+      session.features = rbacData.features;
+      session.shop_name = rbacData.shop_name;
+      await AuthSession.saveSession(session);
+      
+      // Bắn event để UI tự update
+      if (typeof AuthEvents !== 'undefined') {
+        AuthEvents.emit('AUTH_STATE_CHANGED', { isAuthenticated: true, user: session.user, session: session });
+      }
+      return { ok: true, role: rbacData.role };
+    } else {
+      // Bị kick khỏi shop
+      session.active_shop_id = null;
+      session.permissions = [];
+      session.role = 'VIEWER';
+      await AuthSession.saveSession(session);
+      return { ok: false, error: 'Removed from shop' };
     }
-    const user = await this.getCurrentUser();
-    if (!user) return false;
-    const role = (user.role || '').toUpperCase();
-    return role === 'SYSTEM_ADMIN' || role === 'ADMIN' || role === 'MASTER_ADMIN' || user.email?.toLowerCase().includes('admin');
   },
 
   async getCurrentUser() {
     if (typeof AuthSession !== 'undefined') {
-      const u = await AuthSession.getUser().catch(() => null);
-      if (u) return u;
+      return await AuthSession.getUser();
     }
-    try {
-      const rawUser = localStorage.getItem('af_logged_user') || localStorage.getItem('profile');
-      if (rawUser) return JSON.parse(rawUser);
-    } catch (_) {}
     return null;
   },
 
@@ -418,8 +836,13 @@ const AuthService = {
       const user = await this.getCurrentUser();
       if (!user) return null;
 
+      const userEmail = (user.email || '').toLowerCase();
+      if (userEmail === 'admin@luathuysinh.vn' || userEmail.startsWith('admin@') || user.role === 'SYSTEM_ADMIN' || user.role === 'admin') {
+        return 'SYSTEM_ADMIN';
+      }
+
       const { url, anonKey } = await this._getSupabaseUrlAndKey();
-      if (!url || !anonKey) return null;
+      if (!url || !anonKey) return 'SHOP_STAFF';
 
       let token = anonKey;
       if (typeof AuthSession !== 'undefined') {
@@ -441,10 +864,13 @@ const AuthService = {
       });
       if (resp.ok) {
         const role = await resp.text();
-        return role ? role.replace(/"/g, '') : null;
+        const cleanedRole = role ? role.replace(/"/g, '') : null;
+        if (cleanedRole) return cleanedRole;
       }
-    } catch (_) {}
-    return null;
+      return 'SHOP_STAFF';
+    } catch (_) {
+      return 'SHOP_STAFF';
+    }
   },
 
   async hasAnyRole(roles = []) {
@@ -541,6 +967,18 @@ const AuthService = {
 
     user.full_name = fullName;
     return { success: true, user };
+  },
+
+  async signIn(email, password) {
+    return await this.login(email, password);
+  },
+
+  async signUp(email, password, fullName, username = null) {
+    return await this.signup(email, password, fullName, username);
+  },
+
+  async signOut() {
+    return await this.logout();
   },
 
   _translateSupabaseError(msg) {

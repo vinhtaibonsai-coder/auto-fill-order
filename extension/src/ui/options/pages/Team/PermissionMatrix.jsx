@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { AuthSession } from '../../../../domain/auth/auth.session.esm.js';
 
+const ROLE_NAMES = {
+  'SHOP_OWNER': 'Chủ shop',
+  'OWNER': 'Chủ shop',
+  'SHOP_MANAGER': 'Quản lý',
+  'MANAGER': 'Quản lý',
+  'SHOP_STAFF': 'Nhân viên',
+  'STAFF': 'Nhân viên',
+  'VIEWER': 'Người xem'
+};
+
 export default function PermissionMatrix() {
   const [permissions, setPermissions] = useState([]); // { id, code, description }
   const [roles, setRoles] = useState([]); // { id, code, name }
@@ -67,7 +77,7 @@ export default function PermissionMatrix() {
               <th style={{ padding: '10px' }}>Tác vụ / Quyền hạn</th>
               {roles.map(r => (
                 <th key={r.id} style={{ padding: '10px', textAlign: 'center' }}>
-                  {r.code.replace('SHOP_', '')}
+                  {ROLE_NAMES[r.code] || r.code.replace('SHOP_', '')}
                 </th>
               ))}
             </tr>

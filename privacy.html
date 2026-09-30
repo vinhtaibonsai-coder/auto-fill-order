@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chính Sách Bảo Mật - Auto Fill Order Extension</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --text: #1e293b;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      margin: 0;
+      padding: 24px;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--card);
+      padding: 36px 48px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    h1 { color: #0f172a; border-bottom: 2px solid var(--border); padding-bottom: 12px; margin-top: 0; }
+    h2 { color: #0369a1; margin-top: 28px; }
+    h3 { color: #334155; }
+    p, li { font-size: 15px; }
+    .badge {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .highlight-box {
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
+    }
+    .footer {
+      margin-top: 36px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="badge">Hiệu lực: 18/09/2026</span>
+    <h1>CHÍNH SÁCH BẢO MẬT (PRIVACY POLICY)</h1>
+    <p>Chào mừng bạn đến với <strong>Auto Fill Order</strong> (tiện ích trình duyệt tự động hóa bóc tách đơn hàng và hỗ trợ điền biểu mẫu giao nhận). Chúng tôi cam kết bảo vệ quyền riêng tư và an toàn dữ liệu của bạn theo quy định tại <strong>Nghị định 13/2023/NĐ-CP</strong> về bảo vệ dữ liệu cá nhân của Việt Nam và <strong>Chính sách dữ liệu người dùng của Chrome Web Store</strong>.</p>
+
+    <div class="highlight-box">
+      <strong>Cam kết cốt lõi:</strong>
+      <ul>
+        <li>Tiện ích ưu tiên xử lý bóc tách thông tin hoàn toàn cục bộ trên máy tính (Local-First Offline Processing).</li>
+        <li>Tuyệt đối <strong>KHÔNG BÁN</strong>, không cho thuê và không chia sẻ dữ liệu cá nhân của khách hàng cho bất kỳ bên quảng cáo nào.</li>
+        <li>Dữ liệu đơn hàng <strong>KHÔNG ĐƯỢC SỬ DỤNG</strong> để huấn luyện các mô hình AI công cộng.</li>
+      </ul>
+    </div>
+
+    <h2>1. Dữ Liệu Chúng Tôi Thu Thập & Xử Lý</h2>
+    <p>Để thực hiện tính năng tự động điền form trên các cổng giao nhận (VNPost, J&T, Viettel Post, GHTK), tiện ích xử lý các trường dữ liệu sau khi người dùng chủ động dán văn bản hoặc tải ảnh:</p>
+    <ul>
+      <li><strong>Họ tên người nhận:</strong> Dùng để điền vào ô Người nhận hàng.</li>
+      <li><strong>Số điện thoại:</strong> Dùng để đối soát và liên hệ giao hàng.</li>
+      <li><strong>Địa chỉ giao hàng:</strong> Phân tích tỉnh/thành, quận/huyện, phường/xã để lựa chọn đúng danh mục hành chính trên website hãng vận chuyển.</li>
+      <li><strong>Số tiền thu hộ (COD) & Mã đơn:</strong> Dùng để điền giá trị tiền thu và ghi chú kiện hàng.</li>
+    </ul>
+
+    <h2>2. Mục Đích & Cơ Chế Xử Lý Dữ Liệu</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Loại tác vụ</th>
+          <th>Cơ chế xử lý</th>
+          <th>Nơi lưu trữ / Xử lý</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Bóc tách đơn hàng thông thường</strong></td>
+          <td>Thuật toán RegEx & Bảng tra cứu địa giới hành chính Việt Nam chạy cục bộ.</td>
+          <td>100% trên trình duyệt người dùng (Local Device). Không gửi ra ngoài.</td>
+        </tr>
+        <tr>
+          <td><strong>Thẩm định AI & Chuẩn hóa địa chỉ khó</strong></td>
+          <td>Chỉ gửi văn bản khi bóc tách cục bộ không xác định được phường/xã hoặc khi người dùng chủ động nhấn nút "Thẩm định AI".</td>
+          <td>Chuyển tiếp mã hóa qua HTTPS tới AI Gateway của hệ thống.</td>
+        </tr>
+        <tr>
+          <td><strong>Quét hóa đơn bằng hình ảnh (OCR)</strong></td>
+          <td>Chuyển đổi ảnh sang dữ liệu bóc tách văn bản.</td>
+          <td>Chuyển tiếp qua kết nối an toàn có kiểm soát quyền truy cập.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Danh Sách Đơn Vị Xử Lý Phụ (Sub-processors)</h2>
+    <p>Khi sử dụng tính năng mở rộng AI trên máy chủ, chúng tôi chỉ hợp tác với các nhà cung cấp hạ tầng đạt tiêu chuẩn an toàn bảo mật cao:</p>
+    <ul>
+      <li><strong>Supabase Inc.</strong> (Hạ tầng xác thực & cơ sở dữ liệu phân quyền RLS).</li>
+      <li><strong>Google LLC (Google Cloud / Gemini API):</strong> Xử lý nhận dạng hình ảnh OCR và đối soát đơn hàng.</li>
+      <li><strong>Groq Inc.:</strong> Xử lý tăng tốc suy luận ngôn ngữ cho chuẩn hóa địa chỉ.</li>
+    </ul>
+
+    <h2>4. Quyền Của Người Dùng & Xóa Dữ Liệu (Right to be Forgotten)</h2>
+    <p>Bạn có toàn quyền đối với dữ liệu của mình:</p>
+    <ul>
+      <li><strong>Tùy chọn Offline 100%:</strong> Bạn có thể tắt tính năng Thẩm định AI trong trang Cài Đặt để mọi tác vụ diễn ra 100% trên máy tính.</li>
+      <li><strong>Quyền xóa toàn bộ dữ liệu:</strong> Bạn có thể xóa lịch sử đơn hàng cục bộ bất kỳ lúc nào qua nút "Dọn dẹp bộ nhớ" trong tiện ích hoặc yêu cầu xóa dữ liệu đám mây của Shop.</li>
+    </ul>
+
+    <h2>5. Thông Tin Liên Hệ</h2>
+    <p>Nếu có bất kỳ thắc mắc hoặc yêu cầu nào về quyền riêng tư dữ liệu, vui lòng liên hệ:</p>
+    <p>
+      <strong>Đội ngũ Phát triển Auto Fill Order</strong><br>
+      Email: <em>support@autofillorder.vn</em> | Hotline: <em>0935 011 695</em>
+    </p>
+
+    <div class="footer">
+      Bản quyền © 2026 Auto Fill Order. Bảo lưu mọi quyền.
+    </div>
+  </div>
+</body>
+</html>

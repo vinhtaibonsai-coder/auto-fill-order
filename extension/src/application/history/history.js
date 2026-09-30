@@ -44,6 +44,7 @@
       const name = (r.name || '').trim().toLowerCase();
       const phone = (r.phone || '').replace(/\D/g, '');
       const cod = Number(r.codAmount) || 0;
+      const orderCode = String(r.orderCode || '').trim().toLowerCase();
       const rawTrim = (rawText || '').trim();
 
       const duplicate = list.find(o => {
@@ -52,6 +53,9 @@
         const oName = (or.name || '').trim().toLowerCase();
         const oPhone = (or.phone || '').replace(/\D/g, '');
         const oCod = Number(or.codAmount) || 0;
+        const previousOrderCode = String(or.orderCode || '').trim().toLowerCase();
+        const sameOrderCode = orderCode && previousOrderCode && orderCode === previousOrderCode;
+        if (orderCode || previousOrderCode) return sameOrderCode;
         return name && phone && name === oName && phone === oPhone && cod === oCod;
       });
 
@@ -124,21 +128,35 @@
 
     async _pushHistoryToCloud(entry) {
       try {
-        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-          chrome.runtime.sendMessage({ action: 'pushHistory', entries: [entry] });
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.runtime.sendMessage) {
+          try {
+            chrome.runtime.sendMessage({ action: 'pushHistory', entries: [entry] }, () => {
+              if (chrome.runtime.lastError) { /* ignore invalidated context */ }
+            });
+          } catch (_) {}
         } else {
           const c = typeof FirebaseCloud !== 'undefined' ? FirebaseCloud : null;
           if (c && c.isConnected) await c.pushHistory([entry]);
         }
-      } catch (e) { console.warn('Lỗi push lịch sử lên cloud:', e); }
+      } catch (_) {}
     },
 
     async syncToCloud() {
       const entries = await this._getAll();
       try {
-        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id && chrome.runtime.sendMessage) {
           return new Promise(resolve => {
-            chrome.runtime.sendMessage({ action: 'syncHistoryToCloud', entries }, resolve);
+            try {
+              chrome.runtime.sendMessage({ action: 'syncHistoryToCloud', entries }, (res) => {
+                if (chrome.runtime.lastError) {
+                  resolve({ ok: false, reason: 'Extension reloaded' });
+                } else {
+                  resolve(res || { ok: true, count: entries.length });
+                }
+              });
+            } catch (err) {
+              resolve({ ok: false, reason: err.message });
+            }
           });
         } else {
           const c = typeof FirebaseCloud !== 'undefined' ? FirebaseCloud : null;

@@ -2,6 +2,68 @@
 // AUTH.SERVICE.JS — DỊCH VỤ XÁC THỰC NGƯỜI DÙNG CHUẨN USERNAME / EMAIL V3.1
 // =========================================================================
 
+const DEVICE_VALIDATION_GRACE_MS = 15 * 60 * 1000;
+
+async function readDeviceValidationState() {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    try {
+      return await new Promise(resolve => chrome.storage.local.get([
+        'device_access_checked_at',
+        'device_access_grace_started_at'
+      ], resolve));
+    } catch (_) { /* continue with localStorage fallback */ }
+  }
+  if (typeof localStorage !== 'undefined') {
+    return {
+      device_access_checked_at: Number(localStorage.getItem('device_access_checked_at') || 0),
+      device_access_grace_started_at: Number(localStorage.getItem('device_access_grace_started_at') || 0)
+    };
+  }
+  return {};
+}
+
+async function writeDeviceValidationState(patch) {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    try { await chrome.storage.local.set(patch); } catch (_) { /* best effort */ }
+  }
+  if (typeof localStorage !== 'undefined') {
+    try {
+      Object.entries(patch).forEach(([key, value]) => {
+        if (value === null || value === undefined) localStorage.removeItem(key);
+        else localStorage.setItem(key, String(value));
+      });
+    } catch (_) { /* best effort */ }
+  }
+}
+
+async function deviceValidationFailure(reason) {
+  const now = Date.now();
+  const state = await readDeviceValidationState();
+  const startedAt = Number(state.device_access_grace_started_at || now);
+  const withinGrace = now - startedAt <= DEVICE_VALIDATION_GRACE_MS;
+  await writeDeviceValidationState({
+    device_access_grace_started_at: startedAt,
+    device_access_state: withinGrace ? 'offline_grace' : 'device_check_failed',
+    device_access_error: reason
+  });
+  if (withinGrace) {
+    return {
+      valid: true,
+      status: 'offline_grace',
+      retryable: true,
+      reason,
+      message: 'Chưa thể xác minh thiết bị; đang dùng thời gian chờ ngoại tuyến có giới hạn.'
+    };
+  }
+  return {
+    valid: false,
+    status: 'unknown',
+    retryable: true,
+    reason,
+    message: 'Không thể xác minh thiết bị. Vui lòng kết nối mạng và thử lại.'
+  };
+}
+
 const AuthService = {
   async _getSupabaseUrlAndKey() {
     if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.loadConfig === 'function') {
@@ -13,37 +75,379 @@ const AuthService = {
   },
 
   // Tạo phiên làm việc Nội bộ khi Supabase dính Rate Limit
-  async _createLocalDevSession(email, fullName = 'Chủ Shop', username = null) {
-    if (typeof __IS_DEV_EXTENSION__ !== 'undefined' && !__IS_DEV_EXTENSION__) {
-      throw new Error('Local dev session is disabled in production.');
+  async _createLocalDevSession(email, fullName = 'Chu Shop', username = null) {
+    throw new Error('Local dev session is disabled. Use a real Supabase session.');
+  },
+
+  async isAuthenticated() {
+    try {
+      if (typeof AuthSession !== 'undefined' && typeof AuthSession.isAuthenticated === 'function') {
+        return await AuthSession.isAuthenticated();
+      }
+      if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSession === 'function') {
+        const sess = await AuthSession.getSession();
+        return !!(sess && ((sess.user && sess.access_token) || (sess.shop_access_key && sess.active_shop_id)));
+      }
+      return false;
+    } catch (_) {
+      return false;
     }
-    const localUserId = 'usr_local_' + Math.floor(Math.random() * 1000000);
+  },
+
+  // ─── LƯU & QUẢN LÝ DANH SÁCH TÀI KHOẢN GẦN ĐÂY (1-CLICK SWITCH) ──────────
+  async getRecentAccounts() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const res = await new Promise(r => chrome.storage.local.get(['recent_accounts'], r));
+        return Array.isArray(res?.recent_accounts) ? res.recent_accounts : [];
+      } else if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('recent_accounts');
+        return raw ? JSON.parse(raw) : [];
+      }
+    } catch (_) {}
+    return [];
+  },
+
+  async _saveRecentAccount(account) {
+    try {
+      let recents = await this.getRecentAccounts();
+      // Lọc trùng theo id hoặc (shopCode + loginName / email)
+      const key = account.email || `${account.shopCode}_${account.loginName}`;
+      recents = recents.filter(a => (a.email || `${a.shopCode}_${a.loginName}`) !== key);
+      recents.unshift({
+        ...account,
+        lastLogin: Date.now()
+      });
+      recents = recents.slice(0, 6); // Giữ tối đa 6 tài khoản gần nhất
+
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        await new Promise(r => chrome.storage.local.set({ recent_accounts: recents }, r));
+      } else if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('recent_accounts', JSON.stringify(recents));
+      }
+    } catch (_) {}
+  },
+
+  async removeRecentAccount(identifier) {
+    try {
+      let recents = await this.getRecentAccounts();
+      recents = recents.filter(a => a.email !== identifier && `${a.shopCode}_${a.loginName}` !== identifier && a.loginName !== identifier);
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        await new Promise(r => chrome.storage.local.set({ recent_accounts: recents }, r));
+      } else if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('recent_accounts', JSON.stringify(recents));
+      }
+      return recents;
+    } catch (_) {
+      return [];
+    }
+  },
+
+  // ─── ĐĂNG NHẬP NHÂN VIÊN BẰNG PIN 6 SỐ HOẶC 1-CLICK TỰ ĐỘNG ───────────────
+  async loginWithPin({ shopCode, loginName, pin = null, deviceName = null }) {
+    const cleanShopCode = (shopCode || '').trim().toUpperCase();
+    const cleanLoginName = (loginName || '').trim().toLowerCase();
+    const cleanPin = (pin || '').trim();
+
+    if (!cleanShopCode) throw new Error('Vui lòng nhập Mã Shop!');
+    if (!cleanLoginName) throw new Error('Vui lòng nhập Tên của bạn hoặc Tên đăng nhập!');
+    if (cleanPin && cleanPin.length > 0 && !/^[0-9]{6}$/.test(cleanPin)) {
+      throw new Error('Mã PIN phải bao gồm đúng 6 chữ số!');
+    }
+
+    const { url, anonKey } = await this._getSupabaseUrlAndKey();
+    if (!url || !anonKey) throw new Error('Không thể kết nối máy chủ xác thực.');
+
+    // 1. Lấy hoặc sinh persistent deviceId cố định trên máy
+    const clientContext = SupabaseCloud.getClientContext();
+    let deviceId = (clientContext.clientType === 'EXTENSION' ? 'ext_' : 'web_') + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 8);
+    let devName = deviceName || 'Chrome Workstation';
+    try {
+      if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud._getDeviceId === 'function') {
+        deviceId = await SupabaseCloud._getDeviceId();
+      } else if (clientContext.clientType === 'EXTENSION' && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const stored = await new Promise(res => chrome.storage.local.get(['device_id', 'fbDeviceId', 'fbDeviceName'], res));
+        if (stored?.device_id || stored?.fbDeviceId) {
+          deviceId = stored.device_id || stored.fbDeviceId;
+        }
+        if (stored?.fbDeviceName) devName = stored.fbDeviceName;
+      } else if (typeof localStorage !== 'undefined') {
+        const localId = localStorage.getItem('web_device_id');
+        if (localId) deviceId = localId;
+      }
+    } catch (_) {}
+
+    // Chuẩn hóa và lưu device_id cố định
+    if (clientContext.clientType === 'EXTENSION' && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ device_id: deviceId, fbDeviceId: deviceId, fbDeviceName: devName });
+    } else if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('web_device_id', deviceId);
+    }
+
+    const browser = typeof navigator !== 'undefined' && navigator?.userAgent?.includes('Edg') ? 'Edge' : 'Chrome';
+    const osInfo = typeof navigator !== 'undefined' && navigator?.platform ? navigator.platform : 'Windows';
+
+    // 2. Gọi RPC employee_pin_login
+    const endpoint = `${url.replace(/\/$/, '')}/rest/v1/rpc/employee_pin_login`;
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_shop_code: cleanShopCode,
+        p_login_name: cleanLoginName,
+        p_pin: cleanPin || null,
+        p_device_id: deviceId,
+        p_device_info: {
+          device_name: devName,
+          browser: browser,
+          os_info: osInfo,
+          client_type: clientContext.clientType,
+          environment: clientContext.environment,
+          surface: clientContext.surface,
+          origin_host: clientContext.originHost
+        }
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || 'Lỗi kết nối máy chủ xác thực.');
+    }
+
+    const result = await resp.json();
+
+    // 3. Xử lý kết quả
+    if (!result || result.success === false) {
+      if (result?.error === 'DEVICE_PENDING_APPROVAL') {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({
+            last_shop_code: cleanShopCode,
+            last_login_name: cleanLoginName,
+            device_pending_approval: true
+          });
+        }
+        const err = new Error(result.message || 'Thiết bị đang chờ Chủ Shop phê duyệt.');
+        err.code = 'DEVICE_PENDING_APPROVAL';
+        err.details = result;
+        throw err;
+      }
+
+      if (result?.error === 'DEVICE_REVOKED') {
+        const err = new Error(result.message || 'Thiết bị này đã bị thu hồi quyền truy cập.');
+        err.code = 'DEVICE_REVOKED';
+        throw err;
+      }
+
+      throw new Error(result?.message || 'Đăng nhập thất bại.');
+    }
+
+    // 4. Session & Cập nhật danh sách tài khoản gần đây
+    const userObj = result.user;
+    const shopObj = result.shop;
+
+    const sessionToken = result.session_token || ('pin_sess_' + deviceId + '_' + Date.now());
     const sessionData = {
-      access_token: 'local_dev_token_' + Date.now(),
-      refresh_token: 'local_dev_refresh_' + Date.now(),
-      expires_at: Date.now() + 30 * 24 * 3600 * 1000,
-      user: { id: localUserId, email },
-      active_shop_id: 'local_shop_01',
-      permissions: ['*'],
-      auth_mode: 'local_dev'
+      auth_type: 'pin',
+      session_token: sessionToken,
+      access_token: sessionToken,
+      active_shop_id: shopObj.id,
+      shop_name: shopObj.name,
+      shop_code: shopObj.shop_code || cleanShopCode,
+      shop_access_key: shopObj.shop_access_key || undefined,
+      staff_name: userObj.full_name || cleanLoginName,
+      device_id: deviceId,
+      user: userObj,
+      role: userObj.role || (userObj.is_owner ? 'OWNER' : 'SHOP_STAFF'),
+      permissions: result.permissions || ['orders.read', 'orders.create', 'orders.update', 'ai.parse'],
+      client_context: clientContext,
+      activated_at: Date.now()
     };
-    const userObj = {
-      id: localUserId,
-      email: email || 'yen_admin@system.com',
-      username: username || (email ? email.split('@')[0] : 'yen_admin'),
-      full_name: fullName || 'Chủ Shop (Yến)',
-      status: 'active'
+
+    // 5. Lưu thông tin máy tin cậy & Recent Accounts
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({
+        last_shop_code: shopObj.shop_code || cleanShopCode,
+        last_login_name: cleanLoginName,
+        staff_name: userObj.full_name || cleanLoginName,
+        shop_name: shopObj.name,
+        device_pending_approval: false
+      });
+    }
+
+    await this._saveRecentAccount({
+      type: userObj.is_owner || userObj.role === 'OWNER' ? 'owner' : 'staff',
+      shopCode: shopObj.shop_code || cleanShopCode,
+      shopName: shopObj.name,
+      loginName: cleanLoginName,
+      fullName: userObj.full_name || cleanLoginName,
+      avatarUrl: userObj.avatar_url,
+      role: userObj.role || 'STAFF'
+    });
+
+    // 6. Lưu session và phát sự kiện
+    if (typeof AuthSession !== 'undefined') {
+      await AuthSession.saveSession(sessionData);
+    }
+
+    if (typeof AuthEvents !== 'undefined') {
+      AuthEvents.emit('AUTH_STATE_CHANGED', {
+        isAuthenticated: true,
+        user: userObj,
+        session: sessionData
+      });
+    }
+
+    return { session: sessionData, profile: userObj };
+  },
+
+  // Kích hoạt tiện ích bằng Shop Access Key (Legacy Compatibility)
+  async activateWithShopKey(shopKey, staffName = 'Nhân viên kho', deviceName = null) {
+    const cleanKey = (shopKey || '').trim().toUpperCase();
+    const cleanStaff = (staffName || '').trim() || 'Nhân viên kho';
+    if (!cleanKey) {
+      throw new Error('Vui lòng nhập mã Shop Access Key');
+    }
+
+    const { url, anonKey } = await this._getSupabaseUrlAndKey();
+    if (!url || !anonKey) {
+      throw new Error('Không thể kết nối máy chủ xác thực.');
+    }
+
+    // Tự sinh hoặc lấy deviceId duy nhất
+    let deviceId = 'dev_' + Math.random().toString(36).substring(2, 10);
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const stored = await new Promise(res => chrome.storage.local.get(['device_id', 'staff_name'], res));
+        if (stored && stored.device_id) deviceId = stored.device_id;
+      }
+    } catch (_) {}
+
+    const devName = deviceName || cleanStaff;
+
+    const resp = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/verify_shop_access_key`, {
+      method: 'POST',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_access_key: cleanKey,
+        p_device_id: deviceId,
+        p_device_name: devName,
+        p_staff_name: cleanStaff,
+        p_browser: 'Chrome',
+        p_os_info: (typeof navigator !== 'undefined' && navigator?.platform) || 'Windows'
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || 'Lỗi xác thực mã Shop Key');
+    }
+
+    const result = await resp.json();
+    if (!result || result.success === false) {
+      throw new Error(result?.message || 'Mã Shop Key không hợp lệ hoặc đã bị đổi');
+    }
+
+    // Tạo phiên làm việc dạng Shop Key Session
+    const sessionData = {
+      auth_type: 'shop_key',
+      shop_access_key: cleanKey,
+      active_shop_id: result.shop_id,
+      shop_name: result.shop_name,
+      staff_name: cleanStaff,
+      device_id: deviceId,
+      access_token: cleanKey,
+      quotas: {
+        daily_limit: result.daily_limit,
+        daily_used: result.daily_used,
+        monthly_limit: result.monthly_limit,
+        monthly_used: result.monthly_used
+      },
+      user: {
+        id: 'staff_' + deviceId,
+        email: cleanStaff + '@' + (result.shop_name || 'shop'),
+        full_name: cleanStaff,
+        role: 'STAFF'
+      },
+      activated_at: Date.now()
     };
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({
+        device_id: deviceId,
+        staff_name: cleanStaff,
+        shop_access_key: cleanKey,
+        active_shop_id: result.shop_id,
+        shop_name: result.shop_name
+      });
+    }
 
     if (typeof AuthSession !== 'undefined') {
       await AuthSession.saveSession(sessionData);
     }
 
     if (typeof AuthEvents !== 'undefined') {
-      AuthEvents.emit('AUTH_STATE_CHANGED', { isAuthenticated: true, user: userObj, session: sessionData });
+      AuthEvents.emit('AUTH_STATE_CHANGED', {
+        isAuthenticated: true,
+        user: sessionData.user,
+        session: sessionData
+      });
     }
 
-    return { session: sessionData, profile: userObj, isLocalFallback: true };
+    return { success: true, session: sessionData };
+  },
+
+  // Kiểm tra thiết bị có bị thu hồi quyền truy cập (Kill-Switch) hay không
+  async validateDeviceSession(shopId, deviceId) {
+    try {
+      const { url, anonKey } = await this._getSupabaseUrlAndKey();
+      if (!url || !anonKey || !shopId || !deviceId) {
+        return { valid: true, status: 'unavailable', retryable: true };
+      }
+
+      const resp = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/check_device_session_validity`, {
+        method: 'POST',
+        headers: {
+          'apikey': anonKey,
+          'Authorization': `Bearer ${anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_device_id: deviceId, p_shop_id: shopId })
+      });
+
+      if (!resp.ok) return deviceValidationFailure(`HTTP_${resp.status}`);
+      const res = await resp.json();
+      if (res && res.revoked === true) {
+        // Thiết bị đã bị khóa từ xa -> Tự động đăng xuất
+        await this.logout();
+        return { valid: false, revoked: true, message: res.message || 'Thiết bị này đã bị thu hồi quyền.' };
+      }
+      if (res && res.valid === false) {
+        await writeDeviceValidationState({
+          device_access_state: res.status || 'unknown',
+          device_access_checked_at: Date.now(),
+          device_access_grace_started_at: null,
+          device_access_error: res.status || 'DEVICE_NOT_VALID'
+        });
+        return res;
+      }
+      await writeDeviceValidationState({
+        device_access_state: 'active',
+        device_access_checked_at: Date.now(),
+        device_access_grace_started_at: null,
+        device_access_error: null
+      });
+      return res || { valid: true, status: 'active', revoked: false };
+    } catch (error) {
+      return deviceValidationFailure(error?.message || 'DEVICE_CHECK_FAILED');
+    }
   },
 
   // Kiểm tra identifier (email hoặc username) có tồn tại trong DB không
@@ -112,6 +516,9 @@ const AuthService = {
       return await this.login(targetEmail, password);
     } catch (err) {
       const msg = err.message || '';
+      if (err?.code === 'AUTH_SERVER_ERROR') {
+        throw err;
+      }
       // Nếu là lỗi nghiệp vụ xác thực (sai mật khẩu, sai email, chưa confirm...), THROW ngay chứ không fallback offline
       if (
         msg.includes('không đúng') || 
@@ -138,7 +545,9 @@ const AuthService = {
 
     try {
       const endpoint = `${url.replace(/\/$/, '')}/auth/v1/token?grant_type=password`;
-      const resp = await fetch(endpoint, {
+      // Mutable because the HTTP 500 self-healing branch replaces the
+      // initial failed response with the retry response after repair.
+      let resp = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'apikey': anonKey,
@@ -147,23 +556,73 @@ const AuthService = {
         body: JSON.stringify({ email, password })
       });
 
-      const data = await resp.json();
+      let data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        const rawMsg = data.error_description || data.msg || '';
-        if ((rawMsg.toLowerCase().includes('rate limit')) ||
-            (data.msg && data.msg.toLowerCase().includes('rate limit'))) {
-          throw new Error('Đăng nhập quá nhiều lần. Vui lòng thử lại sau 1 phút!');
-        }
-        // API key không hợp lệ hoặc chưa cấu hình → fallback offline
-        if (resp.status === 401 || resp.status === 403) {
-          const { url } = await this._getSupabaseUrlAndKey();
-          if (!url || !url.includes('supabase.co')) {
-            throw new Error('Cấu hình URL Supabase không hợp lệ. Vui lòng kiểm tra Cài đặt.');
+        // Tự động phục hồi tài khoản (Self-healing) nếu Supabase Auth trả về lỗi 500 do xung đột identity
+        if (resp.status === 500) {
+          let repairFailure = '';
+          try {
+            const repairRes = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/admin_repair_user_auth`, {
+              method: 'POST',
+              headers: {
+                'apikey': anonKey,
+                'Authorization': `Bearer ${anonKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ p_email: email, p_password: password })
+            });
+            if (repairRes.ok) {
+              const repairData = await repairRes.json().catch(() => ({}));
+              if (repairData?.success === false) {
+                repairFailure = repairData.message || repairData.error || 'RPC phục hồi tài khoản không thành công.';
+              }
+            }
+            if (repairRes.ok && !repairFailure) {
+              const retryResp = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'apikey': anonKey, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+              });
+              if (retryResp.ok) {
+                const retryData = await retryResp.json();
+                if (retryData?.access_token) {
+                  data = retryData;
+                  resp = retryResp;
+                }
+              }
+            } else if (!repairRes.ok) {
+              repairFailure = `RPC phục hồi tài khoản trả về HTTP ${repairRes.status}.`;
+            }
+          } catch (repairErr) {
+            repairFailure = repairErr?.message || 'Không thể gọi RPC phục hồi tài khoản.';
           }
-          throw new Error('Supabase từ chối kết nối (HTTP ' + resp.status + '). Vui lòng kiểm tra Anon Key trong phần Cài đặt.');
+          if (repairFailure) {
+            console.warn('[AuthService] Login self-healing failed:', repairFailure);
+          }
         }
-        const vnMsg = this._translateSupabaseError(rawMsg) || 'Đăng nhập thất bại. Kiểm tra lại Email/Mật khẩu!';
-        throw new Error(vnMsg);
+
+        if (!resp.ok) {
+          const rawMsg = data.error_description || data.msg || '';
+          if (resp.status >= 500) {
+            const serverError = new Error('Supabase Auth đang gặp lỗi máy chủ (HTTP ' + resp.status + '). Vui lòng chạy migration sửa Auth trên Supabase rồi thử lại.');
+            serverError.code = 'AUTH_SERVER_ERROR';
+            throw serverError;
+          }
+          if ((rawMsg.toLowerCase().includes('rate limit')) ||
+              (data.msg && data.msg.toLowerCase().includes('rate limit'))) {
+            throw new Error('Đăng nhập quá nhiều lần. Vui lòng thử lại sau 1 phút!');
+          }
+          // API key không hợp lệ hoặc chưa cấu hình → fallback offline
+          if (resp.status === 401 || resp.status === 403) {
+            const { url } = await this._getSupabaseUrlAndKey();
+            if (!url || !url.includes('supabase.co')) {
+              throw new Error('Cấu hình URL Supabase không hợp lệ. Vui lòng kiểm tra Cài đặt.');
+            }
+            throw new Error('Supabase từ chối kết nối (HTTP ' + resp.status + '). Vui lòng kiểm tra Anon Key trong phần Cài đặt.');
+          }
+          const vnMsg = this._translateSupabaseError(rawMsg) || 'Đăng nhập thất bại. Kiểm tra lại Email/Mật khẩu!';
+          throw new Error(vnMsg);
+        }
       }
 
       const profile = await this.fetchUserProfile(data.user.id, data.access_token);
@@ -174,6 +633,9 @@ const AuthService = {
       };
 
       const rbacData = await this._fetchUserRBAC(data.user.id, data.access_token, anonKey, url);
+      const clientContext = typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.getClientContext === 'function'
+        ? SupabaseCloud.getClientContext()
+        : { clientType: 'WEB', environment: 'PRODUCTION', surface: 'WEB_WORKSPACE', originHost: '' };
 
       const sessionData = {
         access_token: data.access_token,
@@ -188,7 +650,8 @@ const AuthService = {
         max_devices: rbacData.max_devices,
         max_users: rbacData.max_users,
         monthly_order_limit: rbacData.monthly_order_limit,
-        custom_prompt_rules: rbacData.custom_prompt_rules
+        custom_prompt_rules: rbacData.custom_prompt_rules,
+        client_context: clientContext
       };
 
       if (typeof AuthSession !== 'undefined') {
@@ -198,7 +661,20 @@ const AuthService = {
           await ShopService.syncShopsFromCloud();
         }
       }
+
+      // Tự động đồng bộ và đăng ký thiết bị ngay khi đăng nhập
+      if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.syncDeviceRecord === 'function') {
+        SupabaseCloud.syncDeviceRecord().catch(e => console.warn('[AuthService] syncDeviceRecord error:', e));
+      }
       
+      await this._saveRecentAccount({
+        type: 'owner',
+        email: userObj.email,
+        fullName: userObj.full_name || userObj.email,
+        shopName: rbacData.shop_name || 'Cửa hàng của tôi',
+        role: rbacData.role || 'OWNER'
+      });
+
       if (typeof AuthEvents !== 'undefined') {
         AuthEvents.emit('AUTH_STATE_CHANGED', { isAuthenticated: true, user: userObj, session: sessionData });
       }
@@ -407,14 +883,23 @@ const AuthService = {
       await AuthSession.clearSession();
     }
     
-    // Đồng bộ: Xoá luôn cả LocalStorage của Admin Dashboard nếu đang chạy chung Origin
+    // Đồng bộ: Xoá toàn bộ LocalStorage của Admin Dashboard & Options nếu đang chạy chung Origin
     if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('af_logged_user');
-      localStorage.removeItem('profile');
-      localStorage.removeItem('current_role');
-      localStorage.removeItem('current_shop_id');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      try {
+        localStorage.removeItem('vnpost_session');
+        localStorage.removeItem('af_logged_user');
+        localStorage.removeItem('profile');
+        localStorage.removeItem('current_role');
+        localStorage.removeItem('current_shop_id');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('activeShop');
+        localStorage.removeItem('activeShopId');
+        localStorage.removeItem('shop_access_key');
+        localStorage.removeItem('staff_name');
+        localStorage.removeItem('shop_name');
+      } catch (_) {}
     }
 
     if (typeof AuthEvents !== 'undefined') {
@@ -422,7 +907,7 @@ const AuthService = {
     }
 
     // Phase 3.1: Session/logout nhất quán giữa mọi context
-    // Chỉ gửi tin nhắn PERFORM_LOGOUT nếu không ở trong Service Worker (background context)
+    // Gửi tin nhắn PERFORM_LOGOUT tới background Service Worker để broadcast ra toàn bộ tab mở
     const isBackground = typeof window === 'undefined';
     if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       try {
@@ -531,10 +1016,10 @@ const AuthService = {
       let memberRole = null;
       try {
         const [ownerShopRes, memberShopRes] = await Promise.all([
-          fetch(`${url.replace(/\/$/, '')}/rest/v1/shops?owner_id=eq.${userId}&select=*&limit=1`, {
+          fetch(`${url.replace(/\/$/, '')}/rest/v1/shops?owner_id=eq.${userId}&select=*&order=created_at.asc,id.asc&limit=1`, {
             headers: { 'apikey': anonKey, 'Authorization': `Bearer ${token}` }
           }).catch(() => null),
-          fetch(`${url.replace(/\/$/, '')}/rest/v1/shop_members?user_id=eq.${userId}&select=role,shops(*)&limit=1`, {
+          fetch(`${url.replace(/\/$/, '')}/rest/v1/shop_members?user_id=eq.${userId}&select=role,shops(*)&order=created_at.asc&limit=1`, {
             headers: { 'apikey': anonKey, 'Authorization': `Bearer ${token}` }
           }).catch(() => null)
         ]);
@@ -576,7 +1061,15 @@ const AuthService = {
       };
     } catch (e) {
       console.warn("Lỗi fetch RBAC:", e);
-      return { active_shop_id: null, permissions: ['*'], role: 'SYSTEM_ADMIN', features: {}, shop_name: 'Shop của bạn', device_limit_exceeded: false };
+      // P0 Security Fix: Fail-closed (Tuyệt đối không cấp SYSTEM_ADMIN khi lỗi mạng/RPC)
+      return {
+        active_shop_id: null,
+        permissions: ['orders.read', 'orders.create', 'orders.update', 'ai.parse'],
+        role: 'SHOP_STAFF',
+        features: {},
+        shop_name: 'Shop của bạn',
+        device_limit_exceeded: false
+      };
     }
   },
 
@@ -633,25 +1126,6 @@ const AuthService = {
       await AuthSession.saveSession(session);
       return { ok: false, error: 'Removed from shop' };
     }
-  },
-
-
-  async isAuthenticated() {
-    if (typeof AuthSession !== 'undefined') {
-      const session = await AuthSession.getSession();
-      const user = await AuthSession.getUser();
-      if (!session || !user) return false;
-      let expireTime = session.expires_at || session.expiresAt;
-      if (expireTime && expireTime < 10000000000) {
-        expireTime = expireTime * 1000;
-      }
-      if (expireTime && expireTime < Date.now()) {
-        await AuthSession.clearSession();
-        return false;
-      }
-      return true;
-    }
-    return false;
   },
 
   async getCurrentUser() {
@@ -754,6 +1228,15 @@ const AuthService = {
     return null;
   },
 
+  async getSupabaseClient() {
+    if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.getSupabaseClient === 'function') {
+      return await SupabaseCloud.getSupabaseClient();
+    }
+    const existing = (typeof window !== 'undefined' && window.supabaseClient)
+      || (typeof globalThis !== 'undefined' && globalThis.supabaseClient);
+    return existing || null;
+  },
+
   async changePassword(newPassword) {
     if (!newPassword || newPassword.length < 6) {
       throw new Error('Mật khẩu mới phải có ít nhất 6 ký tự!');
@@ -766,8 +1249,8 @@ const AuthService = {
     }
 
     if (url && anonKey && session && session.access_token && !session.access_token.startsWith('local_dev_token_')) {
-      if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
-        const sb = window.supabase.createClient(url, anonKey);
+      const sb = await this.getSupabaseClient();
+      if (sb && sb.auth && typeof sb.auth.updateUser === 'function') {
         const { error } = await sb.auth.updateUser({ password: newPassword });
         if (error) throw error;
         return { success: true, message: 'Đổi mật khẩu thành công trên Supabase Cloud!' };
@@ -789,8 +1272,8 @@ const AuthService = {
     }
 
     if (url && anonKey && session && session.access_token && !session.access_token.startsWith('local_dev_token_')) {
-      if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
-        const sb = window.supabase.createClient(url, anonKey);
+      const sb = await this.getSupabaseClient();
+      if (sb && typeof sb.from === 'function') {
         await sb.from('profiles').update({ full_name: fullName }).eq('id', user.id);
       }
     }

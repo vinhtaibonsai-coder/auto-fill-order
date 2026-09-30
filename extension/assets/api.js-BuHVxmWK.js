@@ -1,0 +1,2 @@
+(function(){(()=>{async function o(r,s={},e=3,i=1e3){for(let n=0;n<e;n++)try{const t=await fetch(r,s);if(t.ok)return t;if(t.status>=500||t.status===429){await new Promise(h=>setTimeout(h,i*(n+1)));continue}return t}catch(t){if(n===e-1)throw t;await new Promise(h=>setTimeout(h,i*(n+1)))}throw new Error(`Đã thử ${e} lần nhưng không thành công.`)}globalThis.fetchWithRetry=o})();
+})()

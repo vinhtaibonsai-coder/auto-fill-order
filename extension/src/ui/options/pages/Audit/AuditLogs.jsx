@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AuthSession } from '../../../../domain/auth/auth.session.esm.js';
+import Pagination from '../../components/Pagination';
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     loadLogs();
@@ -18,7 +21,7 @@ export default function AuditLogs() {
         return;
       }
       const res = await fetch(
-        `${configRes.url}/rest/v1/audit_logs?shop_id=eq.${sess.active_shop_id}&order=created_at.desc&limit=100&select=user_id,action,entity_type,entity_id,details,created_at`,
+        `${configRes.url}/rest/v1/audit_logs?shop_id=eq.${sess.active_shop_id}&order=created_at.desc&limit=500&select=user_id,action,entity_type,entity_id,details,created_at`,
         {
           headers: {
             'apikey': configRes.anonKey,
@@ -36,6 +39,11 @@ export default function AuditLogs() {
     setIsLoading(false);
   };
 
+  const paginatedLogs = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return logs.slice(start, start + pageSize);
+  }, [logs, page, pageSize]);
+
   const formatTime = (iso) => {
     if (!iso) return '';
     try {
@@ -45,11 +53,30 @@ export default function AuditLogs() {
     }
   };
 
+  const getActionDisplay = (action) => {
+    const actMap = {
+      'LOGIN': 'Đăng nhập',
+      'LOGOUT': 'Đăng xuất',
+      'ORDER_CREATE': 'Tạo đơn hàng',
+      'ORDER_UPDATE': 'Sửa đơn hàng',
+      'ORDER_DELETE': 'Xóa đơn hàng',
+      'ORDER_SUBMIT': 'Gửi đơn bưu cục',
+      'CONFIG_UPDATE': 'Cập nhật cấu hình',
+      'DEVICE_REVOKED': 'Thu hồi thiết bị',
+      'STAFF_INVITED': 'Mời nhân viên',
+      'STAFF_REMOVED': 'Xóa nhân viên',
+      'CUSTOMER_BLACKLIST': 'Đưa khách vào danh sách cảnh báo',
+      'CUSTOMER_UNBLACKLIST': 'Gỡ cảnh báo khách hàng',
+      'CUSTOMER_EXPORT': 'Xuất dữ liệu khách hàng'
+    };
+    return actMap[action] || action;
+  };
+
   return (
-    <div style={{ maxWidth: '900px' }}>
-      <h2 className="page-title">Audit Logs</h2>
+    <div style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
+      <h2 className="page-title">Nhật Ký Hoạt Động (Audit Logs)</h2>
       <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-        Lưu vết toàn bộ hoạt động của nhân viên trên hệ thống (Tạo, Sửa, Xóa đơn hàng, cấu hình).
+        Lưu vết toàn bộ hoạt động của nhân viên trên hệ thống (Tạo, Sửa, Xóa đơn hàng, thay đổi cấu hình Shop).
       </p>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -65,13 +92,13 @@ export default function AuditLogs() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải...</td>
+                <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải nhật ký...</td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
                 <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có hoạt động nào được ghi nhận.</td>
               </tr>
-            ) : logs.map((log, i) => (
+            ) : paginatedLogs.map((log, i) => (
               <tr key={log.id || i} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTime(log.created_at)}</td>
                 <td style={{ padding: '12px 16px', fontSize: '13px' }}>
@@ -82,7 +109,7 @@ export default function AuditLogs() {
                     display: 'inline-block', padding: '3px 10px', borderRadius: '99px', fontSize: '11px', fontWeight: 700,
                     background: 'rgba(37, 99, 235, 0.08)', color: '#2563eb'
                   }}>
-                    {log.action}
+                    {getActionDisplay(log.action)}
                   </span>
                 </td>
                 <td style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -92,6 +119,22 @@ export default function AuditLogs() {
             ))}
           </tbody>
         </table>
+
+        {/* PAGINATION */}
+        {!isLoading && logs.length > 0 && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={logs.length}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+            pageSizeOptions={[10, 25, 50, 100]}
+            itemLabel="nhật ký"
+          />
+        )}
       </div>
     </div>
   );

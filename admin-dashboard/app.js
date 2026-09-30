@@ -1,3 +1,4 @@
+function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 /**
  * Shop Owner Command Center - app.js
  * 100% Real Supabase Data Integration & Realtime Sync Engine
@@ -679,7 +680,7 @@ function populateSubmittedFiltersDropdowns() {
 
     const currentVal = filterAccount.value;
     filterAccount.innerHTML = '<option value="">-- Tất Cả Tài Khoản Bưu Điện / J&T --</option>' + 
-      accounts.map(a => `<option value="${a}">${a}</option>`).join('');
+      accounts.map(a => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join('');
     if (accounts.includes(currentVal)) filterAccount.value = currentVal;
   }
 
@@ -687,7 +688,7 @@ function populateSubmittedFiltersDropdowns() {
     const devices = Array.from(new Set(allSubmittedOrders.map(o => o.device_name || o.deviceName).filter(Boolean)));
     const currentVal = filterDevice.value;
     filterDevice.innerHTML = '<option value="">-- Tất Cả Máy --</option>' + 
-      devices.map(d => `<option value="${d}">${d}</option>`).join('');
+      devices.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
     if (devices.includes(currentVal)) filterDevice.value = currentVal;
   }
 }
@@ -955,8 +956,14 @@ function renderSubmittedOrdersList() {
             : `<span style="color:var(--text-s); font-size:11.5px;">—</span>`}
         </td>
         <td>
-          <div>${sourceBadge}</div>
-          <div style="font-size:11px; color:var(--text-s); margin-top:2px;">${escapeHtml(o.device_name || o.deviceName || 'Máy chính')}</div>
+          <div>
+            ${(o.source === 'MANUAL_ENTRY' || o.source === 'manual') 
+              ? '<span class="badge" style="background:#FFFBEB; color:#D97706; border:1px solid #FDE68A; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700;">✍️ Gõ tay</span>'
+              : '<span class="badge" style="background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700;">⚡ Tách AI</span>'}
+          </div>
+          <div style="font-size:11px; color:var(--text); font-weight:600; margin-top:2px;">
+            👤 ${escapeHtml(o.created_by_name || o.staff_name || o.device_name || o.deviceName || 'Nhân viên')}
+          </div>
         </td>
         <td style="font-size:11px; color:var(--text-s);">${dateDisplay}</td>
         <td style="text-align:center;">
@@ -1279,12 +1286,13 @@ function renderDevicesTable() {
   }).join('');
 }
 
-// ─── 9. RENDER SUBSCRIPTION TAB ─────────────────────────────────────────
+// ─── 9. RENDER SUBSCRIPTION TAB & SHOP ACCESS KEY ───────────────────────
 function renderSubscriptionTab() {
   const planName = document.getElementById('subPlanName');
   const quotaBar = document.getElementById('subQuotaBar');
   const usedText = document.getElementById('subQuotaUsedText');
   const limitText = document.getElementById('subQuotaLimitText');
+  const keyDisplay = document.getElementById('txtShopAccessKeyDisplay');
 
   if (planName) planName.textContent = `GÓI ${currentQuota.plan.toUpperCase()}`;
   if (usedText) usedText.textContent = `${currentQuota.used.toLocaleString('vi-VN')} lượt đã dùng`;
@@ -1292,6 +1300,18 @@ function renderSubscriptionTab() {
 
   const pct = Math.min(100, Math.round((currentQuota.used / Math.max(1, currentQuota.limit)) * 100));
   if (quotaBar) quotaBar.style.width = `${pct}%`;
+
+  // Render Shop Access Key
+  const activeShop = currentShops.find(s => s.id === activeShopId) || currentShops[0];
+  if (keyDisplay) {
+    if (activeShop?.shop_access_key) {
+      keyDisplay.textContent = activeShop.shop_access_key;
+    } else if (activeShop?.id) {
+      keyDisplay.textContent = 'KEY-SHOP-' + activeShop.id.slice(0, 8).toUpperCase();
+    } else {
+      keyDisplay.textContent = 'KEY-SHOP-DEFAULT';
+    }
+  }
 }
 
 // =========================================================================
@@ -1724,6 +1744,44 @@ Người nhận: Trần Hải Đăng - SĐT: 0918.776.889. Tiền COD thu 850k n
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<i class="ph ph-check-circle"></i> Kích Hoạt Mã Ngay';
+    }
+  });
+
+  // Sao chép Shop Access Key
+  document.getElementById('btnCopyShopAccessKey')?.addEventListener('click', () => {
+    const keyDisplay = document.getElementById('txtShopAccessKeyDisplay');
+    const key = keyDisplay?.textContent?.trim();
+    if (key && !key.includes('Đang tải')) {
+      navigator.clipboard.writeText(key).then(() => {
+        alert('📋 Đã sao chép mã Shop Access Key:\n' + key + '\n\nĐưa mã này cho nhân viên để kích hoạt máy trạm!');
+      }).catch(() => {
+        prompt('Sao chép mã Shop Access Key:', key);
+      });
+    }
+  });
+
+  // Làm mới (Reset) Shop Access Key
+  document.getElementById('btnResetShopAccessKey')?.addEventListener('click', async () => {
+    const activeShop = currentShops.find(s => s.id === activeShopId) || currentShops[0];
+    if (!activeShop?.id) return alert('Vui lòng chọn cửa hàng cần đổi mã!');
+
+    const confirmReset = confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn đổi mã Shop Access Key mới?\n\nSau khi đổi, mã cũ sẽ bị vô hiệu hóa và các máy nhân viên cũ sẽ cần nhập mã mới để tiếp tục sử dụng.');
+    if (!confirmReset) return;
+
+    try {
+      if (sb) {
+        const { data, error } = await sb.rpc('admin_reset_shop_access_key', { p_shop_id: activeShop.id });
+        if (error) throw error;
+        if (data && data.success) {
+          alert('🎉 Đổi mã thành công!\nMã mới: ' + data.shop_access_key);
+          activeShop.shop_access_key = data.shop_access_key;
+          renderSubscriptionTab();
+        } else {
+          throw new Error(data?.message || 'Không thể đổi mã.');
+        }
+      }
+    } catch (err) {
+      alert('❌ Lỗi đổi mã Key: ' + (err.message || err));
     }
   });
 }

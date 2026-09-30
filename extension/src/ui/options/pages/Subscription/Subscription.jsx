@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { AuthSession } from '../../../../domain/auth/auth.session.esm.js';
 
+const asNumber = value => Number.isFinite(Number(value)) ? Number(value) : 0;
+const fmtNumber = value => asNumber(value).toLocaleString('vi-VN');
+
 export default function Subscription() {
   const [currentPlan, setCurrentPlan] = useState('TRIAL');
   const [budget, setBudget] = useState(null);
@@ -8,6 +11,8 @@ export default function Subscription() {
   const [periodEnd, setPeriodEnd] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeShopId, setActiveShopId] = useState(null);
+  const [shopCode, setShopCode] = useState('');
+  const [paymentTransactions, setPaymentTransactions] = useState([]);
   
   // Payment Modal State
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -161,11 +166,15 @@ export default function Subscription() {
       if (quotaRes.ok) {
         const qRows = await quotaRes.json();
         if (qRows && qRows.length > 0) {
+          const monthlyLimit = asNumber(qRows[0].ai_monthly_limit);
+          const monthlyUsed = asNumber(qRows[0].ai_monthly_used);
+          const dailyLimit = asNumber(qRows[0].ai_daily_limit);
+          const dailyUsed = asNumber(qRows[0].ai_daily_used);
           setBudget({
-            monthly_remaining: Math.max(0, qRows[0].ai_monthly_limit - qRows[0].ai_monthly_used),
-            monthly_limit: qRows[0].ai_monthly_limit,
-            daily_remaining: Math.max(0, qRows[0].ai_daily_limit - qRows[0].ai_daily_used),
-            daily_limit: qRows[0].ai_daily_limit
+            monthly_remaining: Math.max(0, monthlyLimit - monthlyUsed),
+            monthly_limit: monthlyLimit,
+            daily_remaining: Math.max(0, dailyLimit - dailyUsed),
+            daily_limit: dailyLimit
           });
         }
       }
@@ -179,6 +188,32 @@ export default function Subscription() {
         if (devRes.ok) {
           const rows = await devRes.json();
           setDeviceCount(Array.isArray(rows) ? rows.length : 0);
+        }
+      } catch (_) {}
+
+      // 4. Lấy mã shop (shop_code) để tạo nội dung chuyển khoản ngắn gọn
+      try {
+        const sRes = await fetch(
+          `${configRes.url}/rest/v1/shops?id=eq.${sess.active_shop_id}&select=shop_code,name`,
+          { headers }
+        );
+        if (sRes.ok) {
+          const sRows = await sRes.json();
+          if (sRows && sRows.length > 0 && sRows[0].shop_code) {
+            setShopCode(sRows[0].shop_code);
+          }
+        }
+      } catch (_) {}
+
+      // 5. Tải lịch sử giao dịch thanh toán & hóa đơn
+      try {
+        const txRes = await fetch(
+          `${configRes.url}/rest/v1/payment_transactions?shop_id=eq.${sess.active_shop_id}&order=created_at.desc&limit=20`,
+          { headers }
+        );
+        if (txRes.ok) {
+          const txRows = await txRes.json();
+          setPaymentTransactions(Array.isArray(txRows) ? txRows : []);
         }
       } catch (_) {}
     } catch (err) {
@@ -221,7 +256,7 @@ export default function Subscription() {
         return;
       }
 
-      const res = await fetch(`${configRes.url}/rest/v1/rpc/redeem_license_key`, {
+      let res = await fetch(`${configRes.url}/rest/v1/rpc/apply_license_key`, {
         method: 'POST',
         headers: {
           'apikey': configRes.anonKey,
@@ -230,12 +265,28 @@ export default function Subscription() {
         },
         body: JSON.stringify({
           p_shop_id: sess.active_shop_id,
-          p_key_code: licenseKeyInput.trim().toUpperCase()
+          p_code: licenseKeyInput.trim().toUpperCase()
         })
       });
 
+      if (!res.ok) {
+        // Fallback to redeem_license_key if older schema
+        res = await fetch(`${configRes.url}/rest/v1/rpc/redeem_license_key`, {
+          method: 'POST',
+          headers: {
+            'apikey': configRes.anonKey,
+            'Authorization': `Bearer ${sess.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            p_shop_id: sess.active_shop_id,
+            p_key_code: licenseKeyInput.trim().toUpperCase()
+          })
+        });
+      }
+
       const result = await res.json();
-      if (res.ok && result && result.success) {
+      if (res.ok && result && (result.success || result.valid)) {
         setRedeemMessage({ success: true, text: result.message || 'Kích hoạt mã bản quyền thành công!' });
         setLicenseKeyInput('');
         loadSubscription();
@@ -250,8 +301,9 @@ export default function Subscription() {
 
   const getTransferContent = () => {
     if (!activeShopId || !selectedPlan) return '';
-    // Format: AUTOFILL <SHOP_ID_SHORT> <PLAN>
-    return `AUTOFILL ${activeShopId} ${selectedPlan.code}`;
+    // Format: AF <SHOP_CODE> (Guaranteed < 15 chars, matches SePay regex ^AF <CODE> and passes bank 20-char limits)
+    const code = (shopCode || activeShopId.slice(0, 8)).toUpperCase();
+    return `AF ${code}`;
   };
 
   const getVietQRUrl = () => {
@@ -264,41 +316,41 @@ export default function Subscription() {
   if (isLoading) return <div style={{ padding: '30px', textAlign: 'center' }}>🔄 Đang tải thông tin gói cước...</div>;
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '40px' }}>
+    <div style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', paddingBottom: '40px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h2 className="page-title" style={{ margin: 0 }}>💳 Gói Cước & Thanh Toán Tự Động (Commercial SaaS)</h2>
+          <h2 className="page-title" style={{ margin: 0 }}>💳 Gói Cước & Nâng Cấp Tự Động</h2>
           <p style={{ color: 'var(--text-muted)', margin: '6px 0 0 0' }}>
-            Nâng cấp hạn mức AI, số lượng đơn hàng và thành viên. Hệ thống tự động kích hoạt gói cước trong 3 giây qua VietQR.
+            Nâng cấp hạn mức AI, số lượng đơn hàng và số lượng nhân viên. Hệ thống tự động kích hoạt gói cước trong 3 giây qua VietQR.
           </p>
         </div>
       </div>
 
       {/* Current Active Plan Banner */}
-      <div className="card" style={{ marginBottom: '24px', borderLeft: '6px solid #2563eb', background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)', padding: '20px' }}>
+      <div className="card" style={{ marginBottom: '24px', background: 'var(--card)', border: '1px solid var(--border)', padding: '22px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, letterSpacing: '0.5px' }}>GÓI DỊCH VỤ HIỆN TẠI</div>
-            <h3 style={{ margin: '4px 0', fontSize: '22px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px' }}>GÓI DỊCH VỤ HIỆN TẠI</div>
+            <h3 style={{ margin: '4px 0', fontSize: '22px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
               Gói {currentPlan}
-              <span style={{ fontSize: '12px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+              <span style={{ fontSize: '12px', background: 'var(--color-success-bg)', color: 'var(--color-success-text)', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
                 Đang kích hoạt
               </span>
             </h3>
-            <div style={{ fontSize: '13px', color: '#475569' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
               Hạn dùng đến: <strong>{formatDate(periodEnd)}</strong>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '30px', textAlign: 'right' }}>
             <div>
-              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>AI Quota tháng này</div>
-              <div style={{ fontSize: '20px', fontWeight: 800, color: '#2563eb' }}>
-                {budget ? `${budget.monthly_remaining.toLocaleString()} / ${budget.monthly_limit.toLocaleString()}` : '—'}
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Hạn mức AI tháng này</div>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary)' }}>
+                {budget ? `${fmtNumber(budget.monthly_remaining)} / ${fmtNumber(budget.monthly_limit)}` : '—'}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Thiết bị đang kết nối</div>
-              <div style={{ fontSize: '20px', fontWeight: 800, color: '#16a34a' }}>{deviceCount} Active</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Thiết bị đang kết nối</div>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--success)' }}>{deviceCount} Đang hoạt động</div>
             </div>
           </div>
         </div>
@@ -315,29 +367,29 @@ export default function Subscription() {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 padding: '24px 20px',
                 borderRadius: '12px',
-                border: isCurrent ? '2px solid #2563eb' : (p.popular ? '2px solid #3b82f6' : '1px solid #e2e8f0'),
-                background: p.popular ? '#f0f7ff' : '#ffffff',
-                boxShadow: p.popular ? '0 10px 25px -5px rgba(59, 130, 246, 0.15)' : '0 2px 5px rgba(0,0,0,0.05)',
+                border: isCurrent ? '2px solid var(--primary)' : (p.popular ? '2px solid var(--primary)' : '1px solid var(--border)'),
+                background: p.popular ? 'var(--primary-light)' : 'var(--card)',
+                boxShadow: p.popular ? '0 10px 25px -5px rgba(59, 130, 246, 0.15)' : '0 2px 5px rgba(0,0,0,0.03)',
                 position: 'relative'
               }}
             >
               {p.popular && (
-                <span style={{ position: 'absolute', top: '-12px', right: '16px', background: '#2563eb', color: '#fff', fontSize: '10px', padding: '4px 10px', borderRadius: '12px', fontWeight: 700 }}>
+                <span style={{ position: 'absolute', top: '-12px', right: '16px', background: 'var(--primary)', color: '#fff', fontSize: '10px', padding: '4px 10px', borderRadius: '12px', fontWeight: 700 }}>
                   PHỔ BIẾN NHẤT
                 </span>
               )}
               {p.badge && (
-                <span style={{ position: 'absolute', top: '-12px', right: '16px', background: '#16a34a', color: '#fff', fontSize: '10px', padding: '4px 10px', borderRadius: '12px', fontWeight: 700 }}>
+                <span style={{ position: 'absolute', top: '-12px', right: '16px', background: 'var(--success)', color: '#fff', fontSize: '10px', padding: '4px 10px', borderRadius: '12px', fontWeight: 700 }}>
                   {p.badge}
                 </span>
               )}
               <div>
-                <h4 style={{ margin: 0, fontSize: '18px', color: '#0f172a', fontWeight: 700 }}>{p.name}</h4>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#2563eb', margin: '12px 0 16px 0' }}>{p.price}</div>
-                <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '13px', color: '#475569', lineHeight: '2' }}>
+                <h4 style={{ margin: 0, fontSize: '18px', color: 'var(--text-main)', fontWeight: 700 }}>{p.name}</h4>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary)', margin: '12px 0 16px 0' }}>{p.price}</div>
+                <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '13px', color: 'var(--text-muted)', lineHeight: '2' }}>
                   <li>👥 <strong>{p.users}</strong></li>
                   <li>💻 <strong>{p.devices}</strong></li>
                   <li>⚡ <strong>{p.ai}</strong></li>
@@ -354,12 +406,13 @@ export default function Subscription() {
                   padding: '10px 16px',
                   borderRadius: '8px',
                   border: 'none',
-                  background: isCurrent ? '#e2e8f0' : '#2563eb',
-                  color: isCurrent ? '#64748b' : '#ffffff',
+                  background: isCurrent ? 'var(--border)' : 'var(--primary)',
+                  color: isCurrent ? 'var(--text-muted)' : '#ffffff',
                   fontWeight: 700,
                   fontSize: '13px',
                   cursor: isCurrent ? 'default' : 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: isCurrent ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.25)'
                 }}
               >
                 {isCurrent ? 'Đang sử dụng' : 'Nâng cấp qua VietQR ⚡'}
@@ -370,26 +423,29 @@ export default function Subscription() {
       </div>
 
       {/* License Key Activation Section */}
-      <div className="card" style={{ padding: '24px', borderRadius: '12px', background: '#ffffff', border: '1px solid #e2e8f0' }}>
-        <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#0f172a' }}>🔑 Kích hoạt bằng Mã Bản Quyền (License Key)</h3>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 16px 0' }}>
+      <div className="card" style={{ padding: '24px', borderRadius: '12px', background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: 'var(--text-main)' }}>🔑 Kích hoạt bằng Mã Bản Quyền (License Key)</h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px 0' }}>
           Nếu bạn đã nhận mã bản quyền từ đối tác hoặc chương trình khuyến mãi, hãy nhập mã vào đây để kích hoạt gói ngay lập tức.
         </p>
 
         <form onSubmit={handleRedeemKey} style={{ display: 'flex', gap: '12px', maxWidth: '500px' }}>
           <input
             type="text"
-            placeholder="VD: AUTOFILL-PRO-98X2-K9L1"
+            placeholder="VD: AF-98X2-K9L1-M4N3"
             value={licenseKeyInput}
             onChange={(e) => setLicenseKeyInput(e.target.value)}
             style={{
               flex: 1,
               padding: '10px 14px',
               borderRadius: '8px',
-              border: '1px solid #cbd5e1',
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text-main)',
               fontSize: '13px',
               textTransform: 'uppercase',
-              letterSpacing: '1px'
+              letterSpacing: '1px',
+              outline: 'none'
             }}
           />
           <button
@@ -399,11 +455,12 @@ export default function Subscription() {
               padding: '10px 20px',
               borderRadius: '8px',
               border: 'none',
-              background: '#0f172a',
+              background: 'var(--primary)',
               color: '#ffffff',
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: '13px',
-              cursor: isRedeeming ? 'wait' : 'pointer'
+              cursor: isRedeeming ? 'wait' : 'pointer',
+              boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
             }}
           >
             {isRedeeming ? 'Đang kiểm tra...' : 'Kích hoạt'}
@@ -424,6 +481,86 @@ export default function Subscription() {
         )}
       </div>
 
+      {/* Payment Transactions & Invoice History */}
+      <div className="card" style={{ marginTop: '24px', padding: '24px', borderRadius: '12px', background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--text-main)', fontWeight: 700 }}>
+              🧾 Lịch Sử Giao Dịch & Hóa Đơn Thuê Bao
+            </h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: 'var(--text-muted)' }}>
+              Theo dõi các giao dịch gia hạn tự động qua VietQR, SePay và kích hoạt bản quyền của cửa hàng.
+            </p>
+          </div>
+          <button
+            onClick={loadSubscription}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 600,
+              borderRadius: '6px',
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text-main)',
+              cursor: 'pointer'
+            }}
+          >
+            🔄 Làm mới
+          </button>
+        </div>
+
+        {paymentTransactions.length === 0 ? (
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px', opacity: 0.6 }}>📑</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>Chưa có giao dịch thanh toán nào</div>
+            <div style={{ fontSize: '12px', marginTop: '2px' }}>Các khoản thanh toán tự động qua VietQR hoặc kích hoạt mã bản quyền sẽ hiển thị tại đây.</div>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '12px' }}>
+                  <th style={{ padding: '10px 12px' }}>Thời gian</th>
+                  <th style={{ padding: '10px 12px' }}>Mã GD / Tham chiếu</th>
+                  <th style={{ padding: '10px 12px' }}>Cổng thanh toán</th>
+                  <th style={{ padding: '10px 12px' }}>Nội dung CK</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Số tiền</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paymentTransactions.map((tx, idx) => (
+                  <tr key={tx.id || tx.transaction_id || idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
+                      {formatDate(tx.created_at || tx.payment_time)}
+                    </td>
+                    <td style={{ padding: '12px', fontWeight: 600, fontFamily: 'monospace' }}>
+                      {tx.transaction_id || tx.transaction_code || '—'}
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'var(--primary-light)', color: 'var(--primary)', fontSize: '11px', fontWeight: 700 }}>
+                        {tx.gateway || 'VIETQR_SEPAY'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
+                      {tx.content || tx.description || '—'}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>
+                      +{fmtNumber(tx.amount || 0)} đ
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      <span style={{ padding: '2px 8px', borderRadius: '12px', background: '#dcfce7', color: '#15803d', fontSize: '11px', fontWeight: 700 }}>
+                        Hoàn tất
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* VIETQR PAYMENT MODAL */}
       {showPaymentModal && selectedPlan && (
         <div style={{
@@ -440,13 +577,14 @@ export default function Subscription() {
           backdropFilter: 'blur(4px)'
         }}>
           <div style={{
-            background: '#ffffff',
+            background: 'var(--card)',
             borderRadius: '16px',
             width: '90%',
             maxWidth: '520px',
             padding: '28px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            position: 'relative'
+            position: 'relative',
+            border: '1px solid var(--border)'
           }}>
             <button
               onClick={() => setShowPaymentModal(false)}
@@ -455,7 +593,8 @@ export default function Subscription() {
                 top: '16px',
                 right: '16px',
                 border: 'none',
-                background: '#f1f5f9',
+                background: 'var(--bg)',
+                color: 'var(--text-main)',
                 borderRadius: '50%',
                 width: '32px',
                 height: '32px',
@@ -472,8 +611,8 @@ export default function Subscription() {
             {paymentSuccess ? (
               <div style={{ textAlign: 'center', padding: '30px 10px' }}>
                 <div style={{ fontSize: '54px', marginBottom: '16px' }}>🎉</div>
-                <h3 style={{ fontSize: '22px', color: '#16a34a', margin: '0 0 10px 0' }}>Thanh Toán Thành Công!</h3>
-                <p style={{ color: '#475569', fontSize: '14px', lineHeight: '1.6' }}>
+                <h3 style={{ fontSize: '22px', color: 'var(--success)', margin: '0 0 10px 0' }}>Thanh Toán Thành Công!</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
                   Gói <strong>{selectedPlan.name}</strong> đã được kích hoạt thành công cho cửa hàng của bạn.
                 </p>
                 <button
@@ -481,7 +620,7 @@ export default function Subscription() {
                   style={{
                     marginTop: '20px',
                     padding: '10px 24px',
-                    background: '#16a34a',
+                    background: 'var(--success)',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '8px',
@@ -494,17 +633,17 @@ export default function Subscription() {
               </div>
             ) : (
               <div>
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#0f172a' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--text-main)', fontWeight: 800 }}>
                   ⚡ Quét mã VietQR để kích hoạt gói {selectedPlan.name}
                 </h3>
-                <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: '#64748b' }}>
+                <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: 'var(--text-muted)' }}>
                   Mở ứng dụng ngân hàng bất kỳ (MB, VCB, Techcombank, Momo...) để quét mã bên dưới.
                 </p>
 
                 {/* QR Image Container */}
                 <div style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
                   borderRadius: '12px',
                   padding: '16px',
                   textAlign: 'center',
@@ -515,36 +654,36 @@ export default function Subscription() {
                     alt="VietQR Payment"
                     style={{ width: '220px', height: '220px', borderRadius: '8px', display: 'inline-block' }}
                   />
-                  <div style={{ marginTop: '10px', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }}></span>
+                  <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', animation: 'pulse-live 1.5s infinite' }}></span>
                     Hệ thống tự động kích hoạt sau khi nhận tiền (3 - 5 giây)
                   </div>
                 </div>
 
                 {/* Transfer Details */}
-                <div style={{ background: '#f1f5f9', borderRadius: '8px', padding: '14px', fontSize: '13px', marginBottom: '20px' }}>
+                <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px', fontSize: '13px', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ color: '#64748b' }}>Số tiền:</span>
-                    <strong style={{ color: '#2563eb', fontSize: '15px' }}>{selectedPlan.amount.toLocaleString('vi-VN')} đ</strong>
+                    <span style={{ color: 'var(--text-muted)' }}>Số tiền:</span>
+                    <strong style={{ color: 'var(--primary)', fontSize: '15px' }}>{selectedPlan.amount.toLocaleString('vi-VN')} đ</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ color: '#64748b' }}>Số tài khoản:</span>
-                    <strong style={{ letterSpacing: '0.5px' }}>{BANK_CONFIG.accountNo} ({BANK_CONFIG.bankCode})</strong>
+                    <span style={{ color: 'var(--text-muted)' }}>Số tài khoản:</span>
+                    <strong style={{ letterSpacing: '0.5px', color: 'var(--text-main)' }}>{BANK_CONFIG.accountNo} ({BANK_CONFIG.bankCode})</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ color: '#64748b' }}>Chủ tài khoản:</span>
-                    <strong>{BANK_CONFIG.accountName}</strong>
+                    <span style={{ color: 'var(--text-muted)' }}>Chủ tài khoản:</span>
+                    <strong style={{ color: 'var(--text-main)' }}>{BANK_CONFIG.accountName}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#64748b' }}>Nội dung CK:</span>
-                    <code style={{ background: '#e2e8f0', padding: '3px 6px', borderRadius: '4px', fontWeight: 700, color: '#0f172a' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Nội dung CK:</span>
+                    <code style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>
                       {getTransferContent()}
                     </code>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     {isCheckingPayment ? '🔄 Đang chờ thanh toán...' : '⚡ Đang lắng nghe webhook...'}
                   </span>
                   <button
@@ -552,7 +691,8 @@ export default function Subscription() {
                     style={{
                       padding: '8px 16px',
                       background: 'transparent',
-                      border: '1px solid #cbd5e1',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-main)',
                       borderRadius: '6px',
                       fontSize: '12px',
                       cursor: 'pointer'
@@ -569,3 +709,4 @@ export default function Subscription() {
     </div>
   );
 }
+

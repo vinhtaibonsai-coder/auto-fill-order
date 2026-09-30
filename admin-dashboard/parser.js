@@ -196,7 +196,7 @@
       const orderCodes = [];
 
       // Từ khóa nhận diện Mã sản phẩm / SKU
-      const skuKeywords = /(?:size|màu|mau|xl|xxl|áo|quần|váy|đầm|hộp|chai|cái|chiếc|bao|túi|lọ|sp|sản\s*phẩm|kg|gram|gói|bịch|set|combo)/i;
+      const skuKeywords = /(?:size|màu|mau|xl|xxl|áo|quần|váy|đầm|hộp|chai|cái|chiếc|bao|túi|lọ|sp|sản\s*phẩm|kg|gram|gói|bịch|set|combo|cây|lũa|rêu|cover)/i;
 
       // Từ khóa nhận diện Dòng Địa chỉ (Chung cư, Số nhà, Phòng, Tầng, Đường...) để không bóc nhầm số phòng thành mã đơn
       const addressKeywords = /(?:chung\s*cư|căn\s*hộ|toà\s*nhà|tòa\s*nhà|tòa|toà|block|tầng|lầu|phòng|khu\s*đô\s*thị|kđt|đường|phố|ngõ|ngách|hẻm|kiệt|số\s*nhà|thôn|xóm|ấp|bản|tổ|kp|khu\s*phố|xã|phường|quận|huyện|thị\s*xã|thành\s*phố|tp\.|tp\s|tỉnh|hcm|hà\s*nội|hn|đà\s*nẵng)/i;
@@ -210,6 +210,23 @@
         return false;
       };
 
+      // Helper kiểm tra mã đơn riêng hợp lệ của shop:
+      // Bắt buộc phải có chữ số (vd: e120.02, p150.12, TAI0001, TAI0002, DH123...)
+      // Tuyệt đối không nhận chuỗi chữ thuần không có số như 'caycover', 'Cây Cover', 'bonsai'
+      const isValidShopCode = (cand) => {
+        if (!cand) return false;
+        const str = String(cand).trim();
+        if (str.length < 3 || str.length > 30) return false;
+        if (!/\d/.test(str)) return false; // PHẢI CHỨA CHỮ SỐ
+        if (/^\d+$/.test(str)) return false; // Không phải số thuần (tránh nhầm SĐT/tiền)
+        if (/\d+k$/i.test(str)) return false; // Không phải tiền COD như 150k
+        if (/^[A-Za-z]\d+\.\d+\.\d+/i.test(str)) return false; // Không phải số phòng căn hộ
+        if (skuKeywords.test(str)) return false;
+        if (isPhoneOrCod(str)) return false;
+        if (/^(hàng|gửi|tới|số|vận|đơn|cước|ship|thu|cod)$/i.test(str)) return false;
+        return true;
+      };
+
       // Ưu tiên 1: Dòng độc lập chỉ chứa duy nhất mã đơn/mã hàng (ví dụ: dòng "E80.290" hoặc "DH-12345" hoặc "Mã: E80.290")
       for (const l of lines) {
         const trimmed = l.trim();
@@ -220,18 +237,15 @@
         const explicitMatch = trimmed.match(/^(?:mã\s*đơn(?:\s*hàng)?(?:\s*là)?|mã\s*đh|mã\s*dh|mã\s*vận\s*đơn|mã\s*order|order\s*id|mã|dh)[:\s\-•]*([a-zA-Z0-9.\-_]{2,25})$/i);
         if (explicitMatch && explicitMatch[1]) {
           const candidate = explicitMatch[1].trim();
-          if (!/^(hàng|gửi|tới|số|vận|đơn|cước|ship|thu|cod)$/i.test(candidate) && !skuKeywords.test(candidate) && !isPhoneOrCod(candidate)) {
+          if (isValidShopCode(candidate)) {
             return candidate;
           }
         }
 
-        // Dòng đứng độc lập 100% khớp pattern mã (ví dụ: "E80.290", "VN123456789", "JT987654321", "DH100462959")
+        // Dòng đứng độc lập 100% khớp pattern mã (ví dụ: "E80.290", "VN123456789", "JT987654321", "DH100462959", "TAI0001")
         if (!addressKeywords.test(trimmed) && /^[A-Za-z0-9][A-Za-z0-9.\-_]{2,20}$/.test(trimmed)) {
-          if (!/\d+k$/i.test(trimmed) && !/^(ship|cod|vnd|vnđ|kg|g|size|free|freeship)$/i.test(trimmed) && !skuKeywords.test(trimmed)) {
-            // Loại trừ số căn hộ chung cư 3 cấp như B1.09.01 và loại trừ số thuần túy
-            if (!/^[A-Za-z]\d+\.\d+\.\d+/i.test(trimmed) && !/^\d+$/.test(trimmed)) {
-              return trimmed;
-            }
+          if (isValidShopCode(trimmed)) {
+            return trimmed;
           }
         }
       }
@@ -245,14 +259,16 @@
         }
 
         if (skuKeywords.test(low) && !/(?:mã\s*đơn|mã\s*đh|mã\s*dh|mã\s*vận\s*đơn|mã\s*order|order\s*id)/i.test(low)) {
-          return;
+          if (!/\b(?:VN[0-9]{8,12}|JT[0-9]{8,12}|DH[-_]?[0-9]{3,10}|ORD[-_]?[0-9]{3,10}|[A-Za-z][0-9]{1,4}[\.-][0-9]{1,6}|[A-Za-z]{1,5}[-_]?[0-9]{2,10})\b/i.test(low)) {
+            return;
+          }
         }
 
         // Bắt mã đơn theo tiền tố rõ ràng
         const explicitMatch = l.match(/(?:mã\s*đơn(?:\s*hàng)?(?:\s*là)?|mã\s*đh|mã\s*dh|mã\s*vận\s*đơn|mã\s*order|order\s*id|mã|dh)[:\s\-•]*([a-zA-Z0-9.\-_]{2,25})/i);
         if (explicitMatch && explicitMatch[1]) {
           const candidate = explicitMatch[1].trim();
-          if (!/^(hàng|gửi|tới|số|vận|đơn|cước|ship|thu|cod)$/i.test(candidate) && !skuKeywords.test(candidate) && !isPhoneOrCod(candidate)) {
+          if (isValidShopCode(candidate)) {
             if (!orderCodes.includes(candidate)) orderCodes.push(candidate);
             return;
           }
@@ -262,7 +278,7 @@
         const standaloneMatch = l.match(/\b(VN[0-9]{8,12}|JT[0-9]{8,12}|DH[-_]?[0-9]{3,10}|ORD[-_]?[0-9]{3,10}|[A-Za-z][0-9]{1,4}[\.-][0-9]{1,6}|[A-Za-z]{1,5}[-_]?[0-9]{2,10})\b/i);
         if (standaloneMatch && standaloneMatch[1]) {
           const cand = standaloneMatch[1].trim();
-          if (!/\d+k$/i.test(cand) && !/^(ship|cod|vnd|vnđ|kg|g|size)$/i.test(cand) && !skuKeywords.test(cand) && !isPhoneOrCod(cand)) {
+          if (isValidShopCode(cand)) {
             if (!orderCodes.includes(cand)) orderCodes.push(cand);
           }
         }

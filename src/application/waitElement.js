@@ -7,6 +7,7 @@
       const el = document.querySelector(selector);
       if (el) return resolve(el);
 
+      const root = document.body || document.documentElement || document;
       const observer = new MutationObserver(() => {
         const target = document.querySelector(selector);
         if (target) {
@@ -16,7 +17,7 @@
         }
       });
 
-      observer.observe(document.body, { childList: true, subtree: true });
+      observer.observe(root, { childList: true, subtree: true });
 
       const timer = setTimeout(() => {
         observer.disconnect();

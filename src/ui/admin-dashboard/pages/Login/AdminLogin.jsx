@@ -27,7 +27,8 @@ export default function AdminLogin({ onLoginSuccess }) {
       
       // Ở Admin Dashboard, chúng ta có thể kiểm tra Role của user sau khi đăng nhập thành công
       const role = await AuthService.getUserRole();
-      if (['ADMIN', 'SUPER_ADMIN', 'SYSTEM_ADMIN'].includes(role)) {
+      const isAdmin = ['ADMIN', 'SUPER_ADMIN', 'SYSTEM_ADMIN', 'SUPPORT_ADMIN', 'FINANCE_ADMIN', 'CONTENT_ADMIN'].includes(role) || (typeof role === 'string' && (role.endsWith('_ADMIN') || role.includes('ADMIN')));
+      if (isAdmin) {
         onLoginSuccess();
       } else {
         // Đăng xuất ngay lập tức nếu không có quyền Admin

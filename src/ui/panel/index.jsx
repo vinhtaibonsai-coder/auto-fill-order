@@ -11,8 +11,10 @@ function checkUrlAndInject() {
   const url = window.location.href;
   let isCreatePage = false;
   
-  if (url.includes('vnpost.vn')) {
-    isCreatePage = url.includes('create') || url.includes('tao-don');
+  if (url.includes('my.vnpost.vn')) {
+    isCreatePage = url.includes('my.vnpost.vn/order/domestic/create');
+  } else if (url.includes('donhang.vnpost.vn')) {
+    isCreatePage = url.includes('/create') || url.includes('tao-don');
   } else if (url.includes('jtexpress.vn')) {
     isCreatePage = url.includes('create') || url.includes('Create') || url.includes('add') || url.includes('new');
   }

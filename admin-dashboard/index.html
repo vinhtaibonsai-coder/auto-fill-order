@@ -178,7 +178,7 @@
         <!-- KPI Cards Grid -->
         <div class="quick-stat-grid">
           <!-- Card 1: Submitted Orders -->
-          <div class="card" style="border-left: 4px solid var(--primary); padding: 20px;">
+          <div class="card" style="padding: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-s);">
@@ -198,7 +198,7 @@
           </div>
 
           <!-- Card 2: Total COD -->
-          <div class="card" style="border-left: 4px solid var(--mint); padding: 20px;">
+          <div class="card" style="padding: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-s);">
@@ -218,7 +218,7 @@
           </div>
 
           <!-- Card 3: Draft Orders -->
-          <div class="card" style="border-left: 4px solid var(--amber); padding: 20px;">
+          <div class="card" style="padding: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-s);">
@@ -238,7 +238,7 @@
           </div>
 
           <!-- Card 4: AI Monthly Quota -->
-          <div class="card" style="border-left: 4px solid var(--purple); padding: 20px;">
+          <div class="card" style="padding: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-s);">
@@ -260,7 +260,7 @@
           <!-- 7-Day Chart -->
           <div class="card" style="padding: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-              <h3 style="font-size:14px; font-weight:700;"><i class="ph ph-chart-bar-bold text-indigo-500"></i> Sản Lượng Đơn Hàng 7 Ngày Gần Nhất</h3>
+              <h3 style="font-size:14px; font-weight:700;"><i class="ph ph-chart-bar-bold icon-accent"></i> Sản Lượng Đơn Hàng 7 Ngày Gần Nhất</h3>
               <div style="display:flex; gap:12px; font-size:11px; font-weight:600;">
                 <span style="color:var(--amber); display:flex; align-items:center; gap:4px;"><i class="ph ph-circle-fill"></i> VNPost</span>
                 <span style="color:var(--red-soft); display:flex; align-items:center; gap:4px;"><i class="ph ph-circle-fill"></i> J&T Express</span>
@@ -273,7 +273,7 @@
 
           <!-- Quick Summary by Carrier -->
           <div class="card" style="padding: 20px;">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:16px;"><i class="ph ph-pie-chart-bold text-indigo-500"></i> Tỷ Trọng Vận Chuyển</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:16px;"><i class="ph ph-pie-chart-bold icon-accent"></i> Tỷ Trọng Vận Chuyển</h3>
             <div style="display:flex; flex-direction:column; gap:14px;">
               <div style="background:rgba(0,0,0,0.02); padding:14px; border-radius:10px; border:1px solid var(--border);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -281,7 +281,7 @@
                   <span style="font-size:13px; font-weight:800;" id="kpiVnpostCount">0 đơn</span>
                 </div>
                 <div style="height:6px; background:rgba(0,0,0,0.05); border-radius:3px; overflow:hidden;">
-                  <div id="barVnpostPercent" style="height:100%; width:0%; background:var(--amber); transition:width 0.5s;"></div>
+                  <div id="barVnpostPercent" style="height:100%; width:0%; background:var(--amber);"></div>
                 </div>
               </div>
 
@@ -291,7 +291,7 @@
                   <span style="font-size:13px; font-weight:800;" id="kpiJtCount">0 đơn</span>
                 </div>
                 <div style="height:6px; background:rgba(0,0,0,0.05); border-radius:3px; overflow:hidden;">
-                  <div id="barJtPercent" style="height:100%; width:0%; background:var(--red-soft); transition:width 0.5s;"></div>
+                  <div id="barJtPercent" style="height:100%; width:0%; background:var(--red-soft);"></div>
                 </div>
               </div>
 
@@ -306,7 +306,7 @@
         <!-- Recent Realtime Orders Stream -->
         <div class="card" style="padding: 20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-            <h3 style="font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px;"><i class="ph ph-clock-counter-clockwise-bold text-indigo-500"></i> Đơn Hàng Vừa Lên Gần Đây (Realtime Stream)</h3>
+            <h3 style="font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px;"><i class="ph ph-clock-counter-clockwise-bold icon-accent"></i> Đơn Hàng Vừa Lên Gần Đây (Realtime Stream)</h3>
             <button class="btn btn-secondary btn-sm" onclick="document.querySelector('[data-tab=orders]').click();">Xem tất cả đơn →</button>
           </div>
           <div class="table-wrap">
@@ -347,7 +347,7 @@
 
         <!-- Stats Grid matching Option Page -->
         <div class="stats-grid-2">
-          <div class="card" style="border-left: 4px solid var(--primary); padding: 20px;">
+          <div class="card" style="padding: 20px;">
             <div style="display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">
                 <i class="ph ph-paper-plane-tilt"></i>
@@ -362,7 +362,7 @@
             </div>
           </div>
 
-          <div class="card" style="border-left: 4px solid var(--mint); padding: 20px;">
+          <div class="card" style="padding: 20px;">
             <div style="display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:var(--mint-bg); color:var(--mint); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">
                 <i class="ph ph-currency-circle-dollar"></i>
@@ -486,7 +486,7 @@
           <!-- Customers List -->
           <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <h3 style="font-size:14px; font-weight:700;"><i class="ph ph-users text-indigo-500"></i> Danh Sách Khách Hàng Thân Thiết (<span id="countCustomersHeader">0</span>)</h3>
+              <h3 style="font-size:14px; font-weight:700;"><i class="ph ph-users icon-accent"></i> Danh Sách Khách Hàng Thân Thiết (<span id="countCustomersHeader">0</span>)</h3>
               <div class="search-box" style="width:200px;">
                 <i class="ph ph-magnifying-glass search-icon"></i>
                 <input type="text" id="txtSearchCustomers" class="field search-field" placeholder="Tìm Tên, SĐT, Địa chỉ...">
@@ -551,28 +551,28 @@
         <!-- SHOP IDENTITY & TEAM SUMMARY CARDS -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
           <!-- Card 1: Shop Name & Code -->
-          <div class="card" style="padding:16px; border-left: 4px solid var(--primary);">
-            <div style="font-size:11px; font-weight:700; color:var(--text-s); text-transform:uppercase; margin-bottom:4px;"><i class="ph ph-storefront text-indigo-500"></i> Cửa Hàng Đang Quản Lý</div>
+          <div class="card" style="padding:16px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-s); text-transform:uppercase; margin-bottom:4px;"><i class="ph ph-storefront icon-accent"></i> Cửa Hàng Đang Quản Lý</div>
             <div id="staffTabShopName" style="font-size:16px; font-weight:800; color:var(--text-p); margin-bottom:4px;">Shop Lũa Thủy Sinh</div>
             <div style="font-size:11px; color:var(--text-s);">Mã Shop: <code id="staffTabShopCode" style="font-weight:700; color:var(--primary);">SHOP-VNPOST-01</code></div>
           </div>
 
           <!-- Card 2: Shop Owner Details -->
-          <div class="card" style="padding:16px; border-left: 4px solid var(--amber);">
+          <div class="card" style="padding:16px;">
             <div style="font-size:11px; font-weight:700; color:var(--text-s); text-transform:uppercase; margin-bottom:4px;"><i class="ph ph-crown text-amber-500"></i> Chủ Sở Hữu (Owner)</div>
             <div id="staffTabOwnerName" style="font-size:16px; font-weight:800; color:var(--text-p); margin-bottom:4px;">Nguyễn Văn Tài</div>
             <div id="staffTabOwnerEmail" style="font-size:11px; color:var(--text-s);">tai@luathuysinh.vn • 0908.066.466</div>
           </div>
 
           <!-- Card 3: Team Scale -->
-          <div class="card" style="padding:16px; border-left: 4px solid var(--mint);">
+          <div class="card" style="padding:16px;">
             <div style="font-size:11px; font-weight:700; color:var(--text-s); text-transform:uppercase; margin-bottom:4px;"><i class="ph ph-users text-emerald-500"></i> Quy Mô Nhân Sự</div>
             <div id="staffTabTotalCount" style="font-size:16px; font-weight:800; color:var(--mint); margin-bottom:4px;">0 Tài Khoản</div>
             <div id="staffTabRoleBreakdown" style="font-size:11px; color:var(--text-s);">1 Chủ shop • 0 Quản lý • 0 Nhân viên</div>
           </div>
 
           <!-- Card 4: Plan & Quota Status -->
-          <div class="card" style="padding:16px; border-left: 4px solid var(--purple);">
+          <div class="card" style="padding:16px;">
             <div style="font-size:11px; font-weight:700; color:var(--text-s); text-transform:uppercase; margin-bottom:4px;"><i class="ph ph-shield-check text-purple-500"></i> Hạn Ngạch & Gói Cước</div>
             <div id="staffTabPlanBadge" style="font-size:16px; font-weight:800; color:var(--purple); margin-bottom:4px;">GÓI PRO (Tối đa 20 Acc)</div>
             <div style="font-size:11px; color:var(--text-s);">Trạng thái: <span class="status-online" style="font-size:10px;">Đang hoạt động</span></div>
@@ -583,7 +583,7 @@
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
             <div style="font-weight:800; font-size:14px; display:flex; align-items:center; gap:8px;">
-              <i class="ph ph-user-gear text-indigo-500"></i> Danh Sách Tài Khoản Trực Thuộc Shop
+              <i class="ph ph-user-gear icon-accent"></i> Danh Sách Tài Khoản Trực Thuộc Shop
               <span id="badgeStaffTableCount" class="badge" style="background:#EEF2FF; color:#4F46E5; font-size:11px;">0 Tài khoản</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -616,7 +616,7 @@
         <div class="card" style="margin-top:16px; background:var(--bg); border:1px dashed var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
-              <h4 style="font-size:13px; font-weight:700;"><i class="ph ph-ticket text-indigo-500"></i> Mã Mời & Link Tham Gia Shop (Shop Invite Link)</h4>
+              <h4 style="font-size:13px; font-weight:700;"><i class="ph ph-ticket icon-accent"></i> Mã Mời & Link Tham Gia Shop (Shop Invite Link)</h4>
               <p style="font-size:11px; color:var(--text-s);">Nhân viên mới chỉ cần nhập mã này hoặc bấm link để tự động gia nhập Shop với quyền STAFF.</p>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -652,7 +652,7 @@
         <div id="sectSettingsGeneral" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
           <!-- Shop Info & Sender Address -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-storefront text-indigo-500"></i> Thông Tin Kho Gửi Hàng Mặc Định</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-storefront icon-accent"></i> Thông Tin Kho Gửi Hàng Mặc Định</h3>
             
             <div class="form-group" style="margin-bottom:10px;">
               <label>Tên Cửa Hàng / Thương Hiệu:</label>
@@ -689,7 +689,7 @@
           <div style="display:flex; flex-direction:column; gap:16px;">
             <!-- Carrier Configs -->
             <div class="card">
-              <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-truck text-indigo-500"></i> Cấu Hinh Tài Khoản Bưu Điện</h3>
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-truck icon-accent"></i> Cấu Hinh Tài Khoản Bưu Điện</h3>
 
               <div class="form-group" style="margin-bottom:12px;">
                 <label style="color:#B45309; font-weight:700;"><i class="ph ph-envelope-simple"></i> Mã Khách Hàng VNPost (Bưu Điện):</label>
@@ -729,7 +729,7 @@
 
             <!-- Bank Account COD -->
             <div class="card">
-              <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-bank text-indigo-500"></i> Tài Khoản Ngân Hàng Nhận Tiền COD</h3>
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;"><i class="ph ph-bank icon-accent"></i> Tài Khoản Ngân Hàng Nhận Tiền COD</h3>
 
               <div class="form-group" style="margin-bottom:10px;">
                 <label>Ngân Hàng:</label>
@@ -781,7 +781,7 @@
         <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px;">
           <!-- Devices Table -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-browsers text-indigo-500"></i> Danh Sách Máy Tính & Trình Duyệt Đăng Nhập Panel</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-browsers icon-accent"></i> Danh Sách Máy Tính & Trình Duyệt Đăng Nhập Panel</h3>
             <div class="table-wrap">
               <table class="table" style="width:100%;">
                 <thead>
@@ -802,7 +802,7 @@
 
           <!-- Password Change Card -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-key text-indigo-500"></i> Đổi Mật Khẩu Tài Khoản</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-key icon-accent"></i> Đổi Mật Khẩu Tài Khoản</h3>
             <div class="form-group" style="margin-bottom:10px;">
               <label>Mật Khẩu Mới:</label>
               <input type="password" id="txtOwnerNewPass" class="field" placeholder="Nhập ít nhất 6 ký tự..." style="margin-top:4px;">
@@ -834,9 +834,37 @@
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <!-- Shop Access Key Card -->
+          <div class="card" style="grid-column: span 2; border-top: 2px solid var(--primary);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3 style="font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                <i class="ph ph-key icon-accent"></i> Mã Shop Access Key (Dành Cho Nhân Viên Kho)
+              </h3>
+              <span class="badge" style="background:#ECFDF5; color:#059669; font-weight:700;">Đang Kích Hoạt</span>
+            </div>
+            <p style="font-size:12px; color:var(--text-s); margin-bottom:14px;">
+              Giao mã này cho nhân viên để kích hoạt Extension trên máy tính mà <strong>không cần tạo tài khoản Supabase riêng</strong>. Mọi máy kích hoạt bằng mã này sẽ sử dụng chung hạn ngạch AI và tự động lưu đơn về shop.
+            </p>
+
+            <div style="display:flex; gap:12px; align-items:center; background:var(--bg); padding:12px 16px; border-radius:10px; border:1px solid var(--border);">
+              <div style="flex:1;">
+                <label style="font-size:11px; font-weight:700; color:var(--text-s);">MÃ TRUY CẬP CỬA HÀNG:</label>
+                <div id="txtShopAccessKeyDisplay" style="font-family:monospace; font-size:18px; font-weight:800; color:var(--primary); letter-spacing:1px; margin-top:2px;">
+                  Đang tải mã...
+                </div>
+              </div>
+              <button id="btnCopyShopAccessKey" class="btn btn-primary btn-sm" style="display:flex; align-items:center; gap:6px;">
+                <i class="ph ph-copy"></i> Sao Chép Mã
+              </button>
+              <button id="btnResetShopAccessKey" class="btn btn-secondary btn-sm" style="color:var(--red-soft); display:flex; align-items:center; gap:6px;">
+                <i class="ph ph-arrows-clockwise"></i> Đổi Mã Mới
+              </button>
+            </div>
+          </div>
+
           <!-- Current Plan Card -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-crown text-indigo-500"></i> Gói Cước Hiện Tại Của Shop</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-crown icon-accent"></i> Gói Cước Hiện Tại Của Shop</h3>
             
             <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -849,7 +877,7 @@
             <div class="form-group" style="margin-bottom:14px;">
               <label style="font-weight:700;">Tiến Độ Hạn Ngạch AI Tháng Này:</label>
               <div style="height:10px; background:#E2E8F0; border-radius:5px; margin-top:8px; overflow:hidden;">
-                <div id="subQuotaBar" style="height:100%; width:0%; background:linear-gradient(90deg, #4F46E5, #818CF8); transition:width 0.5s;"></div>
+                <div id="subQuotaBar" style="height:100%; width:0%; background:linear-gradient(90deg, #4F46E5, #818CF8);"></div>
               </div>
               <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:12px; font-weight:600;">
                 <span id="subQuotaUsedText">0 lượt đã dùng</span>
@@ -860,7 +888,7 @@
 
           <!-- License Code Redemption -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-ticket text-indigo-500"></i> Nạp Mã Bản Quyền (Redeem License Key)</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-ticket icon-accent"></i> Nạp Mã Bản Quyền (Redeem License Key)</h3>
             <p style="font-size:12px; color:var(--text-s); margin-bottom:16px;">
               Nhập mã kích hoạt do Master Admin cấp để mở rộng số lượng nhân viên, thêm hạn mức AI và gia hạn thời gian sử dụng.
             </p>
@@ -891,7 +919,7 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
           <!-- Input raw text -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:10px;"><i class="ph ph-chat-text text-indigo-500"></i> Đoạn Chat Đơn Hàng Gốc</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:10px;"><i class="ph ph-chat-text icon-accent"></i> Đoạn Chat Đơn Hàng Gốc</h3>
             <textarea id="txtRawOrderInput" class="field" style="width:100%; height:220px; font-size:13px; line-height:1.5; resize:none;" placeholder="Dán nội dung tin nhắn Zalo, Facebook hoặc tin nhắn SMS khách gửi...
 Ví dụ:
 Anh gửi cho em cây kim quýt về 128 Lê Văn Sỹ, P10, Phú Nhuận, HCM nhé. SĐT: 0908112233. Thu hộ em 650k tiền cây nha anh"></textarea>
@@ -904,7 +932,7 @@ Anh gửi cho em cây kim quýt về 128 Lê Văn Sỹ, P10, Phú Nhuận, HCM n
 
           <!-- Parsed Result Card -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:10px;"><i class="ph ph-check-square-offset text-indigo-500"></i> Kết Quả Chuẩn Hóa Địa Chỉ & Thông Tin</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:10px;"><i class="ph ph-check-square-offset icon-accent"></i> Kết Quả Chuẩn Hóa Địa Chỉ & Thông Tin</h3>
             
             <div style="display:flex; flex-direction:column; gap:8px;">
               <div>
@@ -965,7 +993,7 @@ Anh gửi cho em cây kim quýt về 128 Lê Văn Sỹ, P10, Phú Nhuận, HCM n
           
           <!-- Column 1: Token & Webhook config Info -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-key-bold text-indigo-500"></i> Token & Đường dẫn Webhook</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-key-bold icon-accent"></i> Token & Đường dẫn Webhook</h3>
             
             <div style="display:flex; flex-direction:column; gap:12px; font-size:12.5px;">
               <div>
@@ -997,7 +1025,7 @@ Anh gửi cho em cây kim quýt về 128 Lê Văn Sỹ, P10, Phú Nhuận, HCM n
 
           <!-- Column 2: Webhook Logs list -->
           <div class="card">
-            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-activity-bold text-indigo-500"></i> Lịch Sử Nhận Tin Webhook (Thời gian thực)</h3>
+            <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="ph ph-activity-bold icon-accent"></i> Lịch Sử Nhận Tin Webhook (Thời gian thực)</h3>
             
             <div class="table-wrap">
               <table class="table" style="width:100%; font-size:12.5px;">
@@ -1037,7 +1065,7 @@ Anh gửi cho em cây kim quýt về 128 Lê Văn Sỹ, P10, Phú Nhuận, HCM n
   <div class="modal-overlay" id="modalAddStaff" style="display: none;">
     <div class="modal-box">
       <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="font-size:15px; font-weight:800;"><i class="ph ph-user-plus text-indigo-500"></i> Cấp Phát Tài Khoản Nhân Viên Mới</h3>
+        <h3 style="font-size:15px; font-weight:800;"><i class="ph ph-user-plus icon-accent"></i> Cấp Phát Tài Khoản Nhân Viên Mới</h3>
         <button class="btn btn-secondary btn-sm" id="btnCloseAddStaffModal" style="border:none;"><i class="ph ph-x text-lg"></i></button>
       </div>
       <div style="padding:20px;">
@@ -1251,7 +1279,7 @@ Anh gửi cho em cây kim quýt về 128 Lê Văn Sỹ, P10, Phú Nhuận, HCM n
   <div class="modal-overlay" id="modalStaffDetail" style="display: none;">
     <div class="modal-box" style="max-width: 440px;">
       <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="font-size:15px; font-weight:800;"><i class="ph ph-user-gear text-indigo-500"></i> Thiết Lập Tài Khoản Nhân Viên</h3>
+        <h3 style="font-size:15px; font-weight:800;"><i class="ph ph-user-gear icon-accent"></i> Thiết Lập Tài Khoản Nhân Viên</h3>
         <button class="btn btn-secondary btn-sm" id="btnCloseStaffDetailModal" style="border:none;"><i class="ph ph-x text-lg"></i></button>
       </div>
       <div style="padding:20px;">

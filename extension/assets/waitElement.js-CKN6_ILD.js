@@ -1,0 +1,2 @@
+(function(){(()=>{function i(e,c=5e3){return typeof document>"u"?Promise.reject(new Error("document is not defined in this context")):new Promise((n,u)=>{const o=document.querySelector(e);if(o)return n(o);const m=document.body||document.documentElement||document,t=new MutationObserver(()=>{const r=document.querySelector(e);r&&(n(r),t.disconnect(),clearTimeout(d))});t.observe(m,{childList:!0,subtree:!0});const d=setTimeout(()=>{t.disconnect(),u(new Error(`Timeout waiting for selector: ${e}`))},c)})}globalThis.waitForElement=i})();
+})()

@@ -53,8 +53,39 @@ function smoothPath(pts) {
   return d;
 }
 
-const CARRIER_LABELS = { vnpost: 'VNPost', jt: 'J&T' };
-const carrierLabel = p => CARRIER_LABELS[(p || '').toLowerCase()] || (p || '—').toUpperCase();
+const CARRIER_LABELS = { 
+  vnpost: 'VNPost', 
+  jt: 'J&T Express',
+  viettel: 'Viettel Post',
+  ghtk: 'GHTK'
+};
+const normalizeCarrierValue = value => {
+  if (!value) return '';
+  if (typeof value === 'object') {
+    return normalizeCarrierValue(
+      value.id || value.ID || value.code || value.carrier_id || value.carrierId ||
+      value.title || value.TITLE || value.name || value.label || ''
+    );
+  }
+  const raw = String(value).trim();
+  if (!raw) return '';
+  if (raw.startsWith('{')) {
+    try {
+      return normalizeCarrierValue(JSON.parse(raw));
+    } catch (_) {}
+  }
+  return raw;
+};
+const carrierLabel = value => {
+  const raw = normalizeCarrierValue(value);
+  const key = raw.toLowerCase().replace(/\s+/g, '');
+  if (!key) return '—';
+  if (key.includes('vnpost') || key.includes('vietnampost') || key.includes('buudien')) return 'VNPost';
+  if (key === 'jt' || key.includes('j&t') || key.includes('jtexpress')) return 'J&T Express';
+  if (key.includes('viettel')) return 'Viettel Post';
+  if (key.includes('ghtk') || key.includes('giaohangtietkiem')) return 'GHTK';
+  return CARRIER_LABELS[key] || raw;
+};
 
 function statusInfo(row) {
   const s = String(row.status || '').toLowerCase();
@@ -352,8 +383,8 @@ export default function Overview({ setActiveTab, uiRole }) {
     const [ordersCur, ordersPrev, subsCur, subsPrev, aiCur, aiPrev] = await Promise.allSettled([
       fetchRows('orders', `${shopFilter}&deleted_at=is.null&${curRange}&select=id,cod_amount,status,created_at`),
       fetchRows('orders', `${shopFilter}&deleted_at=is.null&${prevRange}&select=id,cod_amount,status,created_at`),
-      fetchRows('submitted_orders', `${shopFilter}&${curSubmittedRange}&select=id,cod_amount,status,submitted_at`),
-      fetchRows('submitted_orders', `${shopFilter}&${prevSubmittedRange}&select=id,cod_amount,status,submitted_at`),
+      fetchRows('submitted_orders', `${shopFilter}&${curSubmittedRange}&select=id,saved_order_id,order_code,tracking_code,name,phone,cod_amount,status,submitted_at`),
+      fetchRows('submitted_orders', `${shopFilter}&${prevSubmittedRange}&select=id,saved_order_id,order_code,tracking_code,name,phone,cod_amount,status,submitted_at`),
       fetchRows('ai_usage_log', `${shopFilter}&request_type=eq.parse&status=eq.success&${curRange}&select=id`),
       fetchRows('ai_usage_log', `${shopFilter}&request_type=eq.parse&status=eq.success&${prevRange}&select=id`)
     ]);
@@ -366,16 +397,68 @@ export default function Overview({ setActiveTab, uiRole }) {
         setKpiState('error');
         setKpiErrorMsg('Không thể tải dữ liệu KPI');
       } else {
+        const dedupeOrdersList = (list) => {
+          const seenKeys = new Set();
+          const result = [];
+          for (const item of list || []) {
+            if (!item) continue;
+            const keys = [];
+            const id = String(item.id || '').trim();
+            const savedId = String(item.saved_order_id || item.savedOrderId || '').trim();
+            const tracking = String(item.tracking_code || item.trackingCode || '').trim().toLowerCase();
+            const orderCode = String(item.order_code || item.orderCode || '').trim().toLowerCase();
+            const phone = String(item.phone || '').replace(/\D/g, '');
+            const name = String(item.name || item.customer_name || '').trim().toLowerCase();
+
+            if (id) keys.push('id_' + id);
+            if (savedId && savedId !== '—' && savedId !== '-') keys.push('id_' + savedId);
+            if (tracking && tracking !== '—' && tracking !== '-' && tracking !== 'chờ cập nhật mã') {
+              keys.push('tr_' + tracking);
+            }
+            if (phone && phone.length >= 9 && orderCode && orderCode !== '—' && orderCode !== '-') keys.push('oc_' + phone + '_' + orderCode);
+            const isSeen = keys.some(k => seenKeys.has(k));
+            if (!isSeen) {
+              keys.forEach(k => seenKeys.add(k));
+              result.push(item);
+            }
+          }
+          return result;
+        };
+
         const oC = okOr(ordersCur) || [];
         const oP = okOr(ordersPrev) || [];
-        const sC = okOr(subsCur) || [];
-        const sP = okOr(subsPrev) || [];
+        const sC = dedupeOrdersList(okOr(subsCur) || []);
+        const sP = dedupeOrdersList(okOr(subsPrev) || []);
 
-        const curTotal = oC.length + sC.length;
+        const subKeysCur = new Set();
+        sC.forEach(s => {
+          const id = String(s.id || '').trim();
+          const savedId = String(s.saved_order_id || s.savedOrderId || '').trim();
+          const phone = String(s.phone || '').replace(/\D/g, '');
+          const orderCode = String(s.order_code || s.orderCode || '').trim().toLowerCase();
+          const name = String(s.name || s.customer_name || '').trim().toLowerCase();
+          if (id) subKeysCur.add('id_' + id);
+          if (savedId && savedId !== '—') subKeysCur.add('id_' + savedId);
+          if (phone && phone.length >= 9 && orderCode && orderCode !== '—') subKeysCur.add('oc_' + phone + '_' + orderCode);
+        });
+
+        const activeDraftsCur = oC.filter(r => {
+          const s = String(r.status || '').toLowerCase();
+          if (s.includes('submitted')) return false;
+          const id = String(r.id || '').trim();
+          const phone = String(r.phone || '').replace(/\D/g, '');
+          const orderCode = String(r.order_code || r.orderCode || '').trim().toLowerCase();
+          const name = String(r.name || r.customer_name || '').trim().toLowerCase();
+          if (id && subKeysCur.has('id_' + id)) return false;
+          if (phone && orderCode && subKeysCur.has('oc_' + phone + '_' + orderCode)) return false;
+          return !r.status || s === 'draft';
+        });
+
+        const curTotal = activeDraftsCur.length + sC.length;
         const prevTotal = oP.length + sP.length;
         const curRevenue = sC.reduce((a, r) => a + (Number(r.cod_amount) || 0), 0);
         const prevRevenue = sP.reduce((a, r) => a + (Number(r.cod_amount) || 0), 0);
-        const draftsCur = oC.filter(r => !r.status || String(r.status).toLowerCase() === 'draft').length;
+        const draftsCur = activeDraftsCur.length;
         const draftsPrev = oP.filter(r => !r.status || String(r.status).toLowerCase() === 'draft').length;
         const rateCur = curTotal === 0 ? 0 : (sC.length / curTotal) * 100;
         const ratePrev = prevTotal === 0 ? 0 : (sP.length / prevTotal) * 100;
@@ -400,7 +483,7 @@ export default function Overview({ setActiveTab, uiRole }) {
           const b = buckets.find(x => x.key === k);
           return b;
         };
-        oC.forEach(r => { const b = idxOf(new Date(r.created_at).getTime()); if (b) b.orders += 1; });
+        activeDraftsCur.forEach(r => { const b = idxOf(new Date(r.created_at).getTime()); if (b) b.orders += 1; });
         sC.forEach(r => {
           const t = new Date(r.submitted_at || r.created_at).getTime();
           const b = idxOf(t);
@@ -465,7 +548,7 @@ export default function Overview({ setActiveTab, uiRole }) {
             icon: 'fail',
             title: `${num.format(failCount)} đơn gửi lỗi`,
             desc: 'Kiểm tra các đơn hàng bị lỗi để xử lý lại.',
-            action: { label: 'Xem', tab: 'orders' }
+            action: { label: 'Xem', tab: 'submitted-orders' }
           });
         }
         setAlerts(items);
@@ -475,12 +558,12 @@ export default function Overview({ setActiveTab, uiRole }) {
 
     const [recentA, recentB] = await Promise.allSettled([
       fetchRowsAny('orders', [
-        `${shopFilter}&deleted_at=is.null&order=created_at.desc&limit=5&select=id,order_code,name,phone,address,cod_amount,platform,status,created_at`,
-        `${shopFilter}&deleted_at=is.null&order=created_at.desc&limit=5&select=id,order_code,customer_name,phone,address,cod_amount,platform,status,created_at`
+        `${shopFilter}&deleted_at=is.null&order=created_at.desc&limit=10&select=id,order_code,name,phone,address,cod_amount,platform,status,created_at`,
+        `${shopFilter}&deleted_at=is.null&order=created_at.desc&limit=10&select=id,order_code,customer_name,phone,address,cod_amount,platform,status,created_at`
       ]),
       fetchRowsAny('submitted_orders', [
-        `${shopFilter}&order=submitted_at.desc&limit=5&select=id,order_code,tracking_code,name,phone,address,cod_amount,platform,status,submitted_at`,
-        `${shopFilter}&order=submitted_at.desc&limit=5&select=id,order_code,tracking_code,customer_name,phone,address,cod_amount,platform,status,submitted_at`
+        `${shopFilter}&order=submitted_at.desc&limit=10&select=id,order_code,tracking_code,name,phone,address,cod_amount,platform,status,submitted_at`,
+        `${shopFilter}&order=submitted_at.desc&limit=10&select=id,order_code,tracking_code,customer_name,phone,address,cod_amount,platform,status,submitted_at`
       ])
     ]);
 
@@ -489,42 +572,80 @@ export default function Overview({ setActiveTab, uiRole }) {
       if (bothFailed) {
         setRecentState('error');
       } else {
-        const rows = [];
+        const getOrderKeys = (r) => {
+          const keys = [];
+          const id = String(r.id || '').trim();
+          const savedId = String(r.saved_order_id || r.savedOrderId || '').trim();
+          const tracking = String(r.tracking_code || r.trackingCode || '').trim().toLowerCase();
+          const orderCode = String(r.order_code || r.orderCode || '').trim().toLowerCase();
+          const phone = String(r.phone || '').replace(/\D/g, '');
+          const customer = String(r.name || r.customer_name || '').trim().toLowerCase();
+
+          if (id) keys.push('id_' + id);
+          if (savedId && savedId !== '—' && savedId !== '-') keys.push('id_' + savedId);
+          if (tracking && tracking !== '—' && tracking !== '-' && tracking !== 'chờ cập nhật mã') {
+            keys.push('tr_' + tracking);
+          }
+          if (phone && phone.length >= 9 && orderCode && orderCode !== '—' && orderCode !== '-') keys.push('oc_' + phone + '_' + orderCode);
+          return keys;
+        };
+
+        const seenKeys = new Set();
+        const recentOrdersList = [];
+
+        // 1. Ưu tiên hàng đầu cho các đơn đã gửi (submitted_orders)
+        (okOr(recentB) || []).forEach(r => {
+          const keys = getOrderKeys(r);
+          const isSeen = keys.some(k => seenKeys.has(k));
+          if (!isSeen) {
+            keys.forEach(k => seenKeys.add(k));
+            recentOrdersList.push({
+              key: 'sub-' + r.id,
+              type: 'submitted',
+              id: r.id,
+              code: r.order_code || '#' + String(r.id).slice(0, 8),
+              customer: r.name || r.customer_name || '—',
+              phone: r.phone || '—',
+              address: r.address || '—',
+              cod: Number(r.cod_amount) || 0,
+              carrier: carrierLabel(r.platform),
+              status: r.status || 'submitted',
+              trackingCode: r.tracking_code || '',
+              createdAt: r.submitted_at || r.created_at,
+              submittedAt: r.submitted_at
+            });
+          }
+        });
+
+        // 2. Thêm các đơn nháp thực sự (chưa được gửi / không trùng với bất kỳ đơn đã gửi nào)
         (okOr(recentA) || []).forEach(r => {
-        rows.push({
-          key: 'draft-' + r.id,
-          type: 'draft',
-          id: r.id,
-          code: r.order_code || '#' + String(r.id).slice(0, 8),
-          customer: r.name || r.customer_name || '—',
-          phone: r.phone || '—',
-          address: r.address || '—',
-          cod: Number(r.cod_amount) || 0,
-          carrier: carrierLabel(r.platform),
-          status: r.status || 'draft',
-          createdAt: r.created_at,
-          updatedAt: r.updated_at
+          const s = String(r.status || '').toLowerCase();
+          // Nếu đơn trong bảng orders đã có status = submitted, bỏ qua vì đã nằm ở submitted_orders
+          if (s.includes('submitted')) return;
+
+          const keys = getOrderKeys(r);
+          const isSeen = keys.some(k => seenKeys.has(k));
+          if (!isSeen) {
+            keys.forEach(k => seenKeys.add(k));
+            recentOrdersList.push({
+              key: 'draft-' + r.id,
+              type: 'draft',
+              id: r.id,
+              code: r.order_code || '#' + String(r.id).slice(0, 8),
+              customer: r.name || r.customer_name || '—',
+              phone: r.phone || '—',
+              address: r.address || '—',
+              cod: Number(r.cod_amount) || 0,
+              carrier: carrierLabel(r.platform),
+              status: r.status || 'draft',
+              createdAt: r.created_at,
+              updatedAt: r.updated_at
+            });
+          }
         });
-      });
-      (okOr(recentB) || []).forEach(r => {
-        rows.push({
-          key: 'sub-' + r.id,
-          type: 'submitted',
-          id: r.id,
-          code: r.order_code || '#' + String(r.id).slice(0, 8),
-          customer: r.name || r.customer_name || '—',
-          phone: r.phone || '—',
-          address: r.address || '—',
-          cod: Number(r.cod_amount) || 0,
-          carrier: carrierLabel(r.platform),
-          status: r.status || 'submitted',
-          trackingCode: r.tracking_code || '',
-          createdAt: r.submitted_at || r.created_at,
-          submittedAt: r.submitted_at
-        });
-      });
-      rows.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setRecentOrders(rows.slice(0, 5));
+
+        recentOrdersList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setRecentOrders(recentOrdersList.slice(0, 5));
         setRecentState('ready');
       }
     }
@@ -533,6 +654,78 @@ export default function Overview({ setActiveTab, uiRole }) {
   }, [preset, customStart, customEnd, refreshTick, canConfigure]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  useEffect(() => {
+    let debounceTimer = null;
+    const triggerDebouncedLoad = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadAll();
+      }, 400);
+    };
+
+    // 1. Lắng nghe thay đổi storage từ chrome.storage.onChanged
+    const handleStorageChange = (changes, areaName) => {
+      if (areaName === 'local') {
+        const hasRelevantKey = Object.keys(changes).some(k => 
+          k.includes('submitted') || 
+          k.includes('order') || 
+          k === 'last_submitted_order_sync' || 
+          k === 'last_cloud_order_sync' || 
+          k === 'activeShopId'
+        );
+        if (hasRelevantKey) {
+          triggerDebouncedLoad();
+        }
+      }
+    };
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener(handleStorageChange);
+    }
+
+    // 2. Lắng nghe runtime message từ service worker hoặc panel
+    const handleRuntimeMessage = (msg) => {
+      if (msg && (
+        msg.type === 'cloud_sync_update' || 
+        msg.type === 'order_submitted' || 
+        msg.type === 'submitted_orders_updated' || 
+        msg.action === 'refresh_orders' || 
+        msg.action === 'ordersUpdated'
+      )) {
+        triggerDebouncedLoad();
+      }
+    };
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener(handleRuntimeMessage);
+    }
+
+    // 3. Lắng nghe custom events nội bộ từ window (phát từ App.jsx realtime hoặc OrderStorage)
+    window.addEventListener('submitted-orders-updated', triggerDebouncedLoad);
+    window.addEventListener('orders-updated', triggerDebouncedLoad);
+    window.addEventListener('order-saved-db', triggerDebouncedLoad);
+
+    const handleWindowStorage = (e) => {
+      if (e && e.key && (e.key.includes('submitted') || e.key.includes('order'))) {
+        triggerDebouncedLoad();
+      }
+    };
+    window.addEventListener('storage', handleWindowStorage);
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      window.removeEventListener('submitted-orders-updated', triggerDebouncedLoad);
+      window.removeEventListener('orders-updated', triggerDebouncedLoad);
+      window.removeEventListener('order-saved-db', triggerDebouncedLoad);
+      window.removeEventListener('storage', handleWindowStorage);
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      }
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
+      }
+    };
+  }, [loadAll]);
 
   useEffect(() => {
     if (!drawerOrder) return;
@@ -599,8 +792,8 @@ export default function Overview({ setActiveTab, uiRole }) {
     <div>
       <div className="dash-header">
         <div>
-          <h2 className="page-title">Shop Overview</h2>
-          <p className="dash-subtitle">Theo dõi hiệu quả vận hành cửa hàng của bạn.</p>
+          <h2 className="page-title">Tổng quan Cửa hàng</h2>
+          <p className="dash-subtitle">Theo dõi hiệu quả vận hành và xử lý đơn hàng của bạn.</p>
         </div>
         <div className="dash-controls">
           <select
@@ -665,7 +858,7 @@ export default function Overview({ setActiveTab, uiRole }) {
               delta={<DeltaBadge cur={kpis.revenue} prev={kpis.revenuePrev} suffix="%" />}
               sub={`Kỳ trước: ${compactVND(kpis.revenuePrev)}`}
             />
-            <div className="dash-kpi-card clickable" onClick={() => setActiveTab('orders')}>
+            <div className="dash-kpi-card clickable" onClick={() => setActiveTab('submitted-orders')}>
               <div className="dash-kpi-label">
                 <span className="dash-kpi-icon" style={{ background: 'var(--brand-50)', color: 'var(--brand-600)' }}><Package size={16} /></span>
                 Đơn hàng
@@ -684,7 +877,7 @@ export default function Overview({ setActiveTab, uiRole }) {
               sub={`Kỳ trước: ${kpis.ratePrev.toFixed(1)}%`}
             />
             <KpiCard
-              label="AI Parsed"
+              label="Lượt AI bóc tách"
               icon={<Zap size={16} />}
               iconBg="var(--color-warning-bg)"
               iconColor="var(--color-warning-text)"
@@ -706,8 +899,8 @@ export default function Overview({ setActiveTab, uiRole }) {
               <div className="dash-state-desc">
                 Tạo đơn hàng đầu tiên hoặc bóc tách đơn bằng AI để bắt đầu thấy dữ liệu trên dashboard.
               </div>
-              <button className="dash-btn dash-btn-primary" onClick={() => setActiveTab('orders')}>
-                <Plus size={14} /> Tạo đơn hàng đầu tiên
+              <button className="dash-btn dash-btn-primary" onClick={() => setActiveTab('submitted-orders')}>
+                <Plus size={14} /> Xem danh sách đơn hàng
               </button>
             </div>
           </div>
@@ -800,7 +993,7 @@ export default function Overview({ setActiveTab, uiRole }) {
                   <h3 className="dash-card-title">Đơn hàng gần đây</h3>
                   <span className="dash-card-sub">5 đơn mới nhất</span>
                 </div>
-                <button className="dash-btn dash-btn-sm" onClick={() => setActiveTab('orders')}>
+                <button className="dash-btn dash-btn-sm" onClick={() => setActiveTab('submitted-orders')}>
                   Xem tất cả <ArrowUpRight size={13} />
                 </button>
               </div>
@@ -866,7 +1059,7 @@ export default function Overview({ setActiveTab, uiRole }) {
           <Drawer
             order={drawerOrder}
             onClose={() => setDrawerOrder(null)}
-            onOpenOrders={() => { setDrawerOrder(null); setActiveTab('orders'); }}
+            onOpenOrders={() => { setDrawerOrder(null); setActiveTab('submitted-orders'); }}
           />
         </>
       )}

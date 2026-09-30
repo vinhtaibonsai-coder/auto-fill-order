@@ -144,16 +144,23 @@
 
   function waitFor(checkFn, timeout, interval) {
     timeout = timeout || 3000;
-    interval = interval || 100;
+    interval = interval || 25;
     return new Promise(function(resolve) {
       const start = Date.now();
-      (function tick() {
+      // Fast check immediately in current tick
+      try {
+        const immediate = checkFn();
+        if (immediate) { resolve(immediate); return; }
+      } catch (_) {}
+
+      function tick() {
         let result;
         try { result = checkFn(); } catch (e) { result = null; }
         if (result) { resolve(result); return; }
         if (Date.now() - start >= timeout) { resolve(null); return; }
         setTimeout(tick, interval);
-      })();
+      }
+      setTimeout(tick, Math.min(interval, 15));
     });
   }
 

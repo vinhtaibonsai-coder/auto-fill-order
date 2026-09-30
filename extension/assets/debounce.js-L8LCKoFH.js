@@ -1,0 +1,2 @@
+(function(){(()=>{function u(e,o){let t;return function(...l){const c=()=>{clearTimeout(t),e(...l)};clearTimeout(t),t=setTimeout(c,o)}}function i(e,o){let t;return function(...n){t||(e(...n),t=!0,setTimeout(()=>t=!1,o))}}globalThis.debounce=u,globalThis.throttle=i})();
+})()

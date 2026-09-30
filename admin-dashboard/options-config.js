@@ -1,3 +1,4 @@
+function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 (() => {
 // options-config.js — extracted from options.js
 // =========================================================================
@@ -625,9 +626,7 @@ async function checkAiGatewayStatus() {
     // Gọp tin AI gateway qua background service worker
     const result = await new Promise((resolve) => {
       chrome.runtime.sendMessage({
-        action: 'runGroq',
-        text: 'Khởi động kiểm tra',
-        localResult: {}
+        action: 'checkAiGatewayHealth'
       }, (res) => resolve(res || { ok: false, error: 'No response' }));
     });
 

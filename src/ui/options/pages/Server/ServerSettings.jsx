@@ -68,34 +68,39 @@ export default function ServerSettings({ compact = false }) {
   };
 
   const tone = {
-    ok: { bg: '#ecfdf5', border: '#bbf7d0', color: '#047857' },
-    warn: { bg: '#fffbeb', border: '#fde68a', color: '#92400e' },
-    error: { bg: '#fef2f2', border: '#fecaca', color: '#991b1b' },
-    idle: { bg: '#f8fafc', border: '#e2e8f0', color: '#334155' }
-  }[status.type] || {};
+    ok: { bg: 'var(--color-success-bg)', border: 'rgba(16, 185, 129, 0.3)', color: 'var(--color-success-text)' },
+    warn: { bg: 'var(--color-warning-bg)', border: 'rgba(245, 158, 11, 0.3)', color: 'var(--color-warning-text)' },
+    error: { bg: 'var(--color-danger-bg)', border: 'rgba(239, 68, 68, 0.3)', color: 'var(--color-danger-text)' },
+    idle: { bg: 'var(--bg)', border: 'var(--border)', color: 'var(--text-muted)' }
+  }[status.type] || { bg: 'var(--bg)', border: 'var(--border)', color: 'var(--text-muted)' };
 
   return (
     <div style={{ maxWidth: compact ? '100%' : '800px' }}>
-      {!compact && <h2 className="page-title">Server Connection</h2>}
-      <div className="card" style={{ padding: compact ? '20px' : undefined }}>
-        <h3 style={{ marginTop: 0, marginBottom: '8px' }}>Máy chủ Supabase</h3>
-        <p style={{ color: 'var(--text-muted, #64748b)', marginTop: 0, marginBottom: '18px', fontSize: '13px' }}>
-          Cấu hình này được lưu trong Chrome local storage của extension và dùng cho đăng nhập, AI Gateway, đồng bộ Cloud, Options và Admin.
+      {!compact && <h2 className="page-title">Kết Nối Máy Chủ Supabase</h2>}
+      <div className="card" style={{ padding: compact ? '20px' : '24px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Máy chủ Đám mây (Supabase Cloud)</h3>
+          <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)' }}>
+            Quản trị viên / Admin
+          </span>
+        </div>
+        <p style={{ color: 'var(--text-muted)', marginTop: 0, marginBottom: '18px', fontSize: '13px', lineHeight: '1.4' }}>
+          Cấu hình kết nối cơ sở dữ liệu Supabase Cloud của toàn bộ tiện ích. Tiện ích đã được cấu hình sẵn máy chủ mặc định, chỉ Quản trị viên hệ thống (Master Admin) mới cần thay đổi khi chuyển đổi hạ tầng server.
         </p>
 
         <div style={{ display: 'grid', gap: '14px' }}>
-          <label style={{ display: 'grid', gap: '6px', fontSize: '13px', fontWeight: 700, color: '#334155' }}>
+          <label style={{ display: 'grid', gap: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
             Supabase URL
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://your-project.supabase.co"
               spellCheck={false}
-              style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontFamily: 'monospace', fontSize: '13px' }}
+              style={{ padding: '10px 12px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg)', color: 'var(--text-main)', fontFamily: 'monospace', fontSize: '13px', outline: 'none' }}
             />
           </label>
 
-          <label style={{ display: 'grid', gap: '6px', fontSize: '13px', fontWeight: 700, color: '#334155' }}>
+          <label style={{ display: 'grid', gap: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
             Supabase Anon Key
             <textarea
               value={anonKey}
@@ -103,7 +108,7 @@ export default function ServerSettings({ compact = false }) {
               placeholder="eyJhbGciOiJIUzI1Ni..."
               spellCheck={false}
               rows={compact ? 3 : 4}
-              style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontFamily: 'monospace', fontSize: '12px', resize: 'vertical' }}
+              style={{ padding: '10px 12px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg)', color: 'var(--text-main)', fontFamily: 'monospace', fontSize: '12px', resize: 'vertical', outline: 'none' }}
             />
           </label>
 
@@ -112,7 +117,7 @@ export default function ServerSettings({ compact = false }) {
               type="button"
               onClick={handleSave}
               disabled={isBusy}
-              style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '9px 14px', borderRadius: '8px', fontWeight: 700, cursor: isBusy ? 'default' : 'pointer' }}
+              style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: isBusy ? 'default' : 'pointer', boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)' }}
             >
               Lưu cấu hình
             </button>
@@ -120,13 +125,13 @@ export default function ServerSettings({ compact = false }) {
               type="button"
               onClick={handleSaveAndTest}
               disabled={isBusy}
-              style={{ background: '#fff', color: '#334155', border: '1px solid #cbd5e1', padding: '9px 14px', borderRadius: '8px', fontWeight: 700, cursor: isBusy ? 'default' : 'pointer' }}
+              style={{ background: 'var(--card)', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '9px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: isBusy ? 'default' : 'pointer' }}
             >
-              {isBusy ? 'Đang xử lý...' : 'Lưu và kiểm tra'}
+              {isBusy ? 'Đang xử lý...' : '🔍 Lưu và kiểm tra'}
             </button>
           </div>
 
-          <div style={{ background: tone.bg, border: `1px solid ${tone.border}`, color: tone.color, padding: '10px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 600 }}>
+          <div style={{ background: tone.bg, border: `1px solid ${tone.border}`, color: tone.color, padding: '12px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600 }}>
             {status.text}
           </div>
         </div>

@@ -1,0 +1,18 @@
+{
+  "name": "Auto Fill Orders - Bán Hàng & Vận Đơn",
+  "short_name": "AF Orders",
+  "description": "Hệ thống bóc tách tin nhắn AI và quản lý vận đơn VNPost, J&T Express trên điện thoại",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

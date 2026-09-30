@@ -1,97 +1,184 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Rocket, Plus, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { AdminService } from '../../../../domain/admin/admin.service.js';
+import PublishReleaseModal from '../../modals/PublishReleaseModal';
 
 export default function ReleaseCenter() {
-  const [releases, setReleases] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  const fetchReleases = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setError('');
-    const res = await AdminService.getReleaseVersions();
-    if (res.success) {
-      setReleases(res.data || []);
+    const r = await AdminService.getReleaseVersions();
+    if (r.success) {
+      setRows(r.data || []);
     } else {
-      setError(res.error || 'Lỗi tải danh sách phiên bản');
+      alert(r.error);
     }
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchReleases();
-  }, [fetchReleases]);
+    load();
+  }, [load]);
+
+  const publish = async (data) => {
+    const r = await AdminService.publishRelease(data);
+    if (r.success) {
+      setOpen(false);
+      load();
+    } else {
+      alert(r.error);
+    }
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ display: 'grid', gap: 20 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ margin: 0 }}>🚀 Extension Release & Version Control</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0 0' }}>
-            Quản lý các phiên bản Extension Chrome phát hành, cấu hình ép buộc cập nhật (Force Update) và Release Notes.
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Rocket size={22} color="#2563eb" />
+            Trung Tâm Phát Hành Extension (Release Center)
+          </h2>
+          <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
+            Quản lý các phiên bản cập nhật, phiên bản tối thiểu, bắt buộc nâng cấp (force update) và rollout theo tỷ lệ %
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+
+        <div style={{ display: 'flex', gap: 8 }}>
           <button
-            onClick={fetchReleases}
-            style={{ background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
+            onClick={load}
+            style={{
+              padding: '7px 12px',
+              fontSize: 12,
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: 8,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
+            }}
           >
-            🔄 Refresh
+            <RefreshCw size={13} className={loading ? 'dash-spin' : ''} /> Tải lại
           </button>
-          <button style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}>
-            ✨ Phát hành phiên bản mới
+          <button
+            onClick={() => setOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '7px 14px',
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 2px 4px rgba(37,99,235,0.25)'
+            }}
+          >
+            <Plus size={15} /> Phát hành phiên bản mới
           </button>
         </div>
       </div>
 
-      {error && (
-        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '6px', fontSize: '13px' }}>
-          ⚠️ {error}
-        </div>
-      )}
-
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
-              <th style={{ padding: '12px 16px' }}>Phiên bản</th>
-              <th style={{ padding: '12px 16px' }}>Min Version hỗ trợ</th>
-              <th style={{ padding: '12px 16px' }}>Force Update</th>
-              <th style={{ padding: '12px 16px' }}>Tỷ lệ Rollout</th>
-              <th style={{ padding: '12px 16px' }}>Ghi chú phát hành</th>
-              <th style={{ padding: '12px 16px' }}>Ngày phát hành</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="6" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>⏳ Đang tải dữ liệu...</td></tr>
-            ) : releases.length === 0 && !error ? (
-              <tr><td colSpan="6" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>Chưa có phiên bản release nào.</td></tr>
-            ) : (
-              releases.map(rel => (
-                <tr key={rel.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#2563eb' }}>{rel.version}</td>
-                  <td style={{ padding: '12px 16px', color: '#64748b' }}>{rel.min_supported_version || '—'}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{
-                      background: rel.is_force_update ? '#fee2e2' : '#f1f5f9',
-                      color: rel.is_force_update ? '#991b1b' : '#64748b',
-                      padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600
-                    }}>
-                      {rel.is_force_update ? 'YES (Bắt buộc)' : 'NO'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#16a34a' }}>{rel.rollout_percentage}%</td>
-                  <td style={{ padding: '12px 16px', color: '#334155' }}>{rel.release_notes}</td>
-                  <td style={{ padding: '12px 16px', color: '#64748b' }}>
-                    {rel.created_at ? new Date(rel.created_at).toLocaleDateString('vi-VN') : '—'}
+      {/* Table */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Phiên bản</th>
+                <th>Phiên bản tối thiểu</th>
+                <th>Cập nhật bắt buộc</th>
+                <th>Tỷ lệ Rollout</th>
+                <th>Ghi chú phát hành</th>
+                <th>Ngày phát hành</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '36px 20px', color: '#94a3b8' }}>
+                    {loading ? 'Đang tải lịch sử phiên bản...' : 'Chưa có bản phát hành nào.'}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                rows.map(r => (
+                  <tr key={r.id}>
+                    <td>
+                      <span
+                        style={{
+                          background: '#eff6ff',
+                          color: '#1d4ed8',
+                          border: '1px solid #bfdbfe',
+                          padding: '3px 8px',
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontWeight: 800
+                        }}
+                      >
+                        v{r.version}
+                      </span>
+                      {r.download_url && (
+                        <a
+                          href={r.download_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ marginLeft: 8, fontSize: 11, color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}
+                          title={r.download_url}
+                        >
+                          📦 Tải về
+                        </a>
+                      )}
+                    </td>
+                    <td>
+                      <span style={{ color: '#475569', fontSize: 12.5 }}>
+                        {r.min_supported_version ? `v${r.min_supported_version}` : '—'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${r.is_force_update ? 'badge-danger' : 'badge-success'}`}>
+                        {r.is_force_update ? 'Bắt buộc (Force)' : 'Tùy chọn'}
+                      </span>
+                    </td>
+                    <td>
+                      {(() => {
+                        const hasRollout = typeof r.rollout_percentage === 'number' && Number.isFinite(r.rollout_percentage);
+                        const pct = hasRollout ? Math.max(0, Math.min(100, Math.round(r.rollout_percentage))) : null;
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ width: 60, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
+                              <div style={{ width: `${hasRollout ? pct : 0}%`, height: '100%', background: '#2563eb' }} />
+                            </div>
+                            <span style={{ fontWeight: 700, fontSize: 12, color: '#0f172a' }}>
+                              {hasRollout ? `${pct}%` : '—'}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td>
+                      <span style={{ color: '#334155', fontSize: 13 }}>{r.release_notes || '—'}</span>
+                    </td>
+                    <td>
+                      <span style={{ color: '#64748b', fontSize: 12 }}>
+                        {new Date(r.created_at).toLocaleString('vi-VN')}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      <PublishReleaseModal open={open} onClose={() => setOpen(false)} onSubmit={publish} />
     </div>
   );
 }

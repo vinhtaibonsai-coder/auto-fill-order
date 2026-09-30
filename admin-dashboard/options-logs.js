@@ -249,7 +249,7 @@ async function loadAuditLogs(forceCloud = false) {
       const devices = Array.from(new Set(allAuditLogs.map(l => l.device_name).filter(Boolean)));
       const cur = logsFilterDevice.value;
       logsFilterDevice.innerHTML = '<option value="">-- Tất cả Máy --</option>' +
-        devices.map(d => `<option value="${d}">${d}</option>`).join('');
+        devices.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
       if (devices.includes(cur)) logsFilterDevice.value = cur;
     }
   } catch (err) {

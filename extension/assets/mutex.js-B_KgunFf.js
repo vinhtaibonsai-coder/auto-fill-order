@@ -1,0 +1,2 @@
+(function(){(()=>{const t=new Map,r={async acquire(e,n=8e3){const s=Date.now();if(t.has(e)){const u=t.get(e);if(s-u>n)console.warn(`[Mutex] Khóa "${e}" bị giữ quá ${n}ms, tự động giải phóng.`),t.delete(e);else return!1}return t.set(e,s),!0},release(e){t.delete(e)},isLocked(e,n=8e3){return t.has(e)?Date.now()-t.get(e)>n?(t.delete(e),!1):!0:!1}};globalThis.Mutex=r})();
+})()

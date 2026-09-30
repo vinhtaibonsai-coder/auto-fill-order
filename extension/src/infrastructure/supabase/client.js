@@ -8,6 +8,7 @@
 
   SupabaseCloud._deviceId = null;
   SupabaseCloud._deviceName = '';
+  SupabaseCloud._clientContext = null;
   SupabaseCloud.isConnected = false;
 
   SupabaseCloud._savedUrl = '';
@@ -20,11 +21,50 @@
     return { url, anonKey };
   };
 
+  // A "client installation" is scoped to one Extension install or one Web origin.
+  // It is intentionally not presented as a physical-computer identifier because
+  // browser sandboxes cannot prove that an Extension and a website share hardware.
+  SupabaseCloud.getClientContext = function(surfaceHint = null) {
+    if (this._clientContext && !surfaceHint) return this._clientContext;
+
+    const isExtensionRuntime = Boolean(
+      typeof chrome !== 'undefined' && chrome.runtime?.id && chrome.runtime?.getURL
+    );
+    const locationRef = typeof window !== 'undefined' ? window.location : null;
+    const hostname = String(locationRef?.hostname || '').toLowerCase();
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname.endsWith('.localhost');
+    const environment = isLocalHost ? 'LOCAL' : 'PRODUCTION';
+
+    let surface = surfaceHint;
+    if (!surface) {
+      const pathname = String(locationRef?.pathname || '').toLowerCase();
+      if (isExtensionRuntime && typeof window === 'undefined') surface = 'EXTENSION_SERVICE_WORKER';
+      else if (isExtensionRuntime && locationRef?.protocol === 'chrome-extension:' && pathname.includes('options')) surface = 'EXTENSION_OPTIONS';
+      else if (isExtensionRuntime && locationRef?.protocol === 'chrome-extension:') surface = 'EXTENSION_WORKSPACE';
+      else if (isExtensionRuntime) surface = 'EXTENSION_PANEL';
+      else if (pathname.includes('admin')) surface = 'WEB_ADMIN';
+      else surface = 'WEB_WORKSPACE';
+    }
+
+    const context = {
+      clientType: isExtensionRuntime ? 'EXTENSION' : 'WEB',
+      environment: environment,
+      surface,
+      originHost: isExtensionRuntime ? `chrome-extension://${chrome.runtime.id}` : String(locationRef?.host || 'unknown'),
+      isBillable: isExtensionRuntime && environment === 'PRODUCTION'
+    };
+    if (!surfaceHint) this._clientContext = context;
+    return context;
+  };
+
   SupabaseCloud.saveConfig = async function(url, anonKey) {
     const u = (url || '').trim();
     const k = (anonKey || '').trim();
     this._savedUrl = u;
     this._savedAnonKey = k;
+    this._clientInstance = null;
+    if (typeof window !== 'undefined') window.supabaseClient = null;
+    if (typeof globalThis !== 'undefined') globalThis.supabaseClient = null;
     if (typeof SUPABASE_CONFIG !== 'undefined') {
       SUPABASE_CONFIG.url = u;
       SUPABASE_CONFIG.anonKey = k;
@@ -83,6 +123,71 @@
     });
   };
 
+  SupabaseCloud._clientInstance = null;
+  SupabaseCloud._clientInitPromise = null;
+
+  SupabaseCloud.getSupabaseClient = async function() {
+    const existing = (typeof window !== 'undefined' && window.supabaseClient)
+      || (typeof globalThis !== 'undefined' && globalThis.supabaseClient)
+      || this._clientInstance;
+    if (existing) return existing;
+
+    if (this._clientInitPromise) {
+      return this._clientInitPromise;
+    }
+
+    this._clientInitPromise = (async () => {
+      try {
+        const configRes = await this.loadConfig();
+        if (!configRes?.url || !configRes?.anonKey) return null;
+
+        const checkAgain = (typeof window !== 'undefined' && window.supabaseClient)
+          || (typeof globalThis !== 'undefined' && globalThis.supabaseClient)
+          || this._clientInstance;
+        if (checkAgain) return checkAgain;
+
+        let createClientFn = null;
+        if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
+          createClientFn = window.supabase.createClient;
+        } else {
+          try {
+            const mod = await import('@supabase/supabase-js');
+            createClientFn = mod.createClient;
+          } catch (_) {
+            if (typeof globalThis !== 'undefined' && globalThis.supabase && typeof globalThis.supabase.createClient === 'function') {
+              createClientFn = globalThis.supabase.createClient;
+            }
+          }
+        }
+
+        if (!createClientFn) {
+          return null;
+        }
+
+        const client = createClientFn(configRes.url, configRes.anonKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+            storageKey: 'sb-afo-singleton-auth'
+          }
+        });
+
+        this._clientInstance = client;
+        if (typeof window !== 'undefined') window.supabaseClient = client;
+        if (typeof globalThis !== 'undefined') globalThis.supabaseClient = client;
+        return client;
+      } catch (e) {
+        console.warn('[SupabaseCloud.getSupabaseClient] Error initializing client:', e);
+        return null;
+      } finally {
+        this._clientInitPromise = null;
+      }
+    })();
+
+    return this._clientInitPromise;
+  };
+
   SupabaseCloud._url = function(path) {
     const cfg = this._getConfig();
     const baseUrl = (cfg.url || '').trim().replace(/\/$/, '');
@@ -96,14 +201,72 @@
     if (!token && typeof AuthSession !== 'undefined' && AuthSession._cachedToken) {
       token = AuthSession._cachedToken;
     }
-    if (!token) token = key;
+    // A valid Supabase JWT must have 3 dot-separated segments.
+    // If token is a PIN session token (e.g. pin_sess_* or token_*), it is NOT a JWT and must not be used as Bearer token for PostgREST!
+    const isJwt = typeof token === 'string' && token.split('.').length === 3;
+    const bearerToken = isJwt ? token : key;
 
     return {
       'apikey': key,
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${bearerToken}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation,resolution=merge-duplicates'
     };
+  };
+
+  SupabaseCloud._normalizeCarrierCode = function(value) {
+    if (!value) return '';
+    if (typeof value === 'object') {
+      return this._normalizeCarrierCode(
+        value.id || value.ID || value.code || value.carrier_id || value.carrierId ||
+        value.title || value.TITLE || value.name || value.label || ''
+      );
+    }
+    const raw = String(value).trim();
+    if (!raw) return '';
+    if (raw.startsWith('{')) {
+      try {
+        return this._normalizeCarrierCode(JSON.parse(raw));
+      } catch (_) {}
+    }
+    const key = raw.toLowerCase().replace(/\s+/g, '');
+    if (key.includes('vnpost') || key.includes('vietnampost') || key.includes('buudien')) return 'vnpost';
+    if (key === 'jt' || key.includes('j&t') || key.includes('jtexpress')) return 'jt';
+    return raw;
+  };
+
+  SupabaseCloud._stableSubmittedOrderId = function(order) {
+    const clean = value => String(value || '').trim();
+    const slug = value => clean(value).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60);
+    const tracking = slug(order.trackingCode || order.tracking_code || order.waybill_code);
+    if (tracking && tracking !== '_' && tracking !== '-') return `sub_track_${tracking}`;
+
+    const savedId = slug(order.savedOrderId || order.saved_order_id);
+    if (savedId && savedId !== '_') return `sub_saved_${savedId}`;
+
+    const phone = clean(order.phone).replace(/\D/g, '');
+    const orderCode = slug(order.orderCode || order.order_code);
+    if (phone && orderCode && orderCode !== '_') return `sub_order_${phone}_${orderCode}`;
+
+    return '';
+  };
+
+  SupabaseCloud._hasSubmittedCustomer = function(order) {
+    const name = String(order?.name || order?.customer_name || '').trim();
+    const phone = String(order?.phone || '').replace(/\D/g, '');
+    return (name && name !== '-' && name !== '—' && name.length >= 2) || phone.length >= 9;
+  };
+
+  SupabaseCloud.updateSubmittedOrderTracking = async function(orderId, trackingCode) {
+    if (!orderId || !trackingCode) return false;
+    const encoded = encodeURIComponent(String(orderId));
+    const body = JSON.stringify({ tracking_code: String(trackingCode).trim() });
+    const resp = await fetch(this._url(`submitted_orders?or=(id.eq.${encoded},saved_order_id.eq.${encoded})`), {
+      method: 'PATCH',
+      headers: this._headers(),
+      body
+    });
+    return resp.ok;
   };
 
   SupabaseCloud.testConnection = async function() {
@@ -214,22 +377,35 @@
 
   SupabaseCloud._getDeviceId = async function() {
     if (this._deviceId) return this._deviceId;
+    const clientContext = this.getClientContext();
+    const prefix = clientContext.clientType === 'EXTENSION' ? 'ext_' : 'web_';
     return new Promise(resolve => {
       try {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.get(['fbDeviceId'], r => {
-            if (r.fbDeviceId) { this._deviceId = r.fbDeviceId; resolve(r.fbDeviceId); return; }
-            const id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
+        if (clientContext.clientType === 'EXTENSION' && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.get(['device_id', 'fbDeviceId'], r => {
+            const existing = r.device_id || r.fbDeviceId;
+            if (existing) {
+              this._deviceId = existing;
+              chrome.storage.local.set({ device_id: existing, fbDeviceId: existing });
+              resolve(existing);
+              return;
+            }
+            const id = prefix + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
             this._deviceId = id;
-            chrome.storage.local.set({ fbDeviceId: id }, () => resolve(id));
+            chrome.storage.local.set({ device_id: id, fbDeviceId: id }, () => resolve(id));
           });
         } else {
-          let id = localStorage.getItem('fbDeviceId');
-          if (!id) { id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12); localStorage.setItem('fbDeviceId', id); }
+          // Web IDs are origin-scoped by the browser. Preserve a legacy ID once,
+          // then move it to an explicit key so it cannot be confused with Extension storage.
+          let id = localStorage.getItem('web_device_id') || localStorage.getItem('device_id') || localStorage.getItem('fbDeviceId');
+          if (!id) {
+            id = prefix + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
+          }
+          localStorage.setItem('web_device_id', id);
           this._deviceId = id;
           resolve(id);
         }
-      } catch (e) { resolve('dev_fallback_' + Date.now()); }
+      } catch (e) { resolve(prefix + 'fallback_' + Date.now()); }
     });
   };
 
@@ -244,6 +420,17 @@
           return null;
         }
         if (session && session.access_token) return session.access_token;
+      }
+      if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+        const s = await new Promise(r => chrome.storage.local.get(['vnpost_session'], r));
+        if (s?.vnpost_session?.access_token) return s.vnpost_session.access_token;
+      }
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('vnpost_session') || localStorage.getItem('sb-session') || localStorage.getItem('afo_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.access_token) return parsed.access_token;
+        }
       }
     } catch (_) {}
     return null;
@@ -272,68 +459,243 @@
   };
 
   // Kiểm tra thiết bị hiện tại có bị thu hồi (revoked) trong extension_devices.
-  // Trả về: { revoked: boolean } hoặc { ok:false } khi chưa có token / chưa có thiết bị.
+  // Trả về: { ok: true, revoked: boolean, status: string } hoặc { ok: false, reason: string }
   SupabaseCloud.checkDeviceRevoked = async function() {
     try {
       await this.loadConfig();
-      await this._getDeviceId();
+      const devId = await this._getDeviceId();
       const token = await this._sessionToken();
       if (!token) return { ok: false, reason: 'NO_TOKEN' };
 
       const cfg = this._getConfig();
       const baseUrl = (cfg.url || '').trim().replace(/\/$/, '');
-      const resp = await fetch(
-        `${baseUrl}/rest/v1/extension_devices?select=device_id,revoked&device_id=eq.${encodeURIComponent(this._deviceId)}`,
-        { headers: this._headers(token), cache: 'no-store' }
-      );
+      if (!baseUrl) return { ok: false, reason: 'NO_CONFIG_URL' };
+
+      let activeShopId = null;
+      try {
+        if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSession === 'function') {
+          activeShopId = (await AuthSession.getSession())?.active_shop_id || null;
+        }
+        if (!activeShopId && typeof chrome !== 'undefined' && chrome.storage?.local) {
+          const stored = await new Promise(resolve => chrome.storage.local.get(['active_shop_id', 'current_shop_id', 'vnpost_session'], resolve));
+          activeShopId = stored?.active_shop_id || stored?.current_shop_id || stored?.vnpost_session?.active_shop_id || null;
+        }
+      } catch (_) {}
+
+      // Truy vấn thiết bị theo device_id hoặc id
+      let queryUrl = `${baseUrl}/rest/v1/extension_devices?select=id,device_id,shop_id,revoked,approved,status&or=(device_id.eq.${encodeURIComponent(devId)},id.eq.${encodeURIComponent(devId)})`;
+      if (activeShopId) {
+        queryUrl += `&shop_id=eq.${encodeURIComponent(activeShopId)}`;
+      }
+
+      const resp = await fetch(queryUrl, {
+        headers: this._headers(token),
+        cache: 'no-store'
+      });
       if (!resp.ok) return { ok: false, reason: 'HTTP_' + resp.status };
       const rows = await resp.json();
-      const match = (rows || []).find(r => r.device_id === this._deviceId);
-      return { ok: true, revoked: !!(match && match.revoked) };
+
+      let match = (rows || []).find(r => r.device_id === devId || r.id === devId);
+      if (!match && activeShopId) {
+        const globalResp = await fetch(
+          `${baseUrl}/rest/v1/extension_devices?select=id,device_id,shop_id,revoked,approved,status&or=(device_id.eq.${encodeURIComponent(devId)},id.eq.${encodeURIComponent(devId)})`,
+          { headers: this._headers(token), cache: 'no-store' }
+        );
+        if (globalResp.ok) {
+          const globalRows = await globalResp.json();
+          match = (globalRows || []).find(r => r.device_id === devId || r.id === devId);
+        }
+      }
+
+      if (!match) {
+        return { ok: true, status: 'unregistered', revoked: false };
+      }
+
+      const isRevoked = !!(
+        match.revoked === true ||
+        match.approved === false ||
+        ['blocked', 'suspended', 'revoked'].includes(String(match.status || '').toLowerCase())
+      );
+
+      return {
+        ok: true,
+        status: String(match.status || (isRevoked ? 'revoked' : 'active')).toLowerCase(),
+        revoked: isRevoked,
+        device: match
+      };
     } catch (e) {
-      return { ok: false, reason: 'ERR' };
+      return { ok: false, reason: 'ERR', error: e?.message };
     }
+  };
+
+  SupabaseCloud._getDeviceFingerprint = async function() {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    const language = typeof navigator !== 'undefined' ? navigator.language || '' : '';
+    const platform = typeof navigator !== 'undefined' ? navigator.platform || '' : '';
+    const timezone = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone || '' : '';
+    const screenSize = typeof screen !== 'undefined' ? `${screen.width}x${screen.height}x${screen.colorDepth}` : '';
+    const source = [ua, language, platform, timezone, screenSize].join('|');
+    if (!globalThis.crypto?.subtle) return source;
+    const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(source));
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
   };
 
   // Upsert thiết bị hiện tại vào bảng extension_devices (cần JWT để auth.uid()).
   SupabaseCloud.syncDeviceRecord = async function() {
     try {
       await this.loadConfig();
-      await this._getDeviceId();
-      await this._getDeviceName();
+      const cfg = this.config || (typeof this._getConfig === 'function' ? this._getConfig() : null) || {};
+      const baseUrl = (cfg.url || '').trim().replace(/\/$/, '');
+      const anonKey = cfg.anonKey || '';
+      if (!baseUrl) return { ok: false, reason: 'NO_CONFIG_URL' };
+
+      const deviceId = await this._getDeviceId();
+      const clientContext = this.getClientContext();
+      const rawName = await this._getDeviceName();
       const token = await this._sessionToken();
       if (!token) return { ok: false, reason: 'NO_TOKEN' };
 
-      const deviceId = this._deviceId;
-      const name = this._deviceName || ('Chrome (' + (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.includes('Mac') ? 'Mac' : 'Windows') + ')');
+      // Thu thập thông tin Trình duyệt & Phần cứng chuyên sâu
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+      let browserName = 'Google Chrome';
+      if (/coc_coc_browser|coccoc/i.test(ua)) browserName = 'Cốc Cốc';
+      else if (/edg\//i.test(ua)) browserName = 'Microsoft Edge';
+      else if (typeof navigator !== 'undefined' && navigator.brave) browserName = 'Brave Browser';
+      else if (/opr\/|opera/i.test(ua)) browserName = 'Opera';
+      else if (/firefox\//i.test(ua)) browserName = 'Mozilla Firefox';
+      else if (/safari\//i.test(ua) && !/chrome/i.test(ua)) browserName = 'Apple Safari';
 
-      // Lấy user_id (UUID) của người đang đăng nhập
-      let userId = null;
+      const osInfo = /Windows NT 10/.test(ua) ? 'Windows 10/11 (64-bit)'
+        : /Windows NT 6\.3/.test(ua) ? 'Windows 8.1'
+        : /Windows NT 6\.1/.test(ua) ? 'Windows 7'
+        : /Mac OS X/.test(ua) ? 'macOS (Apple Silicon/Intel)'
+        : /Android/.test(ua) ? 'Android OS'
+        : /Linux/.test(ua) ? 'Linux' : 'Hệ điều hành khác';
+
+      const clientVersion = typeof chrome !== 'undefined' && chrome.runtime?.getManifest
+        ? chrome.runtime.getManifest().version : 'v2.4 Pro';
+
+      const name = rawName || this._deviceName || `${browserName} (${osInfo.split(' ')[0]})`;
+
+      // Lấy Shop ID đang hoạt động nếu có
+      let activeShopId = null;
       try {
-        if (typeof AuthSession !== 'undefined' && AuthSession.getUser) {
-          const user = await AuthSession.getUser();
-          if (user && user.id) userId = user.id;
+        if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSession === 'function') {
+          const sess = await AuthSession.getSession();
+          if (sess?.active_shop_id) activeShopId = sess.active_shop_id;
+        }
+        if (!activeShopId && typeof chrome !== 'undefined' && chrome.storage?.local) {
+          const store = await new Promise(r => chrome.storage.local.get(['active_shop_id', 'current_shop_id', 'fbActiveShopId', 'vnpost_session'], r));
+          activeShopId = store.active_shop_id || store.current_shop_id || store.fbActiveShopId || store.vnpost_session?.active_shop_id || null;
+        }
+        if (!activeShopId && typeof localStorage !== 'undefined') {
+          const rawSess = localStorage.getItem('vnpost_session');
+          if (rawSess) activeShopId = JSON.parse(rawSess)?.active_shop_id || null;
         }
       } catch (_) {}
 
-      const cfg = this._getConfig();
-      const baseUrl = (cfg.url || '').trim().replace(/\/$/, '');
-      const lastSeen = new Date().toISOString();
-      const record = { device_id: deviceId, device_name: name, browser: 'Chrome', last_seen: lastSeen };
-      if (userId) record.user_id = userId;
-      const resp = await fetch(`${baseUrl}/rest/v1/extension_devices`, {
+      // Lấy thông tin user nếu có
+      let userFullName = null;
+      let userEmail = null;
+      try {
+        if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSession === 'function') {
+          const s = await AuthSession.getSession();
+          userFullName = s?.user?.full_name || s?.user?.user_metadata?.full_name || null;
+          userEmail = s?.user?.email || null;
+        }
+      } catch (_) {}
+
+      // Thu thập Telemetry phần cứng & Màn hình
+      const screenRes = typeof screen !== 'undefined' ? `${screen.width} x ${screen.height}` : '1920 x 1080';
+      const cpuCores = typeof navigator !== 'undefined' ? (navigator.hardwareConcurrency || 4) + ' cores' : '4 cores';
+      const memory = typeof navigator !== 'undefined' && navigator.deviceMemory ? `${navigator.deviceMemory} GB RAM` : '>= 8 GB';
+      const timezone = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Ho_Chi_Minh' : 'Asia/Ho_Chi_Minh';
+      const language = typeof navigator !== 'undefined' ? navigator.language || 'vi-VN' : 'vi-VN';
+
+      const metadata = {
+        browser: browserName,
+        os: osInfo,
+        staff_name: userFullName || (userEmail ? userEmail.split('@')[0] : null),
+        user_email: userEmail,
+        screenResolution: screenRes,
+        cpuCores,
+        deviceMemory: memory,
+        timezone,
+        language,
+        extensionVersion: clientVersion,
+        clientType: clientContext.clientType,
+        environment: clientContext.environment,
+        surface: clientContext.surface,
+        originHost: clientContext.originHost,
+        quotaEligible: clientContext.isBillable,
+        carrierContext: typeof window !== 'undefined' && window.location?.href.includes('vnpost') ? 'VNPost' : typeof window !== 'undefined' && window.location?.href.includes('jtexpress') ? 'J&T Express' : 'Extension',
+        lastUpdated: new Date().toISOString()
+      };
+
+      const fingerprintHash = typeof this._getDeviceFingerprint === 'function' ? await this._getDeviceFingerprint() : `fp_${deviceId}`;
+
+      const headers = {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      const richPayload = {
+        p_device_id: deviceId,
+        p_device_name: name,
+        p_browser: browserName,
+        p_os_info: osInfo,
+        p_client_version: clientVersion,
+        p_fingerprint_hash: fingerprintHash,
+        p_shop_id: activeShopId,
+        p_metadata: metadata,
+        p_client_type: clientContext.clientType,
+        p_environment: clientContext.environment,
+        p_surface: clientContext.surface,
+        p_origin_host: clientContext.originHost
+      };
+      const invokeRegistration = payload => fetch(`${baseUrl}/rest/v1/rpc/register_extension_device`, {
         method: 'POST',
-        headers: { ...this._headers(token), 'Prefer': 'resolution=merge-duplicates' },
-        body: JSON.stringify([record])
+        headers,
+        body: JSON.stringify(payload)
       });
-      return { ok: resp.ok };
+
+      let resp = await invokeRegistration(richPayload);
+      let data = await resp.json().catch(() => null);
+      if (!resp.ok && data?.code === 'PGRST202') {
+        // Never register Web as a legacy Extension device while the database
+        // migration is still pending. Extension keeps rollout compatibility.
+        if (clientContext.clientType !== 'EXTENSION') {
+          return {
+            ok: false,
+            reason: 'CLIENT_CONTEXT_SCHEMA_REQUIRED',
+            status: resp.status,
+            data
+          };
+        }
+        const legacyPayload = {
+          p_device_id: richPayload.p_device_id,
+          p_device_name: richPayload.p_device_name,
+          p_browser: richPayload.p_browser,
+          p_os_info: richPayload.p_os_info,
+          p_client_version: richPayload.p_client_version,
+          p_fingerprint_hash: richPayload.p_fingerprint_hash
+        };
+        resp = await invokeRegistration(legacyPayload);
+        data = await resp.json().catch(() => null);
+      }
+
+      const reason = data?.message || data?.details || data?.hint || (resp.ok ? null : `HTTP_${resp.status}`);
+      return { ok: resp.ok && data?.success !== false, data, reason, status: resp.status };
     } catch (e) {
-      return { ok: false, reason: 'ERR' };
+      console.warn('[SupabaseCloud.syncDeviceRecord] Error:', e);
+      return { ok: false, reason: e.message };
     }
   };
 
   SupabaseCloud.registerDevice = async function() {
-    if (!isBackground) {
+    const clientContext = this.getClientContext();
+    if (!isBackground && clientContext.clientType === 'EXTENSION' && typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
       return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage({ action: 'registerDevice' }, response => {
           const lastErr = chrome.runtime.lastError;
@@ -343,36 +705,7 @@
       });
     }
 
-    await this.loadConfig();
-    await this._getDeviceId();
-    await this._getDeviceName();
-    const deviceId = this._deviceId;
-    let platform = 'Windows';
-    if (typeof navigator !== 'undefined') {
-      const ua = navigator.userAgent || '';
-      if (ua.includes('Mac')) platform = 'Mac';
-      else if (ua.includes('Linux')) platform = 'Linux';
-      else if (ua.includes('Android')) platform = 'Android';
-      else if (ua.includes('iPhone') || ua.includes('iPad')) platform = 'iOS';
-    }
-    const defaultSmartName = 'Chrome (' + platform + ')';
-    const name = (this._deviceName && this._deviceName !== 'Máy không tên' && !this._deviceName.startsWith('dev_'))
-      ? this._deviceName
-      : defaultSmartName;
-    this._deviceName = name;
-    const lastSeen = new Date().toISOString();
-
-    const resp = await fetch(this._url('devices'), {
-      method: 'POST',
-      headers: this._headers(),
-      body: JSON.stringify([{
-        device_id: deviceId,
-        name: name,
-        platform: platform,
-        last_seen: lastSeen
-      }])
-    });
-    return { ok: resp.ok };
+    return this.syncDeviceRecord();
   };
 
   SupabaseCloud.fetchDevices = async function() {
@@ -510,6 +843,9 @@
     return Array.from(devicesMap.values());
   };
 
+  // Backward-compatible name: device removal is now an audited revoke, never
+  // a destructive REST DELETE. Existing callers (including old content
+  // scripts) are routed through the canonical owner RPC.
   SupabaseCloud.deleteDevice = async function(targetDeviceId) {
     if (!targetDeviceId) return { ok: false };
     if (!isBackground) {
@@ -522,12 +858,19 @@
       });
     }
 
-    await this.loadConfig();
-    const resp = await fetch(this._url(`devices?device_id=eq.${encodeURIComponent(targetDeviceId)}`), {
-      method: 'DELETE',
-      headers: this._headers()
+    const shopId = await this._getActiveShopId();
+    if (!shopId) return { ok: false, error: 'SHOP_REQUIRED' };
+    const result = await this.rpc('owner_revoke_device', {
+      p_shop_id: shopId,
+      p_device_id: targetDeviceId,
+      p_reason: 'LEGACY_CLIENT_REVOKE'
     });
-    return { ok: resp.ok };
+    return {
+      ok: !!(result && result.ok && result.data && result.data.success !== false),
+      data: result?.data || null,
+      error: result?.error || null,
+      status: result?.status
+    };
   };
 
   SupabaseCloud.adoptDeviceProfile = async function(oldDeviceId, newName) {
@@ -557,6 +900,15 @@
           });
         });
       }
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('vnpost_session');
+        if (raw) {
+          try {
+            const s = JSON.parse(raw);
+            if (s && s.active_shop_id) return s.active_shop_id;
+          } catch (_) {}
+        }
+      }
     } catch (e) {
       return null;
     }
@@ -565,78 +917,143 @@
 
   // ─── ORDERS MANAGEMENT ───
   SupabaseCloud.pushOrders = async function(orders) {
-    if (!isBackground) {
-      return new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'pushOrders', orders }, resolve);
-      });
+    if (!Array.isArray(orders) || orders.length === 0) return true;
+
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        const bgRes = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'pushOrders', orders }, resp => {
+            if (chrome.runtime.lastError) resolve(null);
+            else resolve(resp);
+          });
+        });
+        if (bgRes && bgRes.ok) return true;
+      } catch (_) {}
     }
 
-    if (!Array.isArray(orders) || orders.length === 0) return;
-    const shopId = await this._getActiveShopId();
+    try {
+      await this.loadConfig();
+      const shopId = await this._getActiveShopId();
+      const token = await this._sessionToken();
 
-    const records = orders.map(o => {
-      const rec = {
-        id: o.id || 'ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        name: o.name || o.customer_name || '',
-        customer_name: o.name || o.customer_name || '',
-        phone: o.phone || '',
-        address: o.address || '',
-        order_code: o.orderCode || '',
-        cod_amount: Number(o.codAmount) || 0,
-        collect_fee: !!o.collectFee,
-        platform: o.platform || '',
-        created_at: o.createdAt || new Date().toISOString(),
-        device_name: o.deviceName || this._deviceName || '',
-        status: o.status || 'draft'
-      };
-      if (shopId) rec.shop_id = shopId;
-      return rec;
-    });
+      const records = orders.map(o => {
+        const rec = {
+          id: o.id || 'ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+          name: o.name || o.customer_name || '',
+          customer_name: o.name || o.customer_name || '',
+          phone: o.phone || '',
+          address: o.address || '',
+          order_code: o.orderCode || o.order_code || '',
+          cod_amount: Number(o.codAmount || o.cod_amount) || 0,
+          collect_fee: typeof o.collectFee === 'boolean' ? (o.collectFee ? 1 : 0) : (Number(o.collectFee) || 0),
+          platform: this._normalizeCarrierCode(o.platform || o.carrier || o.carrier_id) || 'vnpost',
+          created_at: o.createdAt || o.created_at || new Date().toISOString(),
+          device_name: o.deviceName || this._deviceName || '',
+          status: o.status || 'draft'
+        };
+        const sId = o.shopId || o.shop_id || shopId;
+        if (sId) rec.shop_id = sId;
+        return rec;
+      });
 
-    await fetch(this._url('orders'), {
-      method: 'POST',
-      headers: this._headers(),
-      body: JSON.stringify(records)
-    });
+      const resp = await fetch(this._url('orders'), {
+        method: 'POST',
+        headers: this._headers(token),
+        body: JSON.stringify(records)
+      });
+      return resp.ok;
+    } catch (e) {
+      console.warn('[SupabaseCloud] pushOrders error:', e);
+      return false;
+    }
   };
 
   SupabaseCloud.pushOrder = async function(order) {
-    if (!isBackground) {
-      return new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'pushOrder', order }, resolve);
-      });
+    if (!order) return false;
+
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        const bgRes = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'pushOrder', order }, resp => {
+            if (chrome.runtime.lastError) resolve(null);
+            else resolve(resp);
+          });
+        });
+        if (bgRes && bgRes.ok) return true;
+      } catch (_) {}
     }
 
-    const id = order.id || 'ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    const shopId = await this._getActiveShopId();
-    const rec = {
-      id: id,
-      name: order.name || order.customer_name || '',
-      customer_name: order.name || order.customer_name || '',
-      phone: order.phone || '',
-      address: order.address || '',
-      order_code: order.orderCode || '',
-      cod_amount: Number(order.codAmount) || 0,
-      collect_fee: !!order.collectFee,
-      platform: order.platform || '',
-      created_at: order.createdAt || new Date().toISOString(),
-      device_name: order.deviceName || this._deviceName || '',
-      status: order.status || 'draft'
-    };
-    if (shopId) rec.shop_id = shopId;
+    try {
+      await this.loadConfig();
+      const id = order.id || 'ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const shopId = order.shopId || order.shop_id || await this._getActiveShopId();
+      const token = await this._sessionToken();
+      const rec = {
+        id: id,
+        name: order.name || order.customer_name || '',
+        customer_name: order.name || order.customer_name || '',
+        phone: order.phone || '',
+        address: order.address || '',
+        order_code: order.orderCode || order.order_code || '',
+        cod_amount: Number(order.codAmount || order.cod_amount) || 0,
+        collect_fee: typeof order.collectFee === 'boolean' ? (order.collectFee ? 1 : 0) : (Number(order.collectFee) || 0),
+        platform: this._normalizeCarrierCode(order.platform || order.carrier || order.carrier_id) || 'vnpost',
+        created_at: order.createdAt || order.created_at || new Date().toISOString(),
+        device_name: order.deviceName || this._deviceName || '',
+        status: order.status || 'draft'
+      };
+      if (shopId) rec.shop_id = shopId;
 
-    const resp = await fetch(this._url('orders'), {
-      method: 'POST',
-      headers: this._headers(),
-      body: JSON.stringify([rec])
-    });
-    return resp.ok;
+      const resp = await fetch(this._url('orders'), {
+        method: 'POST',
+        headers: this._headers(token),
+        body: JSON.stringify([rec])
+      });
+      return resp.ok;
+    } catch (e) {
+      console.warn('[SupabaseCloud] pushOrder error:', e);
+      return false;
+    }
   };
 
-  SupabaseCloud.fetchOrders = async function() {
-    if (!isBackground) {
-      return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage({ action: 'fetchOrders' }, response => {
+  SupabaseCloud.fetchOrders = async function(customShopId = null) {
+    try {
+      await this.loadConfig();
+      const shopId = customShopId || await this._getActiveShopId();
+      const token = await this._sessionToken();
+      let path = 'orders?deleted_at=is.null&order=created_at.desc&limit=1000&select=*';
+      if (shopId) {
+        path = `orders?shop_id=eq.${encodeURIComponent(shopId)}&deleted_at=is.null&order=created_at.desc&limit=1000&select=*`;
+      }
+      const resp = await fetch(this._url(path), {
+        headers: this._headers(token),
+        cache: 'no-store'
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data)) {
+          return data.map(o => ({
+            id: o.id,
+            shopId: o.shop_id || o.shopId || shopId || '',
+            shop_id: o.shop_id || o.shopId || shopId || '',
+            name: o.name || o.customer_name || '',
+            phone: o.phone || '',
+            address: o.address || '',
+            orderCode: o.order_code || o.orderCode || '',
+            codAmount: Number(o.cod_amount) || 0,
+            collectFee: o.collect_fee === true,
+            platform: SupabaseCloud._normalizeCarrierCode(o.platform || o.carrier || o.carrier_id),
+            createdAt: o.created_at || o.createdAt || '',
+            deviceName: o.device_name || o.deviceName || '',
+            status: o.status || 'draft'
+          }));
+        }
+      }
+    } catch (_) {}
+
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'fetchOrders', shopId: customShopId }, response => {
           const lastErr = chrome.runtime.lastError;
           if (lastErr) { resolve([]); return; }
           if (response && response.error) resolve([]);
@@ -645,74 +1062,102 @@
       });
     }
 
-    const resp = await fetch(this._url('orders?select=*&order=created_at.desc&limit=1000'), {
-      headers: this._headers(),
-      cache: 'no-store'
-    });
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    return (data || []).map(o => ({
-      id: o.id,
-      name: o.name || o.customer_name || '',
-      phone: o.phone || '',
-      address: o.address || '',
-      orderCode: o.order_code || o.orderCode || '',
-      codAmount: Number(o.cod_amount) || 0,
-      collectFee: o.collect_fee === true,
-      platform: o.platform || '',
-      createdAt: o.created_at || o.createdAt || '',
-      deviceName: o.device_name || o.deviceName || ''
-    }));
+    return [];
   };
 
   SupabaseCloud.deleteOrder = async function(orderId) {
     if (!orderId) return false;
-    if (!isBackground) {
-      return new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'deleteOrder', orderId }, resolve);
-      });
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        const bgRes = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'deleteOrder', orderId }, resp => {
+            if (chrome.runtime.lastError) resolve(null);
+            else resolve(resp);
+          });
+        });
+        if (bgRes && bgRes.ok) return true;
+      } catch (_) {}
     }
 
-    const resp = await fetch(this._url(`orders?id=eq.${encodeURIComponent(orderId)}`), {
-      method: 'DELETE',
-      headers: this._headers()
-    });
-    return resp.ok;
+    try {
+      await this.loadConfig();
+      const token = await this._sessionToken();
+      const resp = await fetch(this._url(`orders?id=eq.${encodeURIComponent(orderId)}`), {
+        method: 'DELETE',
+        headers: this._headers(token)
+      });
+      return resp.ok;
+    } catch (e) {
+      console.warn('[SupabaseCloud] deleteOrder error:', e);
+      return false;
+    }
   };
 
   SupabaseCloud.deleteBulkOrdersCloud = async function(ids) {
     if (!Array.isArray(ids) || ids.length === 0) return true;
-    if (!isBackground) {
-      return new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'deleteBulkOrdersCloud', ids }, resolve);
-      });
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        const bgRes = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'deleteBulkOrdersCloud', ids }, resp => {
+            if (chrome.runtime.lastError) resolve(null);
+            else resolve(resp);
+          });
+        });
+        if (bgRes && bgRes.ok) return true;
+      } catch (_) {}
     }
 
-    await this.loadConfig();
-    const formattedIds = ids.map(id => `"${String(id).replace(/"/g, '')}"`).join(',');
-    const [resp1, resp2] = await Promise.all([
-      fetch(this._url(`orders?id=in.(${formattedIds})`), { method: 'DELETE', headers: this._headers() }),
-      fetch(this._url(`history?id=in.(${formattedIds})`), { method: 'DELETE', headers: this._headers() })
-    ]);
-    return resp1.ok || resp2.ok;
+    try {
+      await this.loadConfig();
+      const token = await this._sessionToken();
+      const formattedIds = ids.map(id => `"${String(id).replace(/"/g, '')}"`).join(',');
+      const [resp1, resp2] = await Promise.all([
+        fetch(this._url(`orders?id=in.(${formattedIds})`), { method: 'DELETE', headers: this._headers(token) }),
+        fetch(this._url(`history?id=in.(${formattedIds})`), { method: 'DELETE', headers: this._headers(token) })
+      ]);
+      return resp1.ok || resp2.ok;
+    } catch (e) {
+      console.warn('[SupabaseCloud] deleteBulkOrdersCloud error:', e);
+      return false;
+    }
   };
 
   // ─── SUBMITTED ORDERS MANAGEMENT ───
+  SupabaseCloud._sanitizeShopId = function(shopId) {
+    const isUUID = str => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+    if (shopId && isUUID(shopId)) return shopId.trim();
+    return 'c201e6bc-8986-4f91-b900-e319865d1907';
+  };
+
   SupabaseCloud.pushSubmittedOrders = async function(orders) {
     if (!isBackground) {
-      const shopId = await this._getActiveShopId();
-      const mapped = orders.map(o => ({ ...o, shopId: o.shopId || shopId, shop_id: o.shop_id || shopId }));
+      const rawShopId = await this._getActiveShopId();
+      const shopId = this._sanitizeShopId(rawShopId);
+      const mapped = orders.map(o => ({ ...o, shopId: this._sanitizeShopId(o.shopId || o.shop_id || shopId), shop_id: this._sanitizeShopId(o.shop_id || o.shopId || shopId) }));
       return new Promise(resolve => {
         chrome.runtime.sendMessage({ action: 'pushSubmittedOrders', orders: mapped }, resolve);
       });
     }
 
-    if (!Array.isArray(orders) || orders.length === 0) return;
-    const shopId = orders[0]?.shopId || orders[0]?.shop_id || await this._getActiveShopId();
+    if (!Array.isArray(orders) || orders.length === 0) return true;
+    const rawShopId = orders[0]?.shopId || orders[0]?.shop_id || await this._getActiveShopId();
+    const shopId = this._sanitizeShopId(rawShopId);
     
-    const records = orders.map(o => {
+    // Tự động lấy device_id và staff_name từ storage nếu đơn hàng chưa có
+    let defaultDevId = this._deviceId || '';
+    let defaultStaff = this._deviceName || '';
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local && (!defaultDevId || !defaultStaff)) {
+        const stored = await new Promise(r => chrome.storage.local.get(['device_id', 'staff_name', 'device_name'], r));
+        if (!defaultDevId && stored?.device_id) defaultDevId = stored.device_id;
+        if (!defaultStaff && stored?.staff_name) defaultStaff = stored.staff_name;
+      }
+    } catch (_) {}
+
+    const records = orders.filter(o => this._hasSubmittedCustomer(o)).map(o => {
+      const orderShopId = this._sanitizeShopId(o.shopId || o.shop_id || shopId);
       const rec = {
-        id: o.id || 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        id: o.id || this._stableSubmittedOrderId(o) || 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         saved_order_id: o.savedOrderId || '',
         name: o.name || '',
         phone: o.phone || '',
@@ -720,36 +1165,81 @@
         order_code: o.orderCode || '',
         cod_amount: Number(o.codAmount) || 0,
         collect_fee: !!o.collectFee,
-        platform: o.platform || '',
+        platform: this._normalizeCarrierCode(o.platform || o.carrier || o.carrier_id),
         tracking_code: o.trackingCode || '',
         submitted_at: o.submittedAt || new Date().toISOString(),
         submitted_date: o.submittedDate || '',
         device_name: o.deviceName || this._deviceName || '',
         carrier_account: o.carrierAccount || o.carrier_account || '',
         product_note: o.productNote || o.product_note || '',
-        weight: Number(o.weight) || 0
+        weight: Number(o.weight) || 0,
+        source: o.source || 'AUTO_FILL',
+        created_by_name: o.created_by_name || o.staffName || defaultStaff || '',
+        source_device_id: o.source_device_id || o.deviceId || defaultDevId || ''
       };
-      if (shopId) rec.shop_id = shopId;
+      if (orderShopId) rec.shop_id = orderShopId;
       return rec;
     });
 
-    await fetch(this._url('submitted_orders'), {
+    if (records.length === 0) return true;
+
+    const token = await this._sessionToken();
+    const resp = await fetch(this._url('submitted_orders'), {
       method: 'POST',
-      headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
+      headers: { ...this._headers(token), 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify(records)
     });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      console.warn('[SupabaseCloud.pushSubmittedOrders] Direct POST error:', resp.status, errText);
+      // Fallback qua RPC sync_offline_submitted_orders nếu trực tiếp bảng PostgREST bị chặn (RLS hoặc phiên PIN)
+      if (shopId) {
+        const rpcRes = await this.rpc('sync_offline_submitted_orders', {
+          p_orders: records,
+          p_shop_id: shopId,
+          p_access_key: token
+        });
+        if (rpcRes.ok && rpcRes.data?.success) {
+          return true;
+        }
+        console.warn('[SupabaseCloud.pushSubmittedOrders] RPC fallback error:', rpcRes.error || rpcRes.data?.message);
+      }
+      throw new Error(`Đồng bộ đơn hàng lên Cloud thất bại (HTTP ${resp.status})`);
+    }
+    return true;
   };
 
   SupabaseCloud.pushSubmittedOrder = async function(order) {
     if (!isBackground) {
-      const shopId = await this._getActiveShopId();
+      const rawShopId = await this._getActiveShopId();
+      const shopId = this._sanitizeShopId(order.shopId || order.shop_id || rawShopId);
       return new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'pushSubmittedOrder', order: { ...order, shopId: order.shopId || shopId, shop_id: order.shop_id || shopId } }, resolve);
+        chrome.runtime.sendMessage({ action: 'pushSubmittedOrder', order: { ...order, shopId: shopId, shop_id: shopId } }, resolve);
       });
     }
 
-    const id = order.id || 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    const shopId = order.shopId || order.shop_id || await this._getActiveShopId();
+    if (!this._hasSubmittedCustomer(order)) {
+      const tracking = order.trackingCode || order.tracking_code || order.waybill_code || '';
+      const targetId = order.id || order.savedOrderId || order.saved_order_id || '';
+      return targetId && tracking ? await this.updateSubmittedOrderTracking(targetId, tracking) : false;
+    }
+
+    const id = order.id || this._stableSubmittedOrderId(order) || 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const rawShopId = order.shopId || order.shop_id || await this._getActiveShopId();
+    const shopId = this._sanitizeShopId(rawShopId);
+
+    // Tự động lấy device_id và staff_name từ storage nếu đơn hàng chưa có
+    let devId = order.source_device_id || order.deviceId || this._deviceId || '';
+    let staffName = order.created_by_name || order.staffName || this._deviceName || '';
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local && (!devId || !staffName)) {
+        const stored = await new Promise(r => chrome.storage.local.get(['device_id', 'staff_name', 'device_name'], r));
+        if (!devId && stored?.device_id) devId = stored.device_id;
+        if (!staffName && stored?.staff_name) staffName = stored.staff_name;
+      }
+    } catch (_) {}
+
     const rec = {
       id: id,
       saved_order_id: order.savedOrderId || '',
@@ -759,143 +1249,290 @@
       order_code: order.orderCode || '',
       cod_amount: Number(order.codAmount) || 0,
       collect_fee: !!order.collectFee,
-      platform: order.platform || '',
+      platform: this._normalizeCarrierCode(order.platform || order.carrier || order.carrier_id),
       tracking_code: order.trackingCode || '',
       submitted_at: order.submittedAt || new Date().toISOString(),
       submitted_date: order.submittedDate || '',
       device_name: order.deviceName || this._deviceName || '',
       carrier_account: order.carrierAccount || order.carrier_account || '',
       product_note: order.productNote || order.product_note || '',
-      weight: Number(order.weight) || 0
+      weight: Number(order.weight) || 0,
+      source: order.source || 'AUTO_FILL',
+      created_by_name: staffName,
+      staff_name: staffName,
+      source_device_id: devId,
+      raw_text: order.rawText || order.raw_text || ''
     };
     if (shopId) rec.shop_id = shopId;
 
+    const token = await this._sessionToken();
     const resp = await fetch(this._url('submitted_orders'), {
       method: 'POST',
-      headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates' },
+      headers: { ...this._headers(token), 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify([rec])
     });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      console.warn('[SupabaseCloud.pushSubmittedOrder] Direct POST error:', resp.status, errText);
+      // Fallback qua RPC sync_offline_submitted_orders nếu ghi PostgREST thất bại
+      if (shopId) {
+        const rpcRes = await this.rpc('sync_offline_submitted_orders', {
+          p_orders: [rec],
+          p_shop_id: shopId,
+          p_access_key: token
+        });
+        if (rpcRes.ok && rpcRes.data?.success) {
+          return true;
+        }
+        console.warn('[SupabaseCloud.pushSubmittedOrder] RPC fallback error:', rpcRes.error || rpcRes.data?.message);
+      }
+      return false;
+    }
     return resp.ok;
   };
 
-  SupabaseCloud.fetchSubmittedOrders = async function() {
-    if (!isBackground) {
-      return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage({ action: 'fetchSubmittedOrders' }, response => {
+  SupabaseCloud.fetchSubmittedOrders = async function(customShopId = null) {
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'fetchSubmittedOrders', shopId: customShopId }, response => {
           const lastErr = chrome.runtime.lastError;
-          if (lastErr) { resolve([]); return; }
-          if (response && response.error) resolve([]);
-          else resolve(response || []);
+          if (lastErr || !response || response.error) {
+            resolve([]);
+          } else {
+            resolve(response.orders || (Array.isArray(response) ? response : []));
+          }
         });
       });
     }
 
-    const resp = await fetch(this._url('submitted_orders?select=*&order=submitted_at.desc&limit=500'), {
-      headers: this._headers(),
-      cache: 'no-store'
-    });
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    return (data || []).map(o => ({
-      id: o.id,
-      savedOrderId: o.saved_order_id || o.savedOrderId || '',
-      name: o.name || '',
-      phone: o.phone || '',
-      address: o.address || '',
-      orderCode: o.order_code || o.orderCode || '',
-      codAmount: Number(o.cod_amount) || 0,
-      collectFee: o.collect_fee === true,
-      platform: o.platform || '',
-      trackingCode: o.tracking_code || o.trackingCode || '',
-      submittedAt: o.submitted_at || o.submittedAt || '',
-      submittedDate: o.submitted_date || o.submittedDate || '',
-      deviceName: o.device_name || o.deviceName || '',
-      carrierAccount: o.carrier_account || o.carrierAccount || '',
-      productNote: o.product_note || o.productNote || '',
-      weight: Number(o.weight) || 0
-    }));
+    try {
+      await this.loadConfig();
+      const shopId = customShopId || await this._getActiveShopId();
+      const token = await this._sessionToken();
+      let path = 'submitted_orders?order=submitted_at.desc&limit=1000&select=*';
+      if (shopId) {
+        path = `submitted_orders?shop_id=eq.${encodeURIComponent(shopId)}&order=submitted_at.desc&limit=1000&select=*`;
+      }
+      const resp = await fetch(this._url(path), {
+        headers: this._headers(token),
+        cache: 'no-store'
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data)) {
+          return data.map(o => {
+            const codVal = Number(o.cod_amount !== undefined ? o.cod_amount : (o.codAmount !== undefined ? o.codAmount : (o.cod || 0))) || 0;
+            const isRecipientFee = o.collect_fee === true || o.shipping_fee_payer === 'RECIPIENT' || o.collectFee === true;
+            return {
+              id: o.id,
+              shopId: o.shop_id || o.shopId || shopId || '',
+              shop_id: o.shop_id || o.shopId || shopId || '',
+              savedOrderId: o.saved_order_id || o.savedOrderId || '',
+              saved_order_id: o.saved_order_id || o.savedOrderId || '',
+              name: o.name || o.customer_name || '',
+              customer_name: o.name || o.customer_name || '',
+              phone: o.phone || '',
+              address: o.address || '',
+              orderCode: o.order_code || o.orderCode || '',
+              order_code: o.order_code || o.orderCode || '',
+              codAmount: codVal,
+              cod_amount: codVal,
+              collectFee: isRecipientFee,
+              collect_fee: isRecipientFee,
+              platform: SupabaseCloud._normalizeCarrierCode(o.platform || o.carrier || o.carrier_id),
+              trackingCode: o.tracking_code || o.trackingCode || '',
+              tracking_code: o.tracking_code || o.trackingCode || '',
+              submittedAt: o.submitted_at || o.submittedAt || '',
+              submitted_at: o.submitted_at || o.submittedAt || '',
+              submittedDate: o.submitted_date || o.submittedDate || '',
+              submitted_date: o.submitted_date || o.submittedDate || '',
+              deviceName: o.device_name || o.deviceName || '',
+              device_name: o.device_name || o.deviceName || '',
+              carrierAccount: o.carrier_account || o.carrierAccount || '',
+              carrier_account: o.carrier_account || o.carrierAccount || '',
+              productNote: o.product_note || o.productNote || '',
+              product_note: o.product_note || o.productNote || '',
+              weight: Number(o.weight) || 0,
+              status: o.status || 'submitted',
+              shippingFee: Number(o.shipping_fee) || 0,
+              shipping_fee: Number(o.shipping_fee) || 0,
+              actualWeight: Number(o.actual_weight) || 0,
+              actual_weight: Number(o.actual_weight) || 0,
+              webhookLogs: Array.isArray(o.webhook_logs) ? o.webhook_logs : (typeof o.webhook_logs === 'string' ? (JSON.parse(o.webhook_logs || '[]')) : []),
+              webhook_logs: Array.isArray(o.webhook_logs) ? o.webhook_logs : (typeof o.webhook_logs === 'string' ? (JSON.parse(o.webhook_logs || '[]')) : []),
+              updatedAt: o.updated_at || o.updatedAt || '',
+              updated_at: o.updated_at || o.updatedAt || ''
+            };
+          });
+        }
+      } else if (shopId) {
+        // Fallback qua RPC device_fetch_submitted_orders cho phiên thiết bị / PIN
+        const rpcRes = await this.rpc('device_fetch_submitted_orders', {
+          p_shop_id: shopId,
+          p_session_token: token,
+          p_limit: 1000
+        });
+        if (rpcRes.ok && rpcRes.data?.success && Array.isArray(rpcRes.data.orders)) {
+          return rpcRes.data.orders.map(o => {
+            const codVal = Number(o.cod_amount !== undefined ? o.cod_amount : (o.codAmount !== undefined ? o.codAmount : (o.cod || 0))) || 0;
+            const isRecipientFee = o.collect_fee === true || o.shipping_fee_payer === 'RECIPIENT' || o.collectFee === true;
+            return {
+              id: o.id,
+              shopId: o.shop_id || o.shopId || shopId || '',
+              shop_id: o.shop_id || o.shopId || shopId || '',
+              savedOrderId: o.saved_order_id || o.savedOrderId || '',
+              saved_order_id: o.saved_order_id || o.savedOrderId || '',
+              name: o.name || o.customer_name || '',
+              customer_name: o.name || o.customer_name || '',
+              phone: o.phone || '',
+              address: o.address || '',
+              orderCode: o.order_code || o.orderCode || '',
+              order_code: o.order_code || o.orderCode || '',
+              codAmount: codVal,
+              cod_amount: codVal,
+              collectFee: isRecipientFee,
+              collect_fee: isRecipientFee,
+              platform: SupabaseCloud._normalizeCarrierCode(o.platform || o.carrier || o.carrier_id),
+              trackingCode: o.tracking_code || o.trackingCode || '',
+              tracking_code: o.tracking_code || o.trackingCode || '',
+              submittedAt: o.submitted_at || o.submittedAt || '',
+              submitted_at: o.submitted_at || o.submittedAt || '',
+              submittedDate: o.submitted_date || o.submittedDate || '',
+              submitted_date: o.submitted_date || o.submittedDate || '',
+              deviceName: o.device_name || o.deviceName || '',
+              device_name: o.device_name || o.deviceName || '',
+              carrierAccount: o.carrier_account || o.carrierAccount || '',
+              carrier_account: o.carrier_account || o.carrierAccount || '',
+              productNote: o.product_note || o.productNote || '',
+              product_note: o.product_note || o.productNote || '',
+              weight: Number(o.weight) || 0,
+              status: o.status || 'submitted',
+              shippingFee: Number(o.shipping_fee) || 0,
+              shipping_fee: Number(o.shipping_fee) || 0,
+              actualWeight: Number(o.actual_weight) || 0,
+              actual_weight: Number(o.actual_weight) || 0,
+              webhookLogs: Array.isArray(o.webhook_logs) ? o.webhook_logs : (typeof o.webhook_logs === 'string' ? (JSON.parse(o.webhook_logs || '[]')) : []),
+              webhook_logs: Array.isArray(o.webhook_logs) ? o.webhook_logs : (typeof o.webhook_logs === 'string' ? (JSON.parse(o.webhook_logs || '[]')) : []),
+              updatedAt: o.updated_at || o.updatedAt || '',
+              updated_at: o.updated_at || o.updatedAt || ''
+            };
+          });
+        }
+      }
+    } catch (_) {}
+
+    return [];
   };
 
   SupabaseCloud.deleteSubmittedOrderCloud = async function(orderId) {
     if (!orderId) return false;
-    if (!isBackground) {
-      return new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'deleteSubmittedOrderCloud', orderId }, response => {
-          const lastErr = chrome.runtime.lastError;
-          if (lastErr) { resolve(false); return; }
-          resolve(response ? response.ok : false);
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        const bgRes = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({ action: 'deleteSubmittedOrderCloud', orderId }, response => {
+            const lastErr = chrome.runtime.lastError;
+            if (lastErr) { resolve(null); return; }
+            resolve(response ? response.ok : false);
+          });
         });
-      });
+        if (bgRes !== null) return bgRes;
+      } catch (_) {}
     }
 
-    const resp = await fetch(this._url(`submitted_orders?id=eq.${encodeURIComponent(orderId)}`), {
-      method: 'DELETE',
-      headers: this._headers()
-    });
-    return resp.ok;
+    try {
+      await this.loadConfig();
+      const token = await this._sessionToken();
+      const resp = await fetch(this._url(`submitted_orders?id=eq.${encodeURIComponent(orderId)}`), {
+        method: 'DELETE',
+        headers: this._headers(token)
+      });
+      return resp.ok;
+    } catch (e) {
+      console.warn('[SupabaseCloud] deleteSubmittedOrderCloud error:', e);
+      return false;
+    }
   };
 
   SupabaseCloud.deleteOrderCloud = async function(orderId) {
     if (!orderId) return false;
-    if (!isBackground) {
-      return new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'deleteOrderCloud', id: orderId }, response => {
-          const lastErr = chrome.runtime.lastError;
-          if (lastErr) { resolve(false); return; }
-          resolve(response ? response.ok : false);
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        const bgRes = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({ action: 'deleteOrderCloud', id: orderId }, response => {
+            const lastErr = chrome.runtime.lastError;
+            if (lastErr) { resolve(null); return; }
+            resolve(response ? response.ok : false);
+          });
         });
-      });
+        if (bgRes !== null) return bgRes;
+      } catch (_) {}
     }
 
-    await this.loadConfig();
-    const encId = encodeURIComponent(orderId);
-    let deleted_by = null;
-    if (typeof AuthSession !== 'undefined') {
+    try {
+      await this.loadConfig();
+      const token = await this._sessionToken();
+      const encId = encodeURIComponent(orderId);
+      let deleted_by = null;
+      if (typeof AuthSession !== 'undefined') {
         const user = await AuthSession.getUser();
         if (user) deleted_by = user.id;
+      }
+      const patchData = { deleted_at: new Date().toISOString(), deleted_by };
+      
+      const [resp1, resp2] = await Promise.all([
+        fetch(this._url(`orders?id=eq.${encId}`), { 
+          method: 'PATCH', 
+          headers: { ...this._headers(token), 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchData)
+        }),
+        fetch(this._url(`history?id=eq.${encId}`), { 
+          method: 'PATCH', 
+          headers: { ...this._headers(token), 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchData)
+        })
+      ]);
+      return resp1.ok || resp2.ok;
+    } catch (e) {
+      console.warn('[SupabaseCloud] deleteOrderCloud error:', e);
+      return false;
     }
-    const patchData = { deleted_at: new Date().toISOString(), deleted_by };
-    
-    const [resp1, resp2] = await Promise.all([
-      fetch(this._url(`orders?id=eq.${encId}`), { 
-          method: 'PATCH', 
-          headers: { ...this._headers(), 'Content-Type': 'application/json' },
-          body: JSON.stringify(patchData)
-      }),
-      fetch(this._url(`history?id=eq.${encId}`), { 
-          method: 'PATCH', 
-          headers: { ...this._headers(), 'Content-Type': 'application/json' },
-          body: JSON.stringify(patchData)
-      })
-    ]);
-    return resp1.ok || resp2.ok;
   };
 
   SupabaseCloud.deleteHistoryOrder = SupabaseCloud.deleteOrderCloud;
 
   SupabaseCloud.deleteBulkSubmittedOrdersCloud = async function(ids) {
     if (!Array.isArray(ids) || ids.length === 0) return true;
-    if (!isBackground) {
-      return new Promise(resolve => {
-        chrome.runtime.sendMessage({ action: 'deleteBulkSubmittedOrdersCloud', ids }, resolve);
-      });
+    if (!isBackground && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        const bgRes = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'deleteBulkSubmittedOrdersCloud', ids }, resolve);
+        });
+        if (bgRes !== null) return bgRes;
+      } catch (_) {}
     }
 
-    await this.loadConfig();
-    const idList = ids.join(',');
-    let deleted_by = null;
-    if (typeof AuthSession !== 'undefined') {
+    try {
+      await this.loadConfig();
+      const token = await this._sessionToken();
+      const idList = ids.map(id => `"${String(id).replace(/"/g, '')}"`).join(',');
+      let deleted_by = null;
+      if (typeof AuthSession !== 'undefined') {
         const user = await AuthSession.getUser();
         if (user) deleted_by = user.id;
-    }
-    const patchData = { deleted_at: new Date().toISOString(), deleted_by };
+      }
+      const patchData = { deleted_at: new Date().toISOString(), deleted_by };
 
-    const resp = await fetch(this._url(`submitted_orders?id=in.(${idList})`), {
-      method: 'PATCH',
-      headers: { ...this._headers(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(patchData)
-    });
-    return resp.ok;
+      const resp = await fetch(this._url(`submitted_orders?id=in.(${idList})`), {
+        method: 'PATCH',
+        headers: { ...this._headers(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify(patchData)
+      });
+      return resp.ok;
+    } catch (e) {
+      console.warn('[SupabaseCloud] deleteBulkSubmittedOrdersCloud error:', e);
+      return false;
+    }
   };
 
   SupabaseCloud.clearSubmittedOrdersCloud = async function() {

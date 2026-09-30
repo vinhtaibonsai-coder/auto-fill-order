@@ -37,8 +37,8 @@
       'input[placeholder*="Địa chỉ" i]',
       'textarea#receiverAddress',
       'input#receiverAddress',
-      'input[name*="Address" i]',
-      'textarea[name*="Address" i]'
+      'input[name*="receiverAddress" i]',
+      'textarea[name*="receiverAddress" i]'
     ],
     noteLabels: [/Nội dung/i, /Ghi chú/i, /Nội dung hàng/i],
     noteFallbacks: [
@@ -51,7 +51,6 @@
     ],
     codLabels: ['Phát hàng thu tiền COD', 'Thu tiền COD', 'Tiền thu hộ'],
     codInputFallbacks: [
-      'input.ant-input-number-input',
       'input[name="PROP0018"]',
       'input[name*="COD" i]'
     ],
@@ -105,7 +104,76 @@
         console.warn('VNPost getAccountName error:', e);
       }
       return '';
-    }
+    },
+    getSenderInfo: function() {
+      try {
+        let name = this.getAccountName();
+        let phone = '';
+        let address = '';
+
+        // 1. Quét tên người gửi nếu có ô nhập cụ thể
+        const nameEl = document.querySelector('#form-create-order_senderName, input#senderName, input[name*="senderName" i], [class*="sender" i] input[name*="name" i]');
+        if (nameEl && nameEl.value && nameEl.value.trim().length >= 2) {
+          name = nameEl.value.trim();
+        }
+
+        // 2. Quét số điện thoại người gửi
+        const phoneEl = document.querySelector('#form-create-order_senderPhone, input#senderPhone, input[name*="senderPhone" i], [class*="sender" i] input[type="tel"], [class*="sender" i] input[name*="phone" i], [class*="sender" i] input[placeholder*="điện thoại" i]');
+        if (phoneEl && phoneEl.value) {
+          phone = String(phoneEl.value).trim().replace(/[^\d]/g, '');
+        }
+
+        // 3. Quét địa chỉ kho gửi / người gửi
+        const addrEl = document.querySelector('#form-create-order_senderAddress, textarea#senderAddress, input#senderAddress, [class*="sender" i] textarea, [class*="sender" i] input[placeholder*="địa chỉ" i]');
+        if (addrEl && addrEl.value && addrEl.value.trim().length >= 5) {
+          address = addrEl.value.trim();
+        }
+
+        // Quét thêm dropdown kho / địa chỉ gửi hàng
+        const senderCard = document.querySelector('[class*="sender" i], #form-create-order_sender, [class*="warehouse" i]');
+        if (senderCard) {
+          const selectItems = Array.from(senderCard.querySelectorAll('.ant-select-selection-item, .ant-select-selection-selected-value, .ant-cascader-picker-label'))
+            .map(el => (el.innerText || el.textContent || '').trim())
+            .filter(t => t && !/chọn|tất cả|vui lòng/i.test(t) && (t.includes('TP.') || t.includes('Tỉnh') || t.includes('Quận') || t.includes('Huyện') || t.includes('Phường') || t.includes('Xã') || t.startsWith('P.') || t.startsWith('Q.')));
+          if (selectItems.length > 0) {
+            selectItems.forEach(part => {
+              if (address && !address.toLowerCase().includes(part.toLowerCase())) {
+                address += ', ' + part;
+              } else if (!address) {
+                address = part;
+              }
+            });
+          }
+        }
+
+        // 4. Quét từ localStorage của VNPost nếu trên form chưa có đầy đủ
+        if (!phone || !address || !name) {
+          const storageKeys = ['user', 'userInfo', 'USER_INFO', 'account', 'currentUser', 'profile', 'userData', 'defaultWarehouse', 'senderInfo'];
+          for (const key of storageKeys) {
+            const val = localStorage.getItem(key) || sessionStorage.getItem(key);
+            if (val) {
+              try {
+                const p = typeof val === 'string' && (val.startsWith('{') || val.startsWith('[')) ? JSON.parse(val) : val;
+                if (!name) name = p?.fullName || p?.full_name || p?.name || p?.userName || p?.displayName || '';
+                if (!phone) phone = p?.phone || p?.mobile || p?.phoneNumber || p?.tel || p?.senderPhone || '';
+                if (!address) address = p?.address || p?.fullAddress || p?.senderAddress || p?.warehouseAddress || '';
+              } catch (_) {}
+            }
+          }
+        }
+
+        return {
+          name: (name || '').trim(),
+          phone: (phone || '').trim().replace(/[^\d]/g, ''),
+          address: (address || '').trim()
+        };
+      } catch (e) {
+        console.warn('VNPost getSenderInfo error:', e);
+        return { name: '', phone: '', address: '' };
+      }
+    },
+    footerBar: '.ant-pro-footer-bar',
+    submitButton: '.ant-pro-footer-bar #create_order, #create_order, .ant-pro-footer-bar button[title="Tạo đơn"]'
   };
 
   globalThis.VNPOST_SELECTORS = VNPOST_SELECTORS;

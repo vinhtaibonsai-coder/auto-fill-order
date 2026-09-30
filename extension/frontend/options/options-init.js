@@ -37,6 +37,7 @@ function onDOMReady(fn) {
 }
 globalThis.onDOMReady = onDOMReady;
 
+function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 function showQuickToast(message, type = 'success', duration = 3000) {
   let toastContainer = document.getElementById('appToastContainer');
   if (!toastContainer) {
@@ -89,7 +90,7 @@ function showQuickToast(message, type = 'success', duration = 3000) {
   `;
 
   const hasLeadingIcon = message.startsWith('✅') || message.startsWith('❌') || message.startsWith('⚠️') || message.startsWith('ℹ️') || message.startsWith('🚫') || message.startsWith('🔓') || message.startsWith('🏪') || message.startsWith('☁️');
-  toast.innerHTML = `<span>${hasLeadingIcon ? '' : (icons[type] + ' ')}${message}</span>`;
+  toast.innerHTML = `<span>${hasLeadingIcon ? '' : (icons[type] + ' ')}${escapeHTML(message)}</span>`;
   toastContainer.appendChild(toast);
 
   requestAnimationFrame(() => {
@@ -403,7 +404,7 @@ async function loadSubmittedOrders(silent = false) {
 
       const currentVal = subFilterAccount.value;
       subFilterAccount.innerHTML = '<option value="">-- Tất Cả Tài Khoản Bưu Điện / J&T --</option>' + 
-        accounts.map(a => `<option value="${a}">${a}</option>`).join('');
+        accounts.map(a => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join('');
       if (accounts.includes(currentVal)) subFilterAccount.value = currentVal;
     }
 
@@ -412,7 +413,7 @@ async function loadSubmittedOrders(silent = false) {
       const devices = Array.from(new Set(allSubmittedOrders.map(o => o.deviceName).filter(Boolean)));
       const currentVal = subFilterDevice.value;
       subFilterDevice.innerHTML = '<option value="">-- Tất Cả Máy --</option>' + 
-        devices.map(d => `<option value="${d}">${d}</option>`).join('');
+        devices.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
       if (devices.includes(currentVal)) subFilterDevice.value = currentVal;
     }
   } catch (err) {

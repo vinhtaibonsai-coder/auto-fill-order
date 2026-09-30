@@ -1,0 +1,2 @@
+(function(){(()=>{class i{constructor(e=2){this.maxConcurrency=e,this.running=0,this.queue=[]}add(e){return new Promise((n,t)=>{this.queue.push({promiseCreator:e,resolve:n,reject:t}),this.next()})}next(){if(this.running>=this.maxConcurrency||this.queue.length===0)return;this.running++;const{promiseCreator:e,resolve:n,reject:t}=this.queue.shift();e().then(n).catch(t).finally(()=>{this.running--,this.next()})}}globalThis.PromiseQueue=i})();
+})()

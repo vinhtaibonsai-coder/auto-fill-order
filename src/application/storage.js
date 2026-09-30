@@ -35,6 +35,63 @@
     return new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout sau ${ms}ms`)), ms));
   }
 
+  function normalizeCarrierCode(value) {
+    if (!value) return '';
+    if (typeof value === 'object') {
+      return normalizeCarrierCode(
+        value.id || value.ID || value.code || value.carrier_id || value.carrierId ||
+        value.title || value.TITLE || value.name || value.label || ''
+      );
+    }
+    const raw = String(value).trim();
+    if (!raw) return '';
+    if (raw.startsWith('{')) {
+      try {
+        return normalizeCarrierCode(JSON.parse(raw));
+      } catch (_) {}
+    }
+    const key = raw.toLowerCase().replace(/\s+/g, '');
+    if (key.includes('vnpost') || key.includes('vietnampost') || key.includes('buudien')) return 'vnpost';
+    if (key === 'jt' || key.includes('j&t') || key.includes('jtexpress')) return 'jt';
+    return raw;
+  }
+
+  function normalizeSubmittedIdentity(order) {
+    if (!order) return '';
+    const clean = value => String(value || '').trim();
+    const phone = clean(order.phone).replace(/\D/g, '');
+    const tracking = clean(order.trackingCode || order.tracking_code).toLowerCase().replace(/\s+/g, '');
+    if (tracking && tracking !== '-' && tracking !== '—') return `tracking:${tracking}`;
+
+    const savedId = clean(order.savedOrderId || order.saved_order_id).toLowerCase();
+    if (savedId) return `saved:${savedId}`;
+
+    const orderCode = clean(order.orderCode || order.order_code).toLowerCase();
+    if (phone && orderCode && orderCode !== '—') return `order:${phone}:${orderCode}`;
+
+    return `id:${order.id || ''}`;
+  }
+
+  // A customer is not an order identity: repeat purchases may share name, phone and COD.
+  function isSameSubmittedOrder(existing, incoming) {
+    if (!existing || !incoming) return false;
+    const clean = value => String(value || '').trim().toLowerCase();
+    const trackingA = clean(existing.trackingCode || existing.tracking_code);
+    const trackingB = clean(incoming.trackingCode || incoming.tracking_code);
+    if (trackingA && trackingB) return trackingA === trackingB;
+    const savedA = clean(existing.savedOrderId || existing.saved_order_id);
+    const savedB = clean(incoming.savedOrderId || incoming.saved_order_id);
+    if (savedA && savedB) return savedA === savedB;
+    const codeA = clean(existing.orderCode || existing.order_code);
+    const codeB = clean(incoming.orderCode || incoming.order_code);
+    if (codeA && codeB) return codeA === codeB;
+    const idA = clean(existing.id);
+    const idB = clean(incoming.id);
+    return Boolean(idA && idB && idA === idB);
+  }
+
+  let _submittingLock = Promise.resolve();
+
   const OrderStorage = {
     isExtensionAvailable() {
       try {
@@ -226,10 +283,18 @@
 
     async _saveOrdersToLocal(orders) {
       const key = await this._getScopedKey('savedOrders');
+      const now = Date.now();
+      const payload = { 
+        [key]: orders,
+        draft_queue_updated_at: now
+      };
+      if (key !== 'savedOrders') {
+        payload.savedOrders = orders;
+      }
       return new Promise((resolve, reject) => {
         try {
           if (this.isExtensionAvailable()) {
-            chrome.storage.local.set({ [key]: orders }, () => {
+            chrome.storage.local.set(payload, () => {
               if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
                 reject(chrome.runtime.lastError);
               } else {
@@ -239,6 +304,10 @@
             });
           } else {
             localStorage.setItem(key, JSON.stringify(orders));
+            if (key !== 'savedOrders') {
+              localStorage.setItem('savedOrders', JSON.stringify(orders));
+            }
+            localStorage.setItem('draft_queue_updated_at', String(now));
             this._invalidateOrdersCache();
             resolve();
           }
@@ -248,8 +317,8 @@
       });
     },
 
-    async getOrders() {
-      if (this._ordersCache !== null && (Date.now() - this._ordersCacheTime) < this._CACHE_TTL) {
+    async getOrders(forceSyncCloud = false) {
+      if (!forceSyncCloud && this._ordersCache !== null && (Date.now() - this._ordersCacheTime) < this._CACHE_TTL) {
         return this._ordersCache;
       }
       const activeShop = await this.getActiveShop();
@@ -272,19 +341,90 @@
         }
       });
       if (changed) {
-        // Chỉ lưu lại ở background, không await để tránh chặn flow
         this._saveOrdersToLocal(rawOrders).catch(() => {});
       }
+
+      // Kéo đơn nháp từ Supabase Cloud để đồng bộ giữa Webapp và Trang Option
+      let cloudOrders = null;
+      try {
+        if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.fetchOrders === 'function') {
+          cloudOrders = await SupabaseCloud.fetchOrders(activeShopId);
+        } else if (this.isExtensionAvailable()) {
+          cloudOrders = await Promise.race([
+            new Promise(resolve => {
+              try {
+                chrome.runtime.sendMessage({ action: 'fetchOrders', shopId: activeShopId }, resp => {
+                  resolve(Array.isArray(resp) ? resp : null);
+                });
+              } catch (_) {
+                resolve(null);
+              }
+            }),
+            new Promise(resolve => setTimeout(() => resolve(null), 2000))
+          ]);
+        }
+      } catch (_) {}
+
+      let combinedList = orders;
+      if (Array.isArray(cloudOrders) && cloudOrders.length > 0) {
+        const cloudIds = new Set(cloudOrders.map(o => String(o.id)).filter(Boolean));
+        const cloudCodes = new Set(
+          cloudOrders.map(o => String(o.orderCode || o.order_code || '').trim().toLowerCase())
+            .filter(c => c && c !== '—' && c !== '-')
+        );
+
+        // Giữ lại đơn offline local chưa có trên Cloud
+        const localOnlyOrders = orders.filter(o => {
+          if (!o) return false;
+          if (cloudIds.has(String(o.id))) return false;
+          const c = String(o.orderCode || o.order_code || '').trim().toLowerCase();
+          if (c && c !== '—' && c !== '-' && cloudCodes.has(c)) return false;
+          return true;
+        });
+
+        cloudOrders.forEach(o => {
+          o.isCloud = true;
+          if (activeShopId && (!o.shopId || !o.shop_id)) {
+            o.shopId = activeShopId;
+            o.shop_id = activeShopId;
+          }
+        });
+
+        combinedList = [...cloudOrders, ...localOnlyOrders];
+        combinedList.sort((a, b) => {
+          const tA = new Date(a.createdAt || a.created_at || 0).getTime();
+          const tB = new Date(b.createdAt || b.created_at || 0).getTime();
+          if (tB !== tA) return tB - tA;
+          const idA = Number(String(a.id || '').split('_')[1]) || 0;
+          const idB = Number(String(b.id || '').split('_')[1]) || 0;
+          return idB - idA;
+        });
+
+        if (combinedList.length > 1000) combinedList = combinedList.slice(0, 1000);
+
+        const otherShopsOrders = rawOrders.filter(o => o && String(o.shopId || '') !== (activeShopId || ''));
+        const mergedAll = [...combinedList, ...otherShopsOrders];
+        const isDifferent = JSON.stringify(mergedAll) !== JSON.stringify(rawOrders);
+        if (isDifferent) {
+          this._saveOrdersToLocal(mergedAll).catch(() => {});
+        }
+      }
       
-      this._ordersCache = orders;
+      this._ordersCache = combinedList;
       this._ordersCacheTime = Date.now();
-      return orders;
+      return combinedList;
+    },
+
+    async getDraftOrders(forceSyncCloud = false) {
+      const orders = await this.getOrders(forceSyncCloud);
+      return Array.isArray(orders) ? orders.filter(o => o && !o.submittedAt && !o.trackingCode && !o.tracking_code) : [];
     },
 
 
     async saveOrder(order) {
       // Luôn đọc fresh từ storage để tránh cache stale từ context khác
       this._invalidateOrdersCache();
+      order.platform = normalizeCarrierCode(order.platform || order.carrier || order.carrier_id);
       
       const activeShop = await this.getActiveShop();
       const activeShopId = activeShop ? String(activeShop.id || activeShop) : null;
@@ -333,15 +473,18 @@
         order.createdAt = `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
       }
       
-      // Lọc trùng trong cùng một Shop
-      const existing = orders.find(o => {
-        if (order.id && o.id === order.id) return false;
-        if (order.orderCode && o.orderCode && order.orderCode.trim().toLowerCase() === o.orderCode.trim().toLowerCase()) return true;
-        const nameMatch = (order.name || '').trim().toLowerCase() === (o.name || '').trim().toLowerCase();
-        const phoneMatch = (order.phone || '').replace(/\D/g, '') === (o.phone || '').replace(/\D/g, '');
-        const codMatch = Number(order.codAmount) === Number(o.codAmount);
-        return nameMatch && phoneMatch && codMatch;
-      });
+      // Lọc trùng trong cùng một Shop: BẢO VỆ ORDER IDENTITY INVARIANT
+      // Tuyệt đối KHÔNG dùng tên, SĐT, COD hay địa chỉ làm danh tính đơn hàng.
+      // Chỉ gộp khi trùng mã đơn (orderCode) cụ thể giữa 2 bản ghi.
+      let existing = null;
+      const incomingCode = String(order.orderCode || '').trim().toLowerCase();
+      if (incomingCode && incomingCode !== '—' && incomingCode !== '-') {
+        existing = orders.find(o => {
+          if (order.id && o.id === order.id) return false;
+          const existingCode = String(o.orderCode || '').trim().toLowerCase();
+          return existingCode && existingCode === incomingCode;
+        });
+      }
 
       if (existing) {
         order.id = existing.id;
@@ -378,6 +521,21 @@
       try {
         await this._saveOrdersToLocal(mergedAllOrders);
         this._pushToCloud(order);
+        this._syncCustomerHubOrder(order, 'order').catch(() => {});
+        try {
+          if (this.isExtensionAvailable()) {
+            chrome.runtime.sendMessage({ action: 'draftOrdersUpdated', count: updatedOrdersList.length }).catch(() => {});
+          }
+        } catch (_) {}
+        try {
+          const g = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
+          const Evt = typeof CustomEvent !== 'undefined' ? CustomEvent : (g && g.CustomEvent);
+          if (g && typeof g.dispatchEvent === 'function' && Evt) {
+            g.dispatchEvent(new Evt('draft-queue-updated', { detail: { count: updatedOrdersList.length } }));
+            g.dispatchEvent(new Evt('orders-updated', { detail: { order } }));
+            g.dispatchEvent(new Evt('customer-hub-updated', { detail: { order } }));
+          }
+        } catch (_) {}
         return order;
       } catch (e) {
         console.error('Lỗi khi lưu đơn nháp:', e);
@@ -404,19 +562,9 @@
 
     async deleteOrder(id) {
       if (!id) return false;
-      const allOrders = await this._getOrdersFromLocal();
-      const strId = String(id);
-      const filteredOrders = allOrders.filter(o => o && String(o.id) !== strId && String(o.savedOrderId || '') !== strId);
-      
       this._deleteFromCloud(id).catch(() => {});
-
-      try {
-        await this._saveOrdersToLocal(filteredOrders);
-        return true;
-      } catch (e) {
-        console.error('Lỗi khi xóa đơn nháp:', e);
-        return false;
-      }
+      const res = await this.deleteBulkOrders([id]);
+      return res && res.success > 0;
     },
 
     async clearAll() {
@@ -506,11 +654,19 @@
       }
     },
 
+    async deleteOrder(id) {
+      if (!id) return false;
+      this._deleteFromCloud(id).catch(() => {});
+      const res = await this.deleteBulkOrders([id]);
+      return res && res.success > 0;
+    },
+
     async deleteBulkOrders(ids) {
       if (!Array.isArray(ids) || ids.length === 0) return { success: 0, failed: 0 };
-      const orders = await this.getOrders();
+      this._invalidateOrdersCache();
+      const allOrders = await this._getOrdersFromLocal();
       const strIds = ids.map(id => String(id));
-      const filteredOrders = orders.filter(o => o && !strIds.includes(String(o.id)) && !strIds.includes(String(o.savedOrderId || '')));
+      const filteredOrders = allOrders.filter(o => o && !strIds.includes(String(o.id)) && !strIds.includes(String(o.savedOrderId || '')));
       
       try {
         if (this.isExtensionAvailable()) {
@@ -518,28 +674,26 @@
         }
       } catch (_) {}
 
-      return new Promise((resolve) => {
+      try {
+        await this._saveOrdersToLocal(filteredOrders);
+        this._invalidateOrdersCache();
         try {
           if (this.isExtensionAvailable()) {
-            chrome.storage.local.set({ savedOrders: filteredOrders }, () => {
-              if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
-                console.error('Lỗi khi xóa hàng loạt đơn hàng:', chrome.runtime.lastError);
-                resolve({ success: 0, failed: ids.length });
-              } else {
-                this._invalidateOrdersCache();
-                resolve({ success: ids.length, failed: 0 });
-              }
-            });
-          } else {
-            localStorage.setItem('savedOrders', JSON.stringify(filteredOrders));
-            this._invalidateOrdersCache();
-            resolve({ success: ids.length, failed: 0 });
+            chrome.runtime.sendMessage({ action: 'draftOrdersUpdated', count: filteredOrders.length }).catch(() => {});
           }
-        } catch (e) {
-          console.error(e);
-          resolve({ success: 0, failed: ids.length });
-        }
-      });
+        } catch (_) {}
+        try {
+          const win = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
+          const Evt = typeof CustomEvent !== 'undefined' ? CustomEvent : (win && win.CustomEvent);
+          if (win && typeof win.dispatchEvent === 'function' && Evt) {
+            win.dispatchEvent(new Evt('draft-queue-updated', { detail: { count: filteredOrders.length } }));
+          }
+        } catch (_) {}
+        return { success: ids.length, failed: 0 };
+      } catch (e) {
+        console.error('Lỗi khi xóa hàng loạt đơn hàng:', e);
+        return { success: 0, failed: ids.length };
+      }
     },
 
     _cloud() {
@@ -799,18 +953,31 @@
 
     async _getSubmittedOrdersFromLocal() {
       const key = await this._getSubmittedKey();
-      return new Promise((resolve) => {
+      return new Promise(async (resolve) => {
         try {
+          const activeShop = await this.getActiveShop().catch(() => null);
+          const shopId = activeShop ? (activeShop.id || activeShop) : 'c201e6bc-8986-4f91-b900-e319865d1907';
+          const fallbackKey = `submittedOrders_${shopId}`;
+
           if (this.isExtensionAvailable()) {
-            chrome.storage.local.get([key], (result) => {
+            chrome.storage.local.get([key, fallbackKey, 'submittedOrders'], (result) => {
               if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
                 resolve([]);
               } else {
-                resolve(result[key] || []);
+                const primary = result[key];
+                const fallback = result[fallbackKey];
+                const base = result.submittedOrders;
+                if (Array.isArray(primary) && primary.length > 0) return resolve(primary);
+                if (Array.isArray(fallback) && fallback.length > 0) return resolve(fallback);
+                if (Array.isArray(base) && base.length > 0) return resolve(base);
+                resolve(primary || fallback || base || []);
               }
             });
           } else {
-            const data = localStorage.getItem(key);
+            const primary = localStorage.getItem(key);
+            const fallback = localStorage.getItem(fallbackKey);
+            const base = localStorage.getItem('submittedOrders');
+            const data = primary || fallback || base;
             resolve(data ? JSON.parse(data) : []);
           }
         } catch (e) {
@@ -821,10 +988,13 @@
 
     async _saveSubmittedOrdersToLocal(orders) {
       const key = await this._getSubmittedKey();
+      const activeShop = await this.getActiveShop().catch(() => null);
+      const shopId = activeShop ? (activeShop.id || activeShop) : 'shop_default';
+      const fallbackKey = `submittedOrders_${shopId}`;
       return new Promise((resolve, reject) => {
         try {
           if (this.isExtensionAvailable()) {
-            chrome.storage.local.set({ [key]: orders }, () => {
+            chrome.storage.local.set({ [key]: orders, [fallbackKey]: orders, submittedOrders: orders }, () => {
               if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
                 reject(chrome.runtime.lastError);
               } else {
@@ -833,6 +1003,8 @@
             });
           } else {
             localStorage.setItem(key, JSON.stringify(orders));
+            localStorage.setItem(fallbackKey, JSON.stringify(orders));
+            localStorage.setItem('submittedOrders', JSON.stringify(orders));
             resolve();
           }
         } catch (e) {
@@ -846,14 +1018,21 @@
       const activeShopId = activeShop ? String(activeShop.id || activeShop) : null;
       const rawOrders = await this._getSubmittedOrdersFromLocal();
       
-      // 1. Thử kéo dữ liệu mới nhất từ Supabase Cloud
+      const localShopOrders = (rawOrders || []).filter(o => {
+        if (!o) return false;
+        if (!activeShopId) return true;
+        const sId = String(o.shopId || o.shop_id || '');
+        return sId === activeShopId;
+      });
+      
+      // 1. Thử kéo dữ liệu mới nhất từ Supabase Cloud theo activeShopId
       let cloudOrders = null;
       try {
         if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.fetchSubmittedOrders === 'function') {
-          cloudOrders = await SupabaseCloud.fetchSubmittedOrders();
+          cloudOrders = await SupabaseCloud.fetchSubmittedOrders(activeShopId);
         } else if (this.isExtensionAvailable()) {
           cloudOrders = await new Promise(resolve => {
-            chrome.runtime.sendMessage({ action: 'fetchSubmittedOrders' }, res => {
+            chrome.runtime.sendMessage({ action: 'fetchSubmittedOrders', shopId: activeShopId }, res => {
               resolve(Array.isArray(res) ? res : null);
             });
           });
@@ -863,12 +1042,20 @@
       // 2. Nếu lấy được dữ liệu chuẩn từ Cloud, Cloud là nguồn chân lý (Source of Truth)
       let combinedList = [];
       if (Array.isArray(cloudOrders)) {
-        (cloudOrders || []).forEach(o => { if (o) o.isCloud = true; });
+        (cloudOrders || []).forEach(o => {
+          if (o) {
+            o.isCloud = true;
+            if (activeShopId && (!o.shopId || !o.shop_id)) {
+              o.shopId = activeShopId;
+              o.shop_id = activeShopId;
+            }
+          }
+        });
 
         const cloudTrackings = new Set(cloudOrders.map(o => o.trackingCode).filter(Boolean));
         const cloudIds = new Set(cloudOrders.map(o => o.id).filter(Boolean));
 
-        const localOnlyOrders = (rawOrders || []).filter(o => {
+        const localOnlyOrders = localShopOrders.filter(o => {
           if (!o) return false;
           if (o.isCloud === true) return false;
           if (cloudIds.has(o.id)) return false;
@@ -878,13 +1065,13 @@
 
         combinedList = [...cloudOrders, ...localOnlyOrders];
       } else {
-        combinedList = rawOrders || [];
+        combinedList = localShopOrders;
       }
 
       // 3. LỌC BỎ HOÀN TOÀN ĐƠN ẢO & CHỐNG TRÙNG LẶP (Deduplication Engine)
       const cleanList = [];
       const seenTrackings = new Set();
-      const seenCustomerKeys = new Set();
+      const seenSubmittedKeys = new Set();
 
       for (const o of combinedList) {
         if (!o) continue;
@@ -897,28 +1084,36 @@
         const isGhost = (!name || name === '—' || name === '-' || name.length < 2) && (!phone || phone.length < 9);
         if (isGhost) continue;
 
+        // Chỉ định danh theo chuẩn bất biến: tracking_code -> saved_order_id -> shop_id + order_code -> id
+        // Tuyệt đối không dùng Tên + SĐT làm khóa nhận diện đơn để không xóa nhầm khách mua lại.
+        const submittedKey = normalizeSubmittedIdentity(o);
+        if (submittedKey && seenSubmittedKeys.has(submittedKey)) continue;
+        if (submittedKey) seenSubmittedKeys.add(submittedKey);
+
         // Chống trùng mã vận đơn
         if (tracking && tracking !== '—' && tracking !== '') {
           if (seenTrackings.has(tracking)) continue;
           seenTrackings.add(tracking);
         }
 
-        // Chống trùng khách hàng cùng mã đơn trong ngày
-        if (phone && phone.length >= 9) {
-          const dateStr = (o.submittedDate || o.submittedAt || '').substring(0, 10);
-          const custKey = `${phone}_${orderCode !== '—' ? orderCode : ''}_${dateStr}`;
-          if (orderCode && orderCode !== '—' && seenCustomerKeys.has(custKey)) continue;
-          if (orderCode && orderCode !== '—') seenCustomerKeys.add(custKey);
-        }
-
         cleanList.push(o);
       }
 
-      if (Array.isArray(cloudOrders)) {
+      if (cleanList.length !== (rawOrders || []).length || Array.isArray(cloudOrders)) {
         await this._saveSubmittedOrdersToLocal(cleanList).catch(() => {});
       }
 
-      return cleanList;
+      const shopIsolatedList = cleanList.filter(o => {
+        if (!o) return false;
+        if (!activeShopId) return true;
+        const sId = String(o.shopId || o.shop_id || '');
+        return sId === activeShopId;
+      });
+
+      // Tự động giải phóng và đẩy các đơn còn tồn đọng trong queue lên Cloud
+      this.flushPendingCloudOrders().catch(() => {});
+
+      return shopIsolatedList;
     },
 
     async updateLatestSubmittedOrderTracking(trackingCode) {
@@ -929,6 +1124,22 @@
         target.trackingCode = trackingCode;
         await this._saveSubmittedOrdersToLocal(allSubmitted);
         this.pushSubmittedOrderToCloud(target).catch(() => {});
+
+        try {
+          const logger = typeof recordOrderEvent === 'function' ? recordOrderEvent : (globalThis.recordOrderEvent || null);
+          if (logger) {
+            logger({
+              shopId: target.shopId,
+              orderId: target.id,
+              orderCode: target.orderCode || trackingCode || target.id,
+              eventType: 'TRACKING_RECEIVED',
+              actorType: 'CARRIER',
+              source: 'carrier_tracking_callback',
+              metadata: { trackingCode }
+            }).catch(() => {});
+          }
+        } catch (_) {}
+
         return true;
       }
       return false;
@@ -936,136 +1147,165 @@
 
     async saveSubmittedOrder(order) {
       if (!order) return null;
-      
-      const cleanName = (order.name || '').trim();
-      const cleanPhone = (order.phone || '').replace(/\D/g, '');
-      const cleanTracking = (order.trackingCode || '').trim();
-      const cleanOrderCode = (order.orderCode || '').trim();
 
-      // BỎ QUA HOÀN TOÀN ĐƠN ẢO: Không lưu đơn nếu không có Tên (>= 2 ký tự) VÀ không có SĐT (>= 9 số)
-      const isValidCustomer = (cleanName && cleanName !== '—' && cleanName !== '-' && cleanName.length >= 2) || (cleanPhone && cleanPhone.length >= 9);
-      if (!isValidCustomer) {
-        if (cleanTracking && cleanTracking !== '—') {
-          await this.updateLatestSubmittedOrderTracking(cleanTracking);
+      const prevLock = _submittingLock;
+      let resolveLock;
+      _submittingLock = new Promise(r => { resolveLock = r; });
+      await prevLock.catch(() => {});
+
+      try {
+        order.platform = normalizeCarrierCode(order.platform || order.carrier || order.carrier_id);
+        
+        const cleanName = (order.name || '').trim();
+        const cleanPhone = (order.phone || '').replace(/\D/g, '');
+        const cleanTracking = (order.trackingCode || '').trim();
+        const cleanOrderCode = (order.orderCode || '').trim();
+
+        // BỎ QUA HOÀN TOÀN ĐƠN ẢO: Không lưu đơn nếu không có Tên (>= 2 ký tự) VÀ không có SĐT (>= 9 số)
+        const isValidCustomer = (cleanName && cleanName !== '—' && cleanName !== '-' && cleanName.length >= 2) || (cleanPhone && cleanPhone.length >= 9);
+        if (!isValidCustomer) {
+          if (cleanTracking && cleanTracking !== '—') {
+            await this.updateLatestSubmittedOrderTracking(cleanTracking);
+          }
+          return null;
         }
-        return null;
-      }
 
-      const activeShop = await this.getActiveShop();
-      const activeShopId = activeShop ? String(activeShop.id || activeShop) : null;
-      
-      const allSubmitted = await this._getSubmittedOrdersFromLocal();
-      const orders = allSubmitted.filter(o => o && String(o.shopId || '') === (activeShopId || ''));
+        const activeShop = await this.getActiveShop();
+        const activeShopId = activeShop ? String(activeShop.id || activeShop) : null;
+        
+        const allSubmitted = await this._getSubmittedOrdersFromLocal();
+        const orders = allSubmitted.filter(o => o && String(o.shopId || '') === (activeShopId || ''));
 
-      // Gắn device name nếu chưa có
-      if (!order.deviceName) {
-        if (typeof FirebaseCloud !== 'undefined') {
-          const cn = FirebaseCloud.deviceName;
-          if (cn && cn !== 'Máy không tên' && !cn.startsWith('dev_')) {
-            order.deviceName = cn;
+        // Gắn device name nếu chưa có
+        if (!order.deviceName) {
+          if (typeof FirebaseCloud !== 'undefined') {
+            const cn = FirebaseCloud.deviceName;
+            if (cn && cn !== 'Máy không tên' && !cn.startsWith('dev_')) {
+              order.deviceName = cn;
+            }
+          }
+          if (!order.deviceName && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            try {
+              const r = await new Promise(res => chrome.storage.local.get(['fbDeviceName'], res));
+              if (r.fbDeviceName && r.fbDeviceName !== 'Máy không tên' && !r.fbDeviceName.startsWith('dev_')) {
+                order.deviceName = r.fbDeviceName;
+              }
+            } catch(_) {}
           }
         }
-        if (!order.deviceName && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        // Gắn Shop thông tin nếu chưa có
+        if (!order.shopId && activeShopId) {
+          order.shopId = activeShopId;
+          order.shopName = activeShop ? activeShop.name : '';
+        }
+
+        // Gắn Carrier Account (Tài khoản/Nick lên đơn trên Bưu điện)
+        if (!order.carrierAccount) {
+          if (order.carrier_account) {
+            order.carrierAccount = order.carrier_account;
+          } else if (cleanName) {
+            const accMatch = cleanName.match(/\((?:acc|tài khoản|tk)?\s*([^\)]+)\)/i);
+            if (accMatch && accMatch[1]) {
+              order.carrierAccount = accMatch[1].trim();
+            }
+          }
+        }
+
+        // Gắn thông tin Tài khoản người dùng (Staff/User đăng nhập)
+        if (!order.userEmail) {
           try {
-            const r = await new Promise(res => chrome.storage.local.get(['fbDeviceName'], res));
-            if (r.fbDeviceName && r.fbDeviceName !== 'Máy không tên' && !r.fbDeviceName.startsWith('dev_')) {
-              order.deviceName = r.fbDeviceName;
+            if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSessionSync === 'function') {
+              const sess = AuthSession.getSessionSync();
+              if (sess?.user?.email) {
+                order.userEmail = sess.user.email;
+                order.userName = sess.user.user_metadata?.full_name || sess.user.email.split('@')[0];
+              }
             }
-          } catch(_) {}
+            if (!order.userEmail && typeof localStorage !== 'undefined') {
+              const cachedUser = localStorage.getItem('sb_auth_user');
+              if (cachedUser) {
+                const u = JSON.parse(cachedUser);
+                order.userEmail = u.email || '';
+                order.userName = u.full_name || u.name || '';
+              }
+            }
+          } catch (_) {}
         }
-      }
-      // Gắn Shop thông tin nếu chưa có
-      if (!order.shopId && activeShopId) {
-        order.shopId = activeShopId;
-        order.shopName = activeShop ? activeShop.name : '';
-      }
 
-      // Gắn Carrier Account (Tài khoản/Nick lên đơn trên Bưu điện)
-      if (!order.carrierAccount) {
-        if (order.carrier_account) {
-          order.carrierAccount = order.carrier_account;
-        } else if (cleanName) {
-          const accMatch = cleanName.match(/\((?:acc|tài khoản|tk)?\s*([^\)]+)\)/i);
-          if (accMatch && accMatch[1]) {
-            order.carrierAccount = accMatch[1].trim();
+        // Tạo ID ổn định (Deterministic Stable ID) để chống trùng lặp
+        if (!order.id || String(order.id).startsWith('sub_') || String(order.id).startsWith('sub_1') || String(order.id).startsWith('sub_0')) {
+          const stableId = normalizeSubmittedIdentity(order);
+          if (stableId && stableId.startsWith('tracking:')) {
+            order.id = 'sub_tr_' + stableId.replace('tracking:', '').toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 60);
+          } else if (stableId && stableId.startsWith('saved:')) {
+            order.id = 'sub_sv_' + stableId.replace('saved:', '').toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 60);
+          } else if (stableId && stableId.startsWith('order:')) {
+            order.id = 'sub_oc_' + stableId.replace('order:', '').toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 60);
+          } else if (!order.id) {
+            order.id = 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
           }
         }
-      }
 
-      // Gắn thông tin Tài khoản người dùng (Staff/User đăng nhập)
-      if (!order.userEmail) {
-        try {
-          if (typeof AuthSession !== 'undefined' && typeof AuthSession.getSessionSync === 'function') {
-            const sess = AuthSession.getSessionSync();
-            if (sess?.user?.email) {
-              order.userEmail = sess.user.email;
-              order.userName = sess.user.user_metadata?.full_name || sess.user.email.split('@')[0];
-            }
-          }
-          if (!order.userEmail && typeof localStorage !== 'undefined') {
-            const cachedUser = localStorage.getItem('sb_auth_user');
-            if (cachedUser) {
-              const u = JSON.parse(cachedUser);
-              order.userEmail = u.email || '';
-              order.userName = u.full_name || u.name || '';
-            }
-          }
-        } catch (_) {}
-      }
-
-      // Tạo ID và timestamp
-      if (!order.id) {
-        order.id = 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      }
-      if (!order.submittedAt) {
-        order.submittedAt = new Date().toISOString();
-      }
-      if (!order.submittedDate) {
-        const now = new Date();
-        order.submittedDate = now.getFullYear() + '-' +
-          String(now.getMonth() + 1).padStart(2, '0') + '-' +
-          String(now.getDate()).padStart(2, '0');
-      }
-
-      // Kiểm tra trùng: cùng trackingCode, cùng savedOrderId, cùng orderCode, hoặc cùng phone+name
-      const existing = orders.find(o => {
-        if (!o) return false;
-        if (cleanTracking && o.trackingCode && cleanTracking === String(o.trackingCode).trim()) return true;
-        if (order.savedOrderId && o.savedOrderId && order.savedOrderId === o.savedOrderId) return true;
-        if (order.id && o.id && order.id === o.id) return true;
-        if (cleanOrderCode && cleanOrderCode !== '—' && o.orderCode && cleanOrderCode.toLowerCase() === String(o.orderCode).trim().toLowerCase()) return true;
-        const nameMatch = cleanName && cleanName !== '—' && (o.name || '').trim().toLowerCase() === cleanName.toLowerCase();
-        const phoneMatch = cleanPhone && (o.phone || '').replace(/\D/g, '') === cleanPhone;
-        return nameMatch && phoneMatch;
-      });
-
-      let updatedOrdersList = [...orders];
-      if (existing) {
-        const idx = updatedOrdersList.findIndex(o => o.id === existing.id || (cleanTracking && o.trackingCode === cleanTracking));
-        if (idx !== -1) {
-          const updatedOrder = {
-            ...updatedOrdersList[idx],
-            ...order,
-            id: updatedOrdersList[idx].id, // Giữ nguyên ID gốc để không tạo dòng mới trên Database
-            codAmount: (Number(order.codAmount) > 0) ? Number(order.codAmount) : updatedOrdersList[idx].codAmount
-          };
-          if (cleanTracking) updatedOrder.trackingCode = cleanTracking;
-          updatedOrdersList.splice(idx, 1);
-          updatedOrdersList.unshift(updatedOrder);
-          order = updatedOrder;
+        if (!order.submittedAt) {
+          order.submittedAt = new Date().toISOString();
         }
-      } else {
-        updatedOrdersList.unshift(order);
-      }
+        if (!order.submittedDate) {
+          const now = new Date();
+          order.submittedDate = now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0');
+        }
 
-      // Giới hạn 500 đơn gần nhất
-      if (updatedOrdersList.length > 500) {
-        updatedOrdersList.sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
-        updatedOrdersList.length = 500;
-      }
+        // Chỉ khóa theo định danh của đơn/vận đơn; tuyệt đối không dùng tên + SĐT làm khóa đơn.
+        const existing = orders.find(o => isSameSubmittedOrder(o, order));
+
+        let updatedOrdersList = [...orders];
+        if (existing) {
+          const idx = updatedOrdersList.findIndex(o => o && (o.id === existing.id || (cleanTracking && cleanTracking !== '—' && o.trackingCode === cleanTracking)));
+          if (idx !== -1) {
+            const updatedOrder = {
+              ...updatedOrdersList[idx],
+              ...order,
+              id: updatedOrdersList[idx].id, // Giữ nguyên ID gốc để không tạo dòng mới trên Database
+              codAmount: (Number(order.codAmount) > 0) ? Number(order.codAmount) : updatedOrdersList[idx].codAmount
+            };
+            if (cleanTracking && cleanTracking !== '—') updatedOrder.trackingCode = cleanTracking;
+            updatedOrdersList[idx] = updatedOrder;
+            order = updatedOrder;
+          }
+        } else {
+          updatedOrdersList.unshift(order);
+        }
+
+        // Giới hạn 500 đơn gần nhất
+        if (updatedOrdersList.length > 500) {
+          updatedOrdersList.sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+          updatedOrdersList.length = 500;
+        }
 
       // Tự động đẩy đơn lên cloud
       this.pushSubmittedOrderToCloud(order).catch(() => {});
+
+      // Tự động ghi nhật ký sự kiện vòng đời đơn (Order Event Ledger)
+      try {
+        const logger = typeof recordOrderEvent === 'function' ? recordOrderEvent : (globalThis.recordOrderEvent || null);
+        if (logger) {
+          logger({
+            shopId: order.shopId || activeShopId,
+            orderId: order.id,
+            orderCode: order.orderCode || order.trackingCode || order.id,
+            eventType: 'ORDER_SAVED',
+            actorType: 'USER',
+            source: 'carrier_submission',
+            afterState: order,
+            metadata: {
+              platform: order.platform,
+              trackingCode: order.trackingCode,
+              carrierAccount: order.carrierAccount
+            }
+          }).catch(() => {});
+        }
+      } catch (_) {}
 
       // Tự động xóa đơn tương ứng khỏi danh sách Đơn nháp (savedOrders)
       try {
@@ -1074,10 +1314,10 @@
         const matchedDrafts = draftOrders.filter(s => {
           if (!s) return false;
           if (targetId && (String(s.id) === String(targetId) || String(s.savedOrderId) === String(targetId))) return true;
-          if (order.orderCode && s.orderCode && String(s.orderCode).trim().toLowerCase() === String(order.orderCode).trim().toLowerCase()) return true;
-          const nameMatch = (s.name || '').trim().toLowerCase() === (order.name || '').trim().toLowerCase();
-          const phoneMatch = (s.phone || '').replace(/\D/g, '') === (order.phone || '').replace(/\D/g, '');
-          return nameMatch && phoneMatch && nameMatch !== '';
+          if (order.orderCode && s.orderCode) {
+            return String(s.orderCode).trim().toLowerCase() === String(order.orderCode).trim().toLowerCase();
+          }
+          return false;
         });
 
         for (const draft of matchedDrafts) {
@@ -1093,35 +1333,59 @@
       const otherShopsSubmitted = allSubmitted.filter(o => o && String(o.shopId || '') !== (activeShopId || ''));
       const mergedAllSubmitted = [...updatedOrdersList, ...otherShopsSubmitted];
 
+      await this._saveSubmittedOrdersToLocal(mergedAllSubmitted);
+      this._syncCustomerHubOrder(order, 'submitted_order').catch(() => {});
+
       try {
-        await this._saveSubmittedOrdersToLocal(mergedAllSubmitted);
-
-        // Ghi nhận Audit Log & Notification khi tạo/lưu đơn đã lên đơn
-        if (typeof AuditLogger !== 'undefined' && typeof AuditLogger.logOperation === 'function') {
-          AuditLogger.logOperation('ORDER_SUBMITTED', `Lên đơn thành công cho ${order.name || 'Khách hàng'} (${order.orderCode || order.trackingCode || 'Đơn mới'})`, {
-            orderId: order.id,
-            name: order.name,
-            phone: order.phone,
-            orderCode: order.orderCode,
-            trackingCode: order.trackingCode,
-            platform: order.platform,
-            codAmount: order.codAmount
-          });
+        if (this.isExtensionAvailable()) {
+          chrome.runtime.sendMessage({ 
+            type: 'order_submitted', 
+            action: 'refresh_orders', 
+            orderId: order.id, 
+            order 
+          }).catch(() => {});
         }
-        if (typeof NotificationService !== 'undefined' && typeof NotificationService.notify === 'function') {
-          NotificationService.notify({
-            title: '📦 Đơn hàng đã lên đơn',
-            message: `${order.name || 'Khách hàng'} - ${order.orderCode || order.trackingCode || 'Đơn mới'} (${Number(order.codAmount || 0).toLocaleString('vi-VN')}đ)`,
-            category: 'ORDERS',
-            level: 'SUCCESS'
-          });
-        }
+      } catch (_) {}
 
-        return order;
-      } catch (e) {
-        throw e;
+      try {
+        const g = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
+        const Evt = typeof CustomEvent !== 'undefined' ? CustomEvent : (g && g.CustomEvent);
+        if (g && typeof g.dispatchEvent === 'function' && Evt) {
+          g.dispatchEvent(new Evt('submitted-orders-updated', { detail: { order } }));
+          g.dispatchEvent(new Evt('orders-updated', { detail: { order } }));
+          g.dispatchEvent(new Evt('order-saved-db', { detail: { order } }));
+          g.dispatchEvent(new Evt('customer-hub-updated', { detail: { order } }));
+        }
+      } catch (_) {}
+
+      // Ghi nhận Audit Log & Notification khi tạo/lưu đơn đã lên đơn
+      if (typeof AuditLogger !== 'undefined' && typeof AuditLogger.logOperation === 'function') {
+        AuditLogger.logOperation('ORDER_SUBMITTED', `Lên đơn thành công cho ${order.name || 'Khách hàng'} (${order.orderCode || order.trackingCode || 'Đơn mới'})`, {
+          orderId: order.id,
+          name: order.name,
+          phone: order.phone,
+          orderCode: order.orderCode,
+          trackingCode: order.trackingCode,
+          platform: order.platform,
+          codAmount: order.codAmount
+        });
       }
-    },
+      if (typeof NotificationService !== 'undefined' && typeof NotificationService.notify === 'function') {
+        NotificationService.notify({
+          title: '📦 Đơn hàng đã lên đơn',
+          message: `${order.name || 'Khách hàng'} - ${order.orderCode || order.trackingCode || 'Đơn mới'} (${Number(order.codAmount || 0).toLocaleString('vi-VN')}đ)`,
+          category: 'ORDERS',
+          level: 'SUCCESS'
+        });
+      }
+
+      return order;
+    } catch (e) {
+      throw e;
+    } finally {
+      if (typeof resolveLock === 'function') resolveLock();
+    }
+  },
 
     async updateSubmittedOrderTracking(savedOrderId, trackingCode) {
       if (!savedOrderId || !trackingCode) return false;
@@ -1337,7 +1601,7 @@
           // Trường hợp không có user đăng nhập (Offline / Unauthenticated local mode)
           if (list.length === 0) {
             const defaultShop = {
-              id: 'shop_default',
+              id: 'c201e6bc-8986-4f91-b900-e319865d1907',
               name: 'Shop Mặc Định',
               owner_id: null,
               senderName: '',
@@ -1424,6 +1688,9 @@
         return false;
       }
       const activeShopKey = await this._getActiveShopKey();
+      if (typeof AuthSession !== 'undefined' && typeof AuthSession.updateActiveShop === 'function') {
+        await AuthSession.updateActiveShop(String(shopId));
+      }
       return new Promise((resolve) => {
         try {
           if (this.isExtensionAvailable()) {
@@ -1614,32 +1881,135 @@
       } catch (_) {}
     },
 
+    async _syncCustomerHubOrder(order, sourceType = 'order') {
+      if (!order?.shopId || !order?.phone) return null;
+      try {
+        const params = {
+          p_shop_id: order.shopId,
+          p_source_type: sourceType,
+          p_source_order_id: String(order.id || order.savedOrderId || order.orderCode || ''),
+          p_phone: order.phone || '',
+          p_name: order.name || order.customer_name || '',
+          p_address: order.address || '',
+          p_order_code: order.orderCode || order.order_code || '',
+          p_tracking_code: order.trackingCode || order.tracking_code || '',
+          p_carrier: normalizeCarrierCode(order.platform || order.carrier || ''),
+          p_status: order.status || (sourceType === 'submitted_order' ? 'success' : 'pending'),
+          p_cod_amount: Number(order.codAmount || order.cod_amount || 0),
+          p_ordered_at: order.submittedAt || order.createdAt || new Date().toISOString()
+        };
+        if (typeof SupabaseCloud !== 'undefined' && typeof SupabaseCloud.rpc === 'function') {
+          return await SupabaseCloud.rpc('customer_hub_sync_order', params);
+        }
+        if (this.isExtensionAvailable()) {
+          return await new Promise(resolve => chrome.runtime.sendMessage({ action: 'customerHubSyncOrder', params }, response => resolve(response?.data || null)));
+        }
+      } catch (error) {
+        console.warn('[CustomerHubMetric]', { event: 'order_sync_failed', sourceType, orderId: order.id, error: error.message });
+      }
+      return null;
+    },
+
+    async _getPendingOfflineQueue() {
+      return new Promise(resolve => {
+        try {
+          if (this.isExtensionAvailable()) {
+            chrome.storage.local.get(['pending_submitted_orders_queue'], r => {
+              resolve(Array.isArray(r.pending_submitted_orders_queue) ? r.pending_submitted_orders_queue : []);
+            });
+          } else {
+            const raw = localStorage.getItem('pending_submitted_orders_queue');
+            resolve(raw ? JSON.parse(raw) : []);
+          }
+        } catch (_) { resolve([]); }
+      });
+    },
+
+    async _enqueuePendingCloudOrder(order) {
+      if (!order) return;
+      try {
+        const queue = await this._getPendingOfflineQueue();
+        const exists = queue.some(o => isSameSubmittedOrder(o, order));
+        if (!exists) {
+          queue.push({ ...order, queuedAt: Date.now() });
+          if (this.isExtensionAvailable()) {
+            chrome.storage.local.set({ pending_submitted_orders_queue: queue });
+          } else {
+            localStorage.setItem('pending_submitted_orders_queue', JSON.stringify(queue));
+          }
+        }
+      } catch (_) {}
+    },
+
+    async _dequeuePendingCloudOrder(order) {
+      if (!order) return;
+      try {
+        const queue = await this._getPendingOfflineQueue();
+        const filtered = queue.filter(o => !isSameSubmittedOrder(o, order));
+        if (this.isExtensionAvailable()) {
+          chrome.storage.local.set({ pending_submitted_orders_queue: filtered });
+        } else {
+          localStorage.setItem('pending_submitted_orders_queue', JSON.stringify(filtered));
+        }
+      } catch (_) {}
+    },
+
+    async flushPendingCloudOrders() {
+      const queue = await this._getPendingOfflineQueue();
+      if (!Array.isArray(queue) || queue.length === 0) return { ok: true, count: 0 };
+      try {
+        const res = await this.pushSubmittedOrdersToCloud(queue);
+        if (res && res.ok) {
+          if (this.isExtensionAvailable()) {
+            chrome.storage.local.set({ pending_submitted_orders_queue: [] });
+          } else {
+            localStorage.setItem('pending_submitted_orders_queue', JSON.stringify([]));
+          }
+          return { ok: true, count: queue.length };
+        }
+        return { ok: false, count: 0, reason: res?.reason };
+      } catch (err) {
+        return { ok: false, count: 0, reason: err.message };
+      }
+    },
+
     async pushSubmittedOrderToCloud(order) {
       if (!order) return false;
       try {
+        let ok = false;
         if (this.isExtensionAvailable()) {
-          return new Promise(resolve => {
+          ok = await new Promise(resolve => {
             chrome.runtime.sendMessage({ action: 'pushSubmittedOrder', order }, (res) => {
               const lastErr = chrome.runtime.lastError;
-              resolve(res ? res.ok : false);
+              resolve(!lastErr && res && res.ok === true);
             });
           });
         } else {
           const c = this._cloud();
           if (!c || typeof c.pushSubmittedOrder !== 'function') return false;
-          return await c.pushSubmittedOrder(order);
+          ok = await c.pushSubmittedOrder(order);
         }
-      } catch (e) { return false; }
+
+        if (ok) {
+          await this._dequeuePendingCloudOrder(order);
+        } else {
+          await this._enqueuePendingCloudOrder(order);
+        }
+        return ok;
+      } catch (e) {
+        await this._enqueuePendingCloudOrder(order);
+        return false;
+      }
     },
 
-    async syncSubmittedOrdersToCloud() {
-      const orders = await this.getSubmittedOrders();
+    async pushSubmittedOrdersToCloud(orders) {
+      if (!Array.isArray(orders) || orders.length === 0) return { ok: true, count: 0 };
       try {
         if (this.isExtensionAvailable()) {
           return new Promise(resolve => {
             chrome.runtime.sendMessage({ action: 'pushSubmittedOrders', orders }, (res) => {
               const lastErr = chrome.runtime.lastError;
-              resolve({ ok: !(lastErr || (res && res.error)), count: orders.length, reason: res?.error });
+              resolve({ ok: !lastErr && !(res && res.error), count: orders.length, reason: res?.error });
             });
           });
         } else {
@@ -1651,20 +2021,24 @@
       } catch (e) { return { ok: false, reason: e.message }; }
     },
 
+    async syncSubmittedOrdersToCloud() {
+      const orders = await this.getSubmittedOrders();
+      return this.pushSubmittedOrdersToCloud(orders);
+    },
+
     async syncSubmittedOrdersFromCloud() {
       try {
         const getOrderKey = (o) => {
-          if (!o) return 'raw_' + Math.random();
+          if (!o) return null;
+          const tracking = (o.trackingCode || o.tracking_code || '').trim().toUpperCase();
+          if (tracking && tracking !== '—' && tracking !== '-') return 'track_' + tracking;
           const code = (o.orderCode || o.order_code || '').trim().toLowerCase();
-          const savedId = o.savedOrderId || o.saved_order_id || '';
-          const name = (o.name || o.customer_name || '').trim().toLowerCase();
-          const phone = (o.phone || '').replace(/\D/g, '');
-          const id = o.id || '';
           if (code && code !== '—' && code !== '-') return 'code_' + code;
+          const savedId = o.savedOrderId || o.saved_order_id || '';
           if (savedId && savedId !== '—' && savedId !== '-') return 'saved_' + savedId;
-          if (name && phone) return 'np_' + name + '_' + phone;
+          const id = o.id || '';
           if (id) return 'id_' + id;
-          return 'raw_' + Math.random();
+          return null;
         };
 
         if (this.isExtensionAvailable()) {
@@ -1677,10 +2051,14 @@
                 const localOrders = await this.getSubmittedOrders();
 
                 const map = new Map();
-                (localOrders || []).forEach(o => { if (o) map.set(getOrderKey(o), o); });
+                (localOrders || []).forEach(o => { const key = getOrderKey(o); if (key) map.set(key, o); });
                 (cloudOrders || []).forEach(co => {
                   if (!co) return;
                   const k = getOrderKey(co);
+                  if (!k) {
+                    console.warn('[OrderStorage] Bỏ qua submitted order không có identity ổn định.');
+                    return;
+                  }
                   if (map.has(k)) {
                     const existing = map.get(k);
                     map.set(k, { ...existing, ...co });
@@ -1710,10 +2088,14 @@
           const localOrders = await this.getSubmittedOrders();
 
           const map = new Map();
-          (localOrders || []).forEach(o => { if (o) map.set(getOrderKey(o), o); });
+          (localOrders || []).forEach(o => { const key = getOrderKey(o); if (key) map.set(key, o); });
           (Array.isArray(cloudOrders) ? cloudOrders : []).forEach(co => {
             if (!co) return;
             const k = getOrderKey(co);
+            if (!k) {
+              console.warn('[OrderStorage] Bỏ qua submitted order không có identity ổn định.');
+              return;
+            }
             if (map.has(k)) {
               const existing = map.get(k);
               map.set(k, { ...existing, ...co });

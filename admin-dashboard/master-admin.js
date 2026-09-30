@@ -1,3 +1,4 @@
+function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 // =========================================================================
 // MASTER-ADMIN.JS — FRONTEND LOGIC CHO PORTAL ADMIN TỔNG (ADMIN.HTML)
 // Dùng chung thiết kế và bộ CSS với options.html (options.css)
@@ -419,7 +420,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }).join('');
     } catch (e) {
       console.error(e);
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 24px; color: #EF4444;">Lỗi khi tải dữ liệu Shop: ${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 24px; color: #EF4444;">Lỗi khi tải dữ liệu Shop: ${escapeHTML(e.message)}</td></tr>`;
     }
   }
 
@@ -484,7 +485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       alert(`✅ Đã khôi phục Cửa hàng "${shopName}" thành công!`);
       loadShops();
     } catch (e) {
-      alert(`❌ Lỗi khôi phục: ${e.message}`);
+      alert(`❌ Lỗi khôi phục: ${escapeHTML(e.message)}`);
     }
   };
 
@@ -540,7 +541,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     } catch (e) {
       console.error(e);
-      alert(`❌ Lỗi xóa Shop: ${e.message}`);
+      alert(`❌ Lỗi xóa Shop: ${escapeHTML(e.message)}`);
     }
   };
 
@@ -562,7 +563,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       alert(`✅ Đã ${newStatus === 'locked' ? 'khóa' : 'mở khóa'} Shop thành công!`);
       loadShops();
     } catch (e) {
-      alert(`❌ Lỗi: ${e.message}`);
+      alert(`❌ Lỗi: ${escapeHTML(e.message)}`);
     }
   };
 
@@ -608,7 +609,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       alert('✅ Đã cập nhật lại mật khẩu cho tài khoản thành công!');
       closeResetModal();
     } catch (e) {
-      alert(`❌ Lỗi: ${e.message}`);
+      alert(`❌ Lỗi: ${escapeHTML(e.message)}`);
     }
   });
 
@@ -693,7 +694,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert(`❌ Không thể tạo Shop. Vui lòng kiểm tra lại kết nối!`);
       }
     } catch (err) {
-      alert(`❌ Lỗi tạo Shop: ${err.message}`);
+      alert(`❌ Lỗi tạo Shop: ${escapeHTML(err.message)}`);
     }
   });
 
@@ -840,7 +841,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }).join('');
     } catch (err) {
       console.error('loadShopMembers error:', err);
-      shopMembersList.innerHTML = `<div style="text-align: center; padding: 24px; color: #EF4444; font-size: 12px;">Lỗi tải nhân viên: ${err.message}</div>`;
+      shopMembersList.innerHTML = `<div style="text-align: center; padding: 24px; color: #EF4444; font-size: 12px;">Lỗi tải nhân viên: ${escapeHTML(err.message)}</div>`;
     }
   }
 
@@ -1155,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       alert('✅ Đã cập nhật Hạn ngạch & Quyền cho Shop thành công!');
     } catch (e) {
-      alert(`❌ Lỗi: ${e.message}`);
+      alert(`❌ Lỗi: ${escapeHTML(e.message)}`);
     }
   });
 
@@ -1327,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showViewGroqKeys();
       alert('✅ Đã lưu Danh sách Groq API Keys!');
     } catch (e) {
-      alert(`❌ Lỗi lưu Groq API Keys: ${e.message}`);
+      alert(`❌ Lỗi lưu Groq API Keys: ${escapeHTML(e.message)}`);
     }
   });
 
@@ -1345,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showViewAiPrompt();
       alert('✅ Đã lưu AI System Prompt và Quy tắc mặc định!');
     } catch (e) {
-      alert(`❌ Lỗi lưu AI Prompt: ${e.message}`);
+      alert(`❌ Lỗi lưu AI Prompt: ${escapeHTML(e.message)}`);
     }
   });
 
@@ -1359,7 +1360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showViewBlacklist();
       alert('✅ Đã lưu Danh sách đen SĐT toàn hệ thống!');
     } catch (e) {
-      alert(`❌ Lỗi lưu Danh sách đen: ${e.message}`);
+      alert(`❌ Lỗi lưu Danh sách đen: ${escapeHTML(e.message)}`);
     }
   });
 
@@ -1409,7 +1410,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderAuditLogs();
     } catch (err) {
       console.error(err);
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: red;">Không thể tải nhật ký: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: red;">Không thể tải nhật ký: ${escapeHTML(err.message)}</td></tr>`;
     }
   }
 
@@ -1556,7 +1557,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (err) {
       console.error('loadDevices error:', err);
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: red;">Lỗi: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: red;">Lỗi: ${escapeHTML(err.message)}</td></tr>`;
     }
   }
 
@@ -1760,7 +1761,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               alert('✅ Đã đổi tên người dùng thành công!');
               loadUsers();
             } catch (err) {
-              alert(`❌ Lỗi đổi tên: ${err.message}`);
+              alert(`❌ Lỗi đổi tên: ${escapeHTML(err.message)}`);
             }
           }
 
@@ -1800,7 +1801,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (err) {
       console.error('loadUsers error:', err);
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px; color: red;">Lỗi: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px; color: red;">Lỗi: ${escapeHTML(err.message)}</td></tr>`;
     }
   }
 
@@ -1875,7 +1876,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         formCreateUser.reset();
         loadUsers();
       } catch (err) {
-        alert(`❌ Lỗi tạo người dùng: ${err.message}`);
+        alert(`❌ Lỗi tạo người dùng: ${escapeHTML(err.message)}`);
       }
     });
   }
@@ -1936,7 +1937,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         closeEditNameModal();
         loadUsers();
       } catch (err) {
-        alert(`❌ Lỗi đổi tên: ${err.message}`);
+        alert(`❌ Lỗi đổi tên: ${escapeHTML(err.message)}`);
       }
     });
   }
@@ -2001,7 +2002,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         closeResetPassModal();
         loadUsers();
       } catch (err) {
-        alert(`❌ Lỗi đổi mật khẩu: ${err.message}`);
+        alert(`❌ Lỗi đổi mật khẩu: ${escapeHTML(err.message)}`);
       }
     });
   }
@@ -2050,7 +2051,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('modal-set-role').style.display = 'none';
         loadUsers();
       } catch (err) {
-        alert(`❌ Lỗi gán vai trò: ${err.message}`);
+        alert(`❌ Lỗi gán vai trò: ${escapeHTML(err.message)}`);
       }
     });
   }
@@ -2130,7 +2131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         closeAssignShopModal();
         loadUsers();
       } catch (err) {
-        alert(`❌ Lỗi gán Cửa hàng: ${err.message}`);
+        alert(`❌ Lỗi gán Cửa hàng: ${escapeHTML(err.message)}`);
       }
     });
   }
@@ -2165,7 +2166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       alert(`✅ Đã ${nextStatus === 'locked' ? 'Khóa' : 'Mở khóa'} tài khoản ${userEmail} thành công!`);
       loadUsers();
     } catch(err) {
-      alert(`❌ Lỗi: ${err.message}`);
+      alert(`❌ Lỗi: ${escapeHTML(err.message)}`);
     }
   };
 

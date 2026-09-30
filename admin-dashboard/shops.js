@@ -1,3 +1,4 @@
+function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 // shops.js - Xử lý logic Quản lý Shop & Phân quyền User
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -116,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
     } catch (err) {
       console.error('fetchShops error:', err);
-      shopsTbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+      shopsTbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi tải dữ liệu: ${escapeHTML(err.message)}</td></tr>`;
     }
   };
 
@@ -198,13 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const { data: roles } = await sb.from('roles').select('id, code, name').order('code');
       if (roles) {
-        roleSelect.innerHTML = roles.map(r => `<option value="${r.id}">${r.name} (${r.code})</option>`).join('');
+        roleSelect.innerHTML = roles.map(r => `<option value="${escapeHTML(r.id)}">${escapeHTML(r.name)} (${escapeHTML(r.code)})</option>`).join('');
       }
 
       const { data: shops } = await sb.from('shops').select('id, name').is('deleted_at', null).order('name');
       if (shops) {
         shopSelect.innerHTML = `<option value="">-- Không gán Shop --</option>` +
-          shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+          shops.map(s => `<option value="${escapeHTML(s.id)}">${escapeHTML(s.name)}</option>`).join('');
       }
 
       const { data: currentRole } = await sb.from('user_roles').select('role_id').eq('user_id', userId).maybeSingle();
@@ -299,10 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       selectEl.innerHTML = userList.map(u => {
-        const name = u.full_name || u.email?.split('@')[0] || 'Người dùng';
-        const mail = u.email || 'tai@luathuysinh.vn';
+        const name = escapeHTML(u.full_name || u.email?.split('@')[0] || 'Người dùng');
+        const mail = escapeHTML(u.email || 'tai@luathuysinh.vn');
         const isSelected = u.id === selectedId;
-        return `<option value="${u.id}" ${isSelected ? 'selected' : ''}>👤 ${name} (${mail})</option>`;
+        return `<option value="${escapeHTML(u.id)}" ${isSelected ? 'selected' : ''}>👤 ${name} (${mail})</option>`;
       }).join('');
     } catch (_) {
       selectEl.innerHTML = `<option value="${selectedId || ''}" selected>👤 Nguyễn Văn Tài (tai@luathuysinh.vn)</option>`;
@@ -384,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
     } catch (err) {
       console.error('loadShopMembers error:', err);
-      shopMembersList.innerHTML = `<div class="text-xs text-red-500 text-center py-4">Lỗi: ${err.message}</div>`;
+      shopMembersList.innerHTML = `<div class="text-xs text-red-500 text-center py-4">Lỗi: ${escapeHTML(err.message)}</div>`;
     }
   }
 

@@ -10,12 +10,10 @@ const MemberService = {
       shopId = activeShop.id;
     }
 
-    // Nếu shopId không phải UUID hợp lệ (ví dụ 'shop_default') -> Trả về fallback local
+    // Không dựng thành viên giả khi chưa có Shop hợp lệ.
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shopId);
     if (!isUuid) {
-      return [
-        { id: 'mem_owner', shop_id: shopId, role: 'SHOP_OWNER', role_id: '88888888-8888-8888-8888-888888888888', profiles: { username: 'yen_admin', full_name: 'Chủ Shop' } }
-      ];
+      return [];
     }
 
     try {
@@ -39,10 +37,7 @@ const MemberService = {
       console.warn('[MemberService] Lỗi getShopMembers:', e);
     }
 
-    // Mock fallback danh sách nhân viên local
-    return [
-      { id: 'mem_1', role: 'SHOP_OWNER', status: 'active', profiles: { full_name: 'Chủ Shop (Bạn)', email: 'owner@system.com' } }
-    ];
+    return [];
   },
 
   async addMember(shopId, userId, role = 'SHOP_STAFF', permissions = []) {

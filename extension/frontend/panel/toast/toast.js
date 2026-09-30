@@ -90,6 +90,7 @@
         }
         .vnpost-toast--success {
             border-left-color: #10b981;
+            background: rgba(6, 78, 59, 0.96);
         }
         .vnpost-toast--success .vnpost-toast-icon {
             color: #34d399;
@@ -97,6 +98,7 @@
         }
         .vnpost-toast--error {
             border-left-color: #ef4444;
+            background: rgba(127, 29, 29, 0.96);
         }
         .vnpost-toast--error .vnpost-toast-icon {
             color: #fca5a5;
@@ -107,6 +109,7 @@
         }
         .vnpost-toast--warning {
             border-left-color: #f59e0b;
+            background: rgba(120, 53, 15, 0.96);
         }
         .vnpost-toast--warning .vnpost-toast-icon {
             color: #fde047;
@@ -131,6 +134,9 @@
             background: rgba(0, 0, 0, 0.05);
             color: rgba(0, 0, 0, 0.8);
         }
+        .vnpost-toast--success.light-mode { background: #ecfdf5; color: #065f46; }
+        .vnpost-toast--error.light-mode { background: #fef2f2; color: #991b1b; }
+        .vnpost-toast--warning.light-mode { background: #fffbeb; color: #92400e; }
         @keyframes vnpostShakeError {
           0% { opacity: 0; transform: translateX(120%); }
           30% { opacity: 1; transform: translateX(0) scale(1.02); }
@@ -142,6 +148,20 @@
       `;
       target.appendChild(style);
     } catch (_) {}
+  }
+
+  function sanitizeToastMessage(message) {
+    return String(message || '')
+      .replace(/^[\s\p{Extended_Pictographic}\p{Emoji_Presentation}\u200d\ufe0f✓✕⚠⚪●○⇥]+/gu, '')
+      .replace(/^[:\-–—\s]+/, '')
+      .trim();
+  }
+
+  function resolveToastType(message, type) {
+    const raw = String(message || '').toLowerCase();
+    if (/cảnh báo|cần kiểm tra|vui lòng|chưa|không đúng định dạng/.test(raw) || /⚠/.test(raw)) return 'warning';
+    if (type === 'success' || type === 'error' || type === 'warning' || type === 'info') return type;
+    return 'info';
   }
 
   function showVnpostToast(message, type) {
@@ -161,6 +181,8 @@
       }
 
       const root = host.shadowRoot || host;
+      const resolvedType = resolveToastType(message, type);
+      const cleanMessage = sanitizeToastMessage(message);
       ensureToastStyles(root);
       let container = root.getElementById ? root.getElementById('vnpost-toast-container') : null;
       if (!container && root.querySelector) {
@@ -173,11 +195,28 @@
         root.appendChild(container);
       }
 
+      // ─── CHỐNG SPAM TOAST: Trùng lặp & Giới hạn tối đa 2 toast ───
+      const existingSame = Array.from(container.children).find(el => {
+        const msgEl = el.querySelector('.vnpost-toast-message');
+        return msgEl && msgEl.textContent === cleanMessage;
+      });
+      if (existingSame) {
+        existingSame.classList.remove('show');
+        requestAnimationFrame(() => existingSame.classList.add('show'));
+        return;
+      }
+
+      // Giới hạn tối đa 2 toast hiển thị cùng lúc — xóa cái cũ nhất nếu tràn
+      while (container.children.length >= 2) {
+        const oldest = container.firstChild;
+        if (oldest) oldest.remove();
+      }
+
       const panel = root.getElementById ? root.getElementById('vnpost-autofill-panel') : null;
       const isLightMode = panel && panel.classList.contains('light-mode');
 
       const toast = document.createElement('div');
-      toast.className = 'vnpost-toast vnpost-toast--' + (type || 'info');
+      toast.className = 'vnpost-toast vnpost-toast--' + resolvedType;
       if (isLightMode) {
         toast.classList.add('light-mode');
       }
@@ -187,11 +226,11 @@
       iconWrapper.className = 'vnpost-toast-icon';
       
       let svgContent = '';
-      if (type === 'success') {
+      if (resolvedType === 'success') {
         svgContent = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14 9 11"/></svg>`;
-      } else if (type === 'error') {
+      } else if (resolvedType === 'error') {
         svgContent = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
-      } else if (type === 'warning') {
+      } else if (resolvedType === 'warning') {
         svgContent = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
       } else { // info
         svgContent = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
@@ -201,7 +240,7 @@
       // Message
       const msgWrapper = document.createElement('div');
       msgWrapper.className = 'vnpost-toast-message';
-      msgWrapper.textContent = message;
+      msgWrapper.textContent = cleanMessage;
 
       // Close Button
       const closeBtn = document.createElement('button');
@@ -219,12 +258,13 @@
       
       requestAnimationFrame(() => toast.classList.add('show'));
       
+      const duration = resolvedType === 'error' ? 3500 : 2200;
       setTimeout(() => {
         if (toast.parentNode) {
           toast.classList.remove('show');
           setTimeout(() => toast.remove(), 250);
         }
-      }, 3500);
+      }, duration);
     } catch (e) { console.warn('Toast error:', e); }
   }
 

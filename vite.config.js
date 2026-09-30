@@ -11,11 +11,28 @@ export default defineConfig({
     !isVercel && crx({ manifest }),
   ].filter(Boolean),
   build: {
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       input: {
         main: 'index.html',
         options: 'options.html',
         admin: 'admin.html',
+      },
+      output: {
+        manualChunks(id) {
+          const normId = id.replace(/\\/g, '/');
+          if (normId.includes('/node_modules/')) {
+            if (normId.includes('react') || normId.includes('react-dom') || normId.includes('scheduler')) {
+              return 'vendor-react';
+            }
+            if (normId.includes('@supabase') || normId.includes('supabase')) {
+              return 'vendor-supabase';
+            }
+            if (normId.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+          }
+        }
       }
     }
   },
@@ -27,6 +44,21 @@ export default defineConfig({
     strictPort: true,
     hmr: {
       port: 5173
+    },
+    watch: {
+      ignored: [
+        '**/graft/**',
+        '**/.cache/**',
+        '**/.git/**',
+        '**/*.lock',
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/*.zip',
+        '**/.agents/**',
+        '**/.cursor/**',
+        '**/.gemini/**',
+        '**/.codegraph/**'
+      ]
     }
   }
 })

@@ -1,0 +1,2 @@
+(function(){const r={_listeners:{},on(s,i){this._listeners[s]||(this._listeners[s]=[]),this._listeners[s].push(i)},off(s,i){this._listeners[s]&&(this._listeners[s]=this._listeners[s].filter(t=>t!==i))},emit(s,i){this._listeners[s]&&this._listeners[s].forEach(t=>{try{t(i)}catch(e){console.error(`[AuthEvents] Lỗi khi xử lý sự kiện ${s}:`,e)}})}};typeof globalThis<"u"&&(globalThis.AuthEvents=r);
+})()

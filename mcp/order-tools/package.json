@@ -1,0 +1,10 @@
+{
+  "name": "auto-fill-order-mcp",
+  "version": "1.0.2",
+  "description": "Local MCP Tool Adapter for Order Parsing and Address Normalization",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}

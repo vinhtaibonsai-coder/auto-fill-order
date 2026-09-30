@@ -1,122 +1,226 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Headphones, MessageSquare, AlertCircle, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
 import { AdminService } from '../../../../domain/admin/admin.service.js';
+import FilterBar from '../../components/FilterBar';
+import TicketDetailModal from '../../modals/TicketDetailModal';
+import Pagination from '../../components/Pagination';
 
 export default function SupportTickets() {
   const [tickets, setTickets] = useState([]);
+  const [status, setStatus] = useState('');
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [actionLoading, setActionLoading] = useState(null);
-
-  const fetchTickets = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    const res = await AdminService.getSupportTickets();
-    if (res.success) {
-      setTickets(res.data || []);
-    } else {
-      setError(res.error || 'Lỗi tải danh sách tickets');
-    }
-    setLoading(false);
-  }, []);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
-    fetchTickets();
-  }, [fetchTickets]);
+    setPage(1);
+  }, [status, search]);
 
-  const handleUpdateStatus = async (ticket) => {
-    const newStatus = ticket.status === 'open' ? 'in_progress' : (ticket.status === 'in_progress' ? 'resolved' : 'open');
-    setActionLoading(ticket.id);
-    const res = await AdminService.updateTicketStatus(ticket.id, ticket.status, newStatus);
-    if (res.success) {
-      setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, status: newStatus } : t));
+  const load = useCallback(async () => {
+    setLoading(true);
+    const r = await AdminService.getSupportTickets({ status: status || undefined });
+    if (r.success) {
+      setTickets(r.data || []);
     } else {
-      alert('Lỗi: ' + res.error);
+      alert(r.error);
     }
-    setActionLoading(null);
+    setLoading(false);
+  }, [status]);
+
+  useEffect(() => {
+    load();
+    const handleRefresh = () => {
+      load();
+    };
+    window.addEventListener('admin:refresh_data', handleRefresh);
+    return () => window.removeEventListener('admin:refresh_data', handleRefresh);
+  }, [load]);
+
+  const rows = useMemo(() => tickets.filter(t => (
+    `${t.subject || ''} ${t.shops?.name || ''}`.toLowerCase().includes(search.toLowerCase())
+  )), [tickets, search]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [rows, page, pageSize]);
+
+  const reply = async (data) => {
+    const r = await AdminService.replySupportTicket(data.ticketId, data.reply, data.note);
+    if (r.success) {
+      setSelected(null);
+      load();
+    } else {
+      alert(r.error);
+    }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>🎧 Support Center & Ticket Management</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0 0' }}>
-            Tiếp nhận và xử lý sự cố kĩ thuật, yêu cầu nâng cấp gói cước và phản hồi từ các Shop.
-          </p>
-        </div>
-        <button
-          onClick={fetchTickets}
-          style={{ background: 'var(--primary, #2563eb)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
-        >
-          🔄 Refresh
-        </button>
+    <div style={{ display: 'grid', gap: 20 }}>
+      {/* Header */}
+      <div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Headphones size={22} color="#2563eb" />
+          Trung Tâm Hỗ Trợ Kỹ Thuật (Support Tickets)
+        </h2>
+        <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
+          Tiếp nhận câu hỏi, phản hồi lỗi phát sinh và ghi chú kỹ thuật nội bộ cho khách hàng doanh nghiệp
+        </p>
       </div>
 
-      {error && (
-        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '6px', fontSize: '13px' }}>
-          ⚠️ {error}
-        </div>
-      )}
+      {/* Filter */}
+      <FilterBar
+        onSearch={setSearch}
+        placeholder="Tìm theo tiêu đề yêu cầu, tên shop..."
+        filters={[
+          {
+            key: 'status',
+            label: 'Trạng thái',
+            value: status,
+            onChange: setStatus,
+            options: [
+              { value: '', label: 'Tất cả trạng thái' },
+              { value: 'open', label: 'Yêu cầu mới' },
+              { value: 'in_progress', label: 'Đang xử lý' },
+              { value: 'resolved', label: 'Đã giải quyết' }
+            ]
+          }
+        ]}
+        actions={
+          <button
+            onClick={load}
+            style={{
+              padding: '7px 12px',
+              fontSize: 12,
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: 8,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+          >
+            <RefreshCw size={13} className={loading ? 'dash-spin' : ''} /> Tải lại
+          </button>
+        }
+      />
 
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
-              <th style={{ padding: '12px 16px' }}>Mã Ticket</th>
-              <th style={{ padding: '12px 16px' }}>Shop yêu cầu</th>
-              <th style={{ padding: '12px 16px' }}>Tiêu đề</th>
-              <th style={{ padding: '12px 16px' }}>Phân loại</th>
-              <th style={{ padding: '12px 16px' }}>Ưu tiên</th>
-              <th style={{ padding: '12px 16px' }}>Trạng thái</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>⏳ Đang tải dữ liệu...</td></tr>
-            ) : tickets.length === 0 && !error ? (
-              <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>Chưa có support ticket nào.</td></tr>
-            ) : (
-              tickets.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, fontFamily: 'monospace' }}>
-                    TK-{t.id.substring(0, 6).toUpperCase()}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 600 }}>{t.shops?.name || 'Không rõ'}</td>
-                  <td style={{ padding: '12px 16px', color: '#334155' }}>{t.subject}</td>
-                  <td style={{ padding: '12px 16px', color: '#64748b' }}>{t.category?.toUpperCase() || 'GENERAL'}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{
-                      color: t.priority === 'urgent' || t.priority === 'high' ? '#dc2626' : (t.priority === 'normal' ? '#2563eb' : '#64748b'),
-                      fontWeight: 600, fontSize: '11px', textTransform: 'uppercase'
-                    }}>
-                      {t.priority || 'normal'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{
-                      background: t.status === 'open' ? '#fee2e2' : t.status === 'in_progress' ? '#fffbeb' : '#dcfce7',
-                      color: t.status === 'open' ? '#991b1b' : t.status === 'in_progress' ? '#b45309' : '#15803d',
-                      padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase'
-                    }}>
-                      {t.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <button 
-                      onClick={() => handleUpdateStatus(t)}
-                      disabled={actionLoading === t.id}
-                      style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: actionLoading === t.id ? 'not-allowed' : 'pointer', fontSize: '11px', fontWeight: 600, opacity: actionLoading === t.id ? 0.6 : 1 }}
-                    >
-                      {actionLoading === t.id ? '⏳' : (t.status === 'resolved' || t.status === 'closed' ? 'Mở lại' : 'Chuyển TT')}
-                    </button>
+      {/* Table */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Mã Ticket</th>
+                <th>Cửa hàng</th>
+                <th>Tiêu đề yêu cầu</th>
+                <th>Mức độ ưu tiên</th>
+                <th>Trạng thái</th>
+                <th style={{ textAlign: 'right' }}>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '36px 20px', color: '#94a3b8' }}>
+                    {loading ? 'Đang tải danh sách ticket...' : 'Không có yêu cầu hỗ trợ nào phù hợp.'}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                paginatedRows.map(t => {
+                  const isResolved = t.status === 'resolved';
+                  const isInProgress = t.status === 'in_progress';
+                  const priority = String(t.priority || 'medium').toLowerCase();
+
+                  return (
+                    <tr key={t.id}>
+                      <td>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#2563eb', fontSize: 12.5 }}>
+                          #{String(t.id).slice(0, 8)}
+                        </span>
+                      </td>
+                      <td>
+                        <strong style={{ color: '#0f172a', fontSize: 13 }}>{t.shops?.name || '—'}</strong>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: '#1e293b', fontSize: 13.5 }}>
+                          {t.subject}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            background: priority === 'high' || priority === 'urgent' ? '#fee2e2' : priority === 'medium' ? '#fef3c7' : '#f1f5f9',
+                            color: priority === 'high' || priority === 'urgent' ? '#dc2626' : priority === 'medium' ? '#d97706' : '#475569',
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            textTransform: 'uppercase'
+                          }}
+                        >
+                          {priority}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${isResolved ? 'badge-success' : isInProgress ? 'badge-info' : 'badge-warning'}`}>
+                          {isResolved ? 'Đã giải quyết' : isInProgress ? 'Đang xử lý' : 'Yêu cầu mới'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          onClick={() => setSelected(t)}
+                          style={{
+                            padding: '5px 12px',
+                            fontSize: 12,
+                            background: '#ffffff',
+                            color: '#2563eb',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: 6,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                        >
+                          <MessageSquare size={13} /> Xem & Phản hồi
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAGINATION */}
+        {!loading && rows.length > 0 && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={rows.length}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+            pageSizeOptions={[10, 25, 50, 100]}
+            itemLabel="yêu cầu"
+          />
+        )}
       </div>
+
+      <TicketDetailModal
+        open={Boolean(selected)}
+        ticket={selected}
+        onClose={() => setSelected(null)}
+        onSubmit={reply}
+      />
     </div>
   );
 }

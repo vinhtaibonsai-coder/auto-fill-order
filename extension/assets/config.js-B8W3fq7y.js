@@ -1,0 +1,2 @@
+(function(){const e={name:"Auto Fill Order",version:"1.0.2",defaultTimeoutMs:15e3,maxRetryAttempts:3,supportedCarriers:["vnpost","jt","viettel","ghtk"]};typeof globalThis<"u"&&(globalThis.APP_CONFIG=e);typeof window<"u"&&(window.APP_CONFIG=e);
+})()

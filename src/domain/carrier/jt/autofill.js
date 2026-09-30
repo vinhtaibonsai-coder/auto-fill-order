@@ -33,6 +33,83 @@
     } catch (e) { console.warn('setJTPaymentMethod error', e); return false; }
   }
 
+  async function resolveJTDefaultWeight(store = {}) {
+    const inMemoryWeight = Number(store.defaultWeightJt);
+    if (Number.isFinite(inMemoryWeight) && inMemoryWeight > 0) return inMemoryWeight;
+
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      const stored = await new Promise(resolve => {
+        chrome.storage.local.get([
+          'order_default_settings', 
+          'default_weight_jt', 
+          'default_package_weight', 
+          'default_weight_vnpost', 
+          'activeShop'
+        ], result => {
+          if (chrome.runtime?.lastError) return resolve(undefined);
+          let val = result?.order_default_settings?.defaultWeightKg !== undefined 
+            ? result.order_default_settings.defaultWeightKg 
+            : result?.default_weight_jt;
+
+          // Nếu chưa có hoặc là 0.2 mặc định, kiểm tra cấu hình bưu phẩm từ Cài đặt cửa hàng
+          if ((val === undefined || Number(val) === 0.2) && result?.default_package_weight && Number(result.default_package_weight) > 0) {
+            const pkgWeight = Number(result.default_package_weight);
+            val = pkgWeight >= 10 ? (pkgWeight / 1000) : pkgWeight;
+          }
+
+          if ((val === undefined || Number(val) === 0.2) && result?.activeShop) {
+            const shopObj = typeof result.activeShop === 'object' ? result.activeShop : null;
+            if (shopObj?.default_package_weight && Number(shopObj.default_package_weight) > 0) {
+              const pkgWeight = Number(shopObj.default_package_weight);
+              val = pkgWeight >= 10 ? (pkgWeight / 1000) : pkgWeight;
+            }
+          }
+
+          if ((val === undefined || Number(val) === 0.2) && result?.order_default_settings?.defaultWeight) {
+            const defGram = Number(result.order_default_settings.defaultWeight);
+            if (defGram > 0 && defGram !== 200) {
+              val = defGram >= 10 ? (defGram / 1000) : defGram;
+            }
+          }
+          resolve(val);
+        });
+      });
+      const storedWeight = Number(stored);
+      if (Number.isFinite(storedWeight) && storedWeight > 0) return storedWeight;
+    }
+
+    try {
+      if (typeof OrderStorage !== 'undefined' && typeof OrderStorage.getActiveShop === 'function') {
+        const activeShop = await OrderStorage.getActiveShop().catch(() => null);
+        if (activeShop?.default_package_weight && Number(activeShop.default_package_weight) > 0) {
+          const pkgWeight = Number(activeShop.default_package_weight);
+          return pkgWeight >= 10 ? (pkgWeight / 1000) : pkgWeight;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      const rawPkg = localStorage.getItem('default_package_weight');
+      if (rawPkg && Number(rawPkg) > 0) {
+        const pkgWeight = Number(rawPkg);
+        return pkgWeight >= 10 ? (pkgWeight / 1000) : pkgWeight;
+      }
+      const raw = localStorage.getItem('order_default_settings');
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj.defaultWeightKg && Number(obj.defaultWeightKg) > 0) return Number(obj.defaultWeightKg);
+        if (obj.defaultWeight && Number(obj.defaultWeight) > 0 && Number(obj.defaultWeight) !== 200) {
+          const defGram = Number(obj.defaultWeight);
+          return defGram >= 10 ? (defGram / 1000) : defGram;
+        }
+      }
+      const rawLeg = localStorage.getItem('default_weight_jt');
+      if (rawLeg && Number(rawLeg) > 0) return Number(rawLeg);
+    } catch (_) {}
+
+    return 0.2;
+  }
+
   const JTAdapter = {
     async prepare() {
       return true;
@@ -64,8 +141,9 @@
       // 5. Mã đơn hàng của Shop
       const codeEl = findFieldInput(globalThis.JT_SELECTORS.codeLabels, globalThis.JT_SELECTORS.codeFallbacks);
       results.codeField = !!codeEl;
+      if (codeEl) setInputValue(codeEl, orderCode || '');
 
-      // 6. Tên sản phẩm (gộp mã đơn + ghi chú)
+      // 6. Tên sản phẩm / Nội dung
       let goodsInp =
         document.querySelector('textarea[placeholder="Nhập tên sản phẩm"]') ||
         document.querySelector('input[placeholder="Nhập tên sản phẩm"]') ||
@@ -79,17 +157,20 @@
         });
       }
       results.goodsNameField = !!goodsInp;
+      const defaultGoodsName = store.defaultGoodsName || 'Hàng hóa';
+      const primaryGoods = (store.productItem && store.productItem.trim() && store.productItem.trim() !== orderCode)
+        ? store.productItem.trim() + (orderCode ? (" | " + orderCode.trim()) : "")
+        : ((orderCode && orderCode.trim()) ? orderCode.trim() : defaultGoodsName);
+      let goodsText = primaryGoods;
+      const notesParts = [];
+      if (store.extraNote)           notesParts.push(store.extraNote);
+      if (store.extraPhones?.length) notesParts.push('SDT phụ: ' + store.extraPhones.join(', '));
+      if (notesParts.length > 0) goodsText += ' | ' + notesParts.join(' | ');
       if (goodsInp) {
-        const defaultGoodsName = store.defaultGoodsName || 'Hàng hóa';
-        let goodsText = orderCode || defaultGoodsName;
-        const notesParts = [];
-        if (store.extraNote)           notesParts.push(store.extraNote);
-        if (store.extraPhones?.length) notesParts.push('SDT phụ: ' + store.extraPhones.join(', '));
-        if (notesParts.length > 0) goodsText += ' | ' + notesParts.join(' | ');
         setInputValue(goodsInp, goodsText);
       }
 
-      // 7. Trọng lượng
+      // 7. Trọng lượng (kg)
       let weightInp =
         document.querySelector('input[placeholder="Nhập trọng lượng"]') ||
         document.querySelector('input[placeholder*="trọng lượng"]');
@@ -103,7 +184,7 @@
       }
       results.weightField = !!weightInp;
       if (weightInp) {
-        const defaultWeightJt = store.defaultWeightJt !== undefined ? store.defaultWeightJt : 0.2;
+        const defaultWeightJt = await resolveJTDefaultWeight(store);
         setInputValue(weightInp, String(defaultWeightJt));
       }
 
@@ -123,6 +204,15 @@
           document.querySelector('input[placeholder*="Ghi chú"]');
       }
       results.noteField = !!noteEl;
+      if (noteEl) {
+        let noteText = orderCode ? ("Đơn hàng: " + orderCode) : defaultGoodsName;
+        if (store.productItem && store.productItem.trim() && store.productItem.trim() !== orderCode) {
+          noteText = store.productItem.trim() + (orderCode ? (" | Đơn hàng: " + orderCode) : "");
+        }
+        if (store.extraNote) noteText += (noteText ? " | " : "") + store.extraNote;
+        if (store.extraPhones?.length) noteText += (noteText ? " | " : "") + "SDT phụ: " + store.extraPhones.join(', ');
+        setInputValue(noteEl, noteText);
+      }
 
       // 9. Tiền thu hộ COD
       if (codAmount && codAmount > 0) {
@@ -151,9 +241,9 @@
       });
       results.paymentMethodField = setJTPaymentMethod(collectFee);
 
-      // Log kết quả
-      if (typeof Logger !== 'undefined') {
-        Logger.error('Báo cáo điền đơn J&T (Fill Report)', JSON.stringify(results));
+      // Log kết quả nội bộ (chỉ console.log, không gọi Logger.error gây báo lỗi cho người dùng)
+      if (typeof Logger !== 'undefined' && typeof Logger.log === 'function') {
+        Logger.log('Báo cáo điền đơn J&T (Fill Report)', JSON.stringify(results));
       }
     }
   };

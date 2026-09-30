@@ -19,7 +19,7 @@ function normalizeKey(s) {
 
 // Load official merges.json
 const mergesRaw = JSON.parse(fs.readFileSync(
-  path.join(__dirname, 'features', 'address', 'database', 'merges_raw.json'), 'utf-8'
+  path.join(__dirname, 'database', 'raw_sources', 'merges_raw.json'), 'utf-8'
 ));
 
 // merges_raw.json has structure: { data: [ ... 34 provinces ... ] }
@@ -240,24 +240,7 @@ for (const key of sortedKeys) {
 }
 
 output += `  };\n\n`;
-
-// Build the index
-output += `  const WARD_MERGER_INDEX = {\n`;
-const sortedIndexKeys = [...index.keys()].sort();
-for (const wardKey of sortedIndexKeys) {
-  const refs = [...index.get(wardKey)].sort();
-  output += `    "${wardKey}": [`;
-  for (let i = 0; i < refs.length; i++) {
-    const escRef = refs[i].replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    if (i > 0) output += ', ';
-    output += `"${escRef}"`;
-  }
-  output += `],\n`;
-}
-output += `  };\n\n`;
-
 output += `  globalThis.WARD_MERGER_MAP = WARD_MERGER_MAP;\n`;
-output += `  globalThis.WARD_MERGER_INDEX = WARD_MERGER_INDEX;\n`;
 output += `})();\n`;
 
 // Write output

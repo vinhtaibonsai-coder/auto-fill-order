@@ -6934,2930 +6934,6 @@
     "administrative_center": "Cà Mau"
   },
   {
-    "ward_name": "Xã Al Bá",
-    "ward_code": "23954",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ayun (huyện Chư Sê)",
-      "Xã Kông Htok",
-      "Xã Al Bá"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ayun (huyện Chư Sê), Xã Kông Htok, Xã Al Bá",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường An Bình",
-    "ward_code": "23614",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường An Bình",
-      "Xã Tân An",
-      "Xã Cư An"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường An Bình, Xã Tân An, Xã Cư An",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã An Hòa",
-    "ward_code": "21628",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã An Hòa",
-      "Xã An Quang",
-      "Xã An Nghĩa"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã An Hòa, Xã An Quang, Xã An Nghĩa",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường An Khê",
-    "ward_code": "23617",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Ngô Mây",
-      "Phường Tây Sơn (thị xã An Khê)",
-      "Phường An Phú",
-      "Phường An Phước",
-      "Phường An Tân",
-      "Xã Thành An"
-    ],
-    "old_units_count": 6,
-    "merger_details": "Phường Ngô Mây, Phường Tây Sơn (thị xã An Khê), Phường An Phú, Phường An Phước, Phường An Tân, Xã Thành An",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã An Lão",
-    "ward_code": "21609",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn An Lão",
-      "Xã An Tân",
-      "Xã An Hưng"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn An Lão, Xã An Tân, Xã An Hưng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã An Lương",
-    "ward_code": "21769",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Mỹ Chánh",
-      "Xã Mỹ Thành",
-      "Xã Mỹ Cát"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Mỹ Chánh, Xã Mỹ Thành, Xã Mỹ Cát",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường An Nhơn",
-    "ward_code": "21910",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Đập Đá",
-      "Xã Nhơn Mỹ",
-      "Xã Nhơn Hậu"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Đập Đá, Xã Nhơn Mỹ, Xã Nhơn Hậu",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường An Nhơn Bắc",
-    "ward_code": "21925",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Nhơn Thành",
-      "Xã Nhơn Phong",
-      "Xã Nhơn Hạnh"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Nhơn Thành, Xã Nhơn Phong, Xã Nhơn Hạnh",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường An Nhơn Đông",
-    "ward_code": "21934",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Nhơn Hưng",
-      "Xã Nhơn An"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Phường Nhơn Hưng, Xã Nhơn An",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường An Nhơn Nam",
-    "ward_code": "21943",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Nhơn Hòa",
-      "Xã Nhơn Thọ"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Phường Nhơn Hòa, Xã Nhơn Thọ",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã An Nhơn Tây",
-    "ward_code": "21940",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Nhơn Lộc",
-      "Xã Nhơn Tân"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Nhơn Lộc, Xã Nhơn Tân",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường An Phú",
-    "ward_code": "23602",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Thắng Lợi",
-      "Xã Chư Á",
-      "Xã An Phú"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Thắng Lợi, Xã Chư Á, Xã An Phú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã An Toàn",
-    "ward_code": "21622",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã An Toàn",
-      "Xã An Nghĩa (phần còn lại sau khi sáp nhập vào xã An Hòa)"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã An Toàn, Xã An Nghĩa (phần còn lại sau khi sáp nhập vào xã An Hòa)",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã An Vinh",
-    "ward_code": "21616",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã An Trung (huyện An Lão)",
-      "Xã An Dũng",
-      "Xã An Vinh"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã An Trung (huyện An Lão), Xã An Dũng, Xã An Vinh",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ayun",
-    "ward_code": "23798",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đak Jơ Ta",
-      "Xã Ayun (huyện Mang Yang)"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Đak Jơ Ta, Xã Ayun (huyện Mang Yang)",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Ayun Pa",
-    "ward_code": "24044",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Đoàn Kết",
-      "Phường Sông Bờ",
-      "Phường Cheo Reo",
-      "Phường Hòa Bình"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Phường Đoàn Kết, Phường Sông Bờ, Phường Cheo Reo, Phường Hòa Bình",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ân Hảo",
-    "ward_code": "21697",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ân Hảo Tây",
-      "Xã Ân Hảo Đông",
-      "Xã Ân Mỹ"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ân Hảo Tây, Xã Ân Hảo Đông, Xã Ân Mỹ",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ân Tường",
-    "ward_code": "21715",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ân Tường Tây",
-      "Xã Ân Hữu",
-      "Xã Đak Mang"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ân Tường Tây, Xã Ân Hữu, Xã Đak Mang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Bàu Cạn",
-    "ward_code": "23896",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Thăng Hưng",
-      "Xã Bình Giáo",
-      "Xã Bàu Cạn"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Thăng Hưng, Xã Bình Giáo, Xã Bàu Cạn",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Biển Hồ",
-    "ward_code": "23590",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Nghĩa Hưng",
-      "Xã Chư Đang Ya",
-      "Xã Hà Bầu",
-      "Xã Biển Hồ"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Nghĩa Hưng, Xã Chư Đang Ya, Xã Hà Bầu, Xã Biển Hồ",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Bình An",
-    "ward_code": "21829",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Tây Vinh",
-      "Xã Tây Bình",
-      "Xã Bình Hòa",
-      "Xã Bình Thành"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Tây Vinh, Xã Tây Bình, Xã Bình Hòa, Xã Bình Thành",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Bình Dương",
-    "ward_code": "21733",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Bình Dương",
-      "Xã Mỹ Lợi",
-      "Xã Mỹ Phong"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Bình Dương, Xã Mỹ Lợi, Xã Mỹ Phong",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Bình Định",
-    "ward_code": "21907",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Bình Định",
-      "Xã Nhơn Khánh",
-      "Xã Nhơn Phúc"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Bình Định, Xã Nhơn Khánh, Xã Nhơn Phúc",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Bình Hiệp",
-    "ward_code": "21817",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Bình Thuận",
-      "Xã Bình Tân",
-      "Xã Tây An"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Bình Thuận, Xã Bình Tân, Xã Tây An",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Bình Khê",
-    "ward_code": "21820",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Tây Giang",
-      "Xã Tây Thuận"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Tây Giang, Xã Tây Thuận",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Bình Phú",
-    "ward_code": "21835",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Vĩnh An",
-      "Xã Bình Tường",
-      "Xã Tây Phú"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Vĩnh An, Xã Bình Tường, Xã Tây Phú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Bồng Sơn",
-    "ward_code": "21640",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Hoài Đức",
-      "Phường Bồng Sơn"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Phường Hoài Đức, Phường Bồng Sơn",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Bờ Ngoong",
-    "ward_code": "23947",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Bar Măih",
-      "Xã Ia Tiêm",
-      "Xã Chư Pơng",
-      "Xã Bờ Ngoong"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Bar Măih, Xã Ia Tiêm, Xã Chư Pơng, Xã Bờ Ngoong",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Canh Liên",
-    "ward_code": "21997",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "-",
-      "Xã Canh Liên (phần còn lại sau khi sáp nhập vào xã Canh Vinh)"
-    ],
-    "old_units_count": 2,
-    "merger_details": "-, Xã Canh Liên (phần còn lại sau khi sáp nhập vào xã Canh Vinh)",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Canh Vinh",
-    "ward_code": "22003",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Canh Vinh",
-      "Xã Canh Hiển",
-      "Xã Canh Liên",
-      "Xã Canh Hiệp (phần còn lại sau khi sáp nhập vào xã Vân Canh)"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Canh Vinh, Xã Canh Hiển, Xã Canh Liên, Xã Canh Hiệp (phần còn lại sau khi sáp nhập vào xã Vân Canh)",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Cát Tiến",
-    "ward_code": "21898",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Cát Tiến",
-      "Xã Cát Thành",
-      "Xã Cát Hải"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Cát Tiến, Xã Cát Thành, Xã Cát Hải",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Chơ Long",
-    "ward_code": "23851",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đăk Pơ Pho",
-      "Xã Chơ GLong"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Đăk Pơ Pho, Xã Chơ GLong",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Chư A Thai",
-    "ward_code": "24049",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ayun Hạ",
-      "Xã Ia Ake",
-      "Xã Chư A Thai"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ayun Hạ, Xã Ia Ake, Xã Chư A Thai",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Chư Krey",
-    "ward_code": "23830",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã An Trung (huyện Kông Chro)",
-      "Xã Chư Krey"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã An Trung (huyện Kông Chro), Xã Chư Krey",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Chư Păh",
-    "ward_code": "23722",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Phú Hòa",
-      "Xã Nghĩa Hòa",
-      "Xã Hòa Phú"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Phú Hòa, Xã Nghĩa Hòa, Xã Hòa Phú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Chư Prông",
-    "ward_code": "23887",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Chư Prông",
-      "Xã Ia Phìn",
-      "Xã Ia Kly",
-      "Xã Ia Drang"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Thị trấn Chư Prông, Xã Ia Phìn, Xã Ia Kly, Xã Ia Drang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Chư Pưh",
-    "ward_code": "23942",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Nhơn Hòa",
-      "Xã Chư Don",
-      "Xã Ia Phang"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Nhơn Hòa, Xã Chư Don, Xã Ia Phang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Chư Sê",
-    "ward_code": "23941",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Chư Sê",
-      "Xã Dun",
-      "Xã Ia Blang",
-      "Xã Ia Pal",
-      "Xã Ia Glai"
-    ],
-    "old_units_count": 5,
-    "merger_details": "Thị trấn Chư Sê, Xã Dun, Xã Ia Blang, Xã Ia Pal, Xã Ia Glai",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Cửu An",
-    "ward_code": "23629",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Tú An",
-      "Xã Xuân An",
-      "Xã Song An",
-      "Xã Cửu An"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Tú An, Xã Xuân An, Xã Song An, Xã Cửu An",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Diên Hồng",
-    "ward_code": "23563",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Yên Đỗ",
-      "Phường Ia Kring",
-      "Phường Diên Hồng",
-      "Xã Diên Phú"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Phường Yên Đỗ, Phường Ia Kring, Phường Diên Hồng, Xã Diên Phú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Đak Đoa",
-    "ward_code": "23677",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Đak Đoa",
-      "Xã Tân Bình",
-      "Xã Glar"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Đak Đoa, Xã Tân Bình, Xã Glar",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Đak Pơ",
-    "ward_code": "23995",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Đak Pơ",
-      "Xã Hà Tam",
-      "Xã An Thành",
-      "Xã Yang Bắc"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Thị trấn Đak Pơ, Xã Hà Tam, Xã An Thành, Xã Yang Bắc",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Đak Rong",
-    "ward_code": "23644",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Kon Pne",
-      "Xã Đak Rong"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Kon Pne, Xã Đak Rong",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Đak Sơmei",
-    "ward_code": "23683",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Hà Đông",
-      "Xã Đak Sơmei"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Hà Đông, Xã Đak Sơmei",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Đăk Song",
-    "ward_code": "23842",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đăk Pling",
-      "Xã Đăk Song"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Đăk Pling, Xã Đăk Song",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Đề Gi",
-    "ward_code": "21862",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Cát Khánh",
-      "Xã Cát Minh",
-      "Xã Cát Tài"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Cát Khánh, Xã Cát Minh, Xã Cát Tài",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Đức Cơ",
-    "ward_code": "23857",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Chư Ty",
-      "Xã Ia Kriêng"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Thị trấn Chư Ty, Xã Ia Kriêng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Gào",
-    "ward_code": "23611",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Kênh",
-      "Xã Ia Pếch",
-      "Xã Gào"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Kênh, Xã Ia Pếch, Xã Gào",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Hòa Hội",
-    "ward_code": "21871",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Cát Hanh",
-      "Xã Cát Hiệp"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Cát Hanh, Xã Cát Hiệp",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Hoài Ân",
-    "ward_code": "21688",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Tăng Bạt Hổ",
-      "Xã Ân Phong",
-      "Xã Ân Đức",
-      "Xã Ân Tường Đông"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Thị trấn Tăng Bạt Hổ, Xã Ân Phong, Xã Ân Đức, Xã Ân Tường Đông",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Hoài Nhơn",
-    "ward_code": "21664",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Hoài Thanh",
-      "Phường Tam Quan Nam",
-      "Phường Hoài Thanh Tây"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Hoài Thanh, Phường Tam Quan Nam, Phường Hoài Thanh Tây",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Hoài Nhơn Bắc",
-    "ward_code": "21655",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Tam Quan Bắc",
-      "Xã Hoài Sơn",
-      "Xã Hoài Châu Bắc"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Tam Quan Bắc, Xã Hoài Sơn, Xã Hoài Châu Bắc",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Hoài Nhơn Đông",
-    "ward_code": "21670",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Hoài Hương",
-      "Xã Hoài Hải",
-      "Xã Hoài Mỹ"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Hoài Hương, Xã Hoài Hải, Xã Hoài Mỹ",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Hoài Nhơn Nam",
-    "ward_code": "21673",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Hoài Tân",
-      "Phường Hoài Xuân"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Phường Hoài Tân, Phường Hoài Xuân",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Hoài Nhơn Tây",
-    "ward_code": "21661",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Hoài Hảo",
-      "Xã Hoài Phú"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Phường Hoài Hảo, Xã Hoài Phú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Hội Phú",
-    "ward_code": "23586",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Trà Bá",
-      "Phường Chi Lăng",
-      "Phường Hội Phú"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Trà Bá, Phường Chi Lăng, Phường Hội Phú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Hội Sơn",
-    "ward_code": "21868",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Cát Lâm",
-      "Xã Cát Sơn"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Cát Lâm, Xã Cát Sơn",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Hra",
-    "ward_code": "23799",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đak Ta Ley",
-      "Xã Hra"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Đak Ta Ley, Xã Hra",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Băng",
-    "ward_code": "23710",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Băng (huyện Đak Đoa)",
-      "Xã Adơk",
-      "Xã Ia Pết"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Băng (huyện Đak Đoa), Xã Adơk, Xã Ia Pết",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Boòng",
-    "ward_code": "23911",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia O (huyện Chư Prông)",
-      "Xã Ia Me",
-      "Xã Ia Boòng"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia O (huyện Chư Prông), Xã Ia Me, Xã Ia Boòng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Chia",
-    "ward_code": "23788",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Dom",
-    "ward_code": "23872",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Dơk",
-    "ward_code": "23869",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Kla",
-      "Xã Ia Dơk"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Ia Kla, Xã Ia Dơk",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Dreh",
-    "ward_code": "24100",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Rmok",
-      "Xã Krông Năng",
-      "Xã Ia Dreh"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Rmok, Xã Krông Năng, Xã Ia Dreh",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Grai",
-    "ward_code": "23764",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Ia Kha",
-      "Xã Ia Bă",
-      "Xã Ia Grăng"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Ia Kha, Xã Ia Bă, Xã Ia Grăng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Hiao",
-    "ward_code": "24061",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Chrôh Pơnan",
-      "Xã Ia Peng",
-      "Xã Ia Hiao"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Chrôh Pơnan, Xã Ia Peng, Xã Ia Hiao",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Hrú",
-    "ward_code": "23971",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Dreng",
-      "Xã Ia Rong",
-      "Xã HBông",
-      "Xã Ia Hrú"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Ia Dreng, Xã Ia Rong, Xã HBông, Xã Ia Hrú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Hrung",
-    "ward_code": "23767",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Sao (huyện Ia Grai)",
-      "Xã Ia Yok",
-      "Xã Ia Dêr",
-      "Xã Ia Hrung"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Ia Sao (huyện Ia Grai), Xã Ia Yok, Xã Ia Dêr, Xã Ia Hrung",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Khươl",
-    "ward_code": "23728",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đăk Tơ Ver",
-      "Xã Hà Tây",
-      "Xã Ia Khươl"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Đăk Tơ Ver, Xã Hà Tây, Xã Ia Khươl",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Ko",
-    "ward_code": "23977",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Hlốp",
-      "Xã Ia Hla",
-      "Xã Ia Ko"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Hlốp, Xã Ia Hla, Xã Ia Ko",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Krái",
-    "ward_code": "23776",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Tô",
-      "Xã Ia Khai",
-      "Xã Ia Krái"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Tô, Xã Ia Khai, Xã Ia Krái",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Krêl",
-    "ward_code": "23866",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Lang",
-      "Xã Ia Din",
-      "Xã Ia Krêl"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Lang, Xã Ia Din, Xã Ia Krêl",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Lâu",
-    "ward_code": "23935",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Piơr",
-      "Xã Ia Lâu"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Ia Piơr, Xã Ia Lâu",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Le",
-    "ward_code": "23986",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Blứ",
-      "Xã Ia Le"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Ia Blứ, Xã Ia Le",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Ly",
-    "ward_code": "23734",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Ia Ly",
-      "Xã Ia Mơ Nông",
-      "Xã Ia Kreng"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Ia Ly, Xã Ia Mơ Nông, Xã Ia Kreng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Mơ",
-    "ward_code": "23737",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Nan",
-    "ward_code": "23884",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia O",
-    "ward_code": "23782",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Pa",
-    "ward_code": "24022",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Mrơn",
-      "Xã Kim Tân",
-      "Xã Ia Trôk"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Mrơn, Xã Kim Tân, Xã Ia Trôk",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Phí",
-    "ward_code": "23749",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Ka",
-      "Xã Ia Nhin",
-      "Xã Ia Phí"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Ka, Xã Ia Nhin, Xã Ia Phí",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Pia",
-    "ward_code": "23926",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Ga",
-      "Xã Ia Vê",
-      "Xã Ia Pia"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Ga, Xã Ia Vê, Xã Ia Pia",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Pnôn",
-    "ward_code": "23881",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Púch",
-    "ward_code": "23917",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Rbol",
-    "ward_code": "24065",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Chư Băh",
-      "Xã Ia Rbol"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Chư Băh, Xã Ia Rbol",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Rsai",
-    "ward_code": "24112",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Chư RCăm",
-      "Xã Chư Gu",
-      "Xã Ia Rsai"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Chư RCăm, Xã Chư Gu, Xã Ia Rsai",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Sao",
-    "ward_code": "24073",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Sao (thị xã Ayun Pa)",
-      "Xã Ia Rtô"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Ia Sao (thị xã Ayun Pa), Xã Ia Rtô",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Tôr",
-    "ward_code": "23908",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Băng (huyện Chư Prông)",
-      "Xã Ia Bang",
-      "Xã Ia Tôr"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Băng (huyện Chư Prông), Xã Ia Bang, Xã Ia Tôr",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ia Tul",
-    "ward_code": "24028",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Chư Mố",
-      "Xã Ia Broăi",
-      "Xã Ia Kdăm",
-      "Xã Ia Tul"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Chư Mố, Xã Ia Broăi, Xã Ia Kdăm, Xã Ia Tul",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Kbang",
-    "ward_code": "23638",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Kbang",
-      "Xã Lơ Ku",
-      "Xã Đak Smar"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Kbang, Xã Lơ Ku, Xã Đak Smar",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã KDang",
-    "ward_code": "23714",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Hnol",
-      "Xã Trang",
-      "Xã KDang"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Hnol, Xã Trang, Xã KDang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Kim Sơn",
-    "ward_code": "21727",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ân Nghĩa",
-      "Xã Bok Tới"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Ân Nghĩa, Xã Bok Tới",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Kon Chiêng",
-    "ward_code": "23818",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đak Trôi",
-      "Xã Kon Chiêng"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Đak Trôi, Xã Kon Chiêng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Kon Gang",
-    "ward_code": "23701",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đak Krong",
-      "Xã Hneng",
-      "Xã Nam Yang",
-      "Xã Kon Gang"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Xã Đak Krong, Xã Hneng, Xã Nam Yang, Xã Kon Gang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Kông Bơ La",
-    "ward_code": "23674",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đông",
-      "Xã Nghĩa An",
-      "Xã Kông Bơ La"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Đông, Xã Nghĩa An, Xã Kông Bơ La",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Kông Chro",
-    "ward_code": "23824",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Kông Chro",
-      "Xã Yang Trung",
-      "Xã Yang Nam"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Kông Chro, Xã Yang Trung, Xã Yang Nam",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Krong",
-    "ward_code": "23650",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Lơ Pang",
-    "ward_code": "23812",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đê Ar",
-      "Xã Kon Thụp",
-      "Xã Lơ Pang"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Đê Ar, Xã Kon Thụp, Xã Lơ Pang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Mang Yang",
-    "ward_code": "23794",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Kon Dơng",
-      "Xã Đăk Yă",
-      "Xã Đak Djrăng",
-      "Xã Hải Yang"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Thị trấn Kon Dơng, Xã Đăk Yă, Xã Đak Djrăng, Xã Hải Yang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ngô Mây",
-    "ward_code": "21889",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Cát Hưng",
-      "Xã Cát Thắng",
-      "Xã Cát Chánh"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Cát Hưng, Xã Cát Thắng, Xã Cát Chánh",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Nhơn Châu",
-    "ward_code": "21607",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": false,
-    "old_units": [],
-    "old_units_count": 0,
-    "merger_details": "Không sáp nhập",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Phù Cát",
-    "ward_code": "21853",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Ngô Mây",
-      "Xã Cát Trinh",
-      "Xã Cát Tân"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Ngô Mây, Xã Cát Trinh, Xã Cát Tân",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Phù Mỹ",
-    "ward_code": "21730",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Phù Mỹ",
-      "Xã Mỹ Quang",
-      "Xã Mỹ Chánh Tây"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Phù Mỹ, Xã Mỹ Quang, Xã Mỹ Chánh Tây",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Phù Mỹ Bắc",
-    "ward_code": "21739",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Mỹ Đức",
-      "Xã Mỹ Châu",
-      "Xã Mỹ Lộc"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Mỹ Đức, Xã Mỹ Châu, Xã Mỹ Lộc",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Phù Mỹ Đông",
-    "ward_code": "21751",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Mỹ An",
-      "Xã Mỹ Thọ",
-      "Xã Mỹ Thắng"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Mỹ An, Xã Mỹ Thọ, Xã Mỹ Thắng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Phù Mỹ Nam",
-    "ward_code": "21775",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Mỹ Tài",
-      "Xã Mỹ Hiệp"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Mỹ Tài, Xã Mỹ Hiệp",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Phù Mỹ Tây",
-    "ward_code": "21757",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Mỹ Trinh",
-      "Xã Mỹ Hòa"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Mỹ Trinh, Xã Mỹ Hòa",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Phú Thiện",
-    "ward_code": "24043",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Phú Thiện",
-      "Xã Ia Sol",
-      "Xã Ia Piar",
-      "Xã Ia Yeng"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Thị trấn Phú Thiện, Xã Ia Sol, Xã Ia Piar, Xã Ia Yeng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Phú Túc",
-    "ward_code": "24076",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Phú Túc",
-      "Xã Phú Cần",
-      "Xã Chư Ngọc",
-      "Xã Ia Mlah",
-      "Xã Đất Bằng"
-    ],
-    "old_units_count": 5,
-    "merger_details": "Thị trấn Phú Túc, Xã Phú Cần, Xã Chư Ngọc, Xã Ia Mlah, Xã Đất Bằng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Pleiku",
-    "ward_code": "23575",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Tây Sơn (thành phố Pleiku)",
-      "Phường Hội Thương",
-      "Phường Hoa Lư",
-      "Phường Phù Đổng",
-      "Xã Trà Đa"
-    ],
-    "old_units_count": 5,
-    "merger_details": "Phường Tây Sơn (thành phố Pleiku), Phường Hội Thương, Phường Hoa Lư, Phường Phù Đổng, Xã Trà Đa",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Pờ Tó",
-    "ward_code": "24013",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Chư Răng",
-      "Xã Pờ Tó"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Chư Răng, Xã Pờ Tó",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Quy Nhơn",
-    "ward_code": "21583",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Đống Đa (thành phố Quy Nhơn)",
-      "Phường Hải Cảng",
-      "Phường Thị Nại",
-      "Phường Trần Phú"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Phường Đống Đa (thành phố Quy Nhơn), Phường Hải Cảng, Phường Thị Nại, Phường Trần Phú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Quy Nhơn Bắc",
-    "ward_code": "21553",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Trần Quang Diệu",
-      "Phường Nhơn Phú"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Phường Trần Quang Diệu, Phường Nhơn Phú",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Quy Nhơn Đông",
-    "ward_code": "21601",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Nhơn Bình",
-      "Xã Nhơn Hội",
-      "Xã Nhơn Lý",
-      "Xã Nhơn Hải"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Phường Nhơn Bình, Xã Nhơn Hội, Xã Nhơn Lý, Xã Nhơn Hải",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Quy Nhơn Nam",
-    "ward_code": "21592",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Ngô Mây (thành phố Quy Nhơn)",
-      "Phường Nguyễn Văn Cừ",
-      "Phường Quang Trung",
-      "Phường Ghềnh Ráng"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Phường Ngô Mây (thành phố Quy Nhơn), Phường Nguyễn Văn Cừ, Phường Quang Trung, Phường Ghềnh Ráng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Quy Nhơn Tây",
-    "ward_code": "21589",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Bùi Thị Xuân",
-      "Xã Phước Mỹ"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Phường Bùi Thị Xuân, Xã Phước Mỹ",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Sơn Lang",
-    "ward_code": "23647",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Sơ Pai",
-      "Xã Sơn Lang"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Sơ Pai, Xã Sơn Lang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã SRó",
-    "ward_code": "23839",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đăk Kơ Ning",
-      "Xã SRó"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Đăk Kơ Ning, Xã SRó",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Tam Quan",
-    "ward_code": "21637",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Tam Quan",
-      "Xã Hoài Châu"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Phường Tam Quan, Xã Hoài Châu",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Tây Sơn",
-    "ward_code": "21808",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Phú Phong",
-      "Xã Tây Xuân",
-      "Xã Bình Nghi"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Thị trấn Phú Phong, Xã Tây Xuân, Xã Bình Nghi",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Phường Thống Nhất",
-    "ward_code": "23584",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Phường Đống Đa (thành phố Pleiku)",
-      "Phường Yên Thế",
-      "Phường Thống Nhất"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Phường Đống Đa (thành phố Pleiku), Phường Yên Thế, Phường Thống Nhất",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Tơ Tung",
-    "ward_code": "23668",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Kông Lơng Khơng",
-      "Xã Tơ Tung"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Kông Lơng Khơng, Xã Tơ Tung",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Tuy Phước",
-    "ward_code": "21952",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Tuy Phước",
-      "Thị trấn Diêu Trì",
-      "Xã Phước Thuận",
-      "Xã Phước Nghĩa",
-      "Xã Phước Lộc"
-    ],
-    "old_units_count": 5,
-    "merger_details": "Thị trấn Tuy Phước, Thị trấn Diêu Trì, Xã Phước Thuận, Xã Phước Nghĩa, Xã Phước Lộc",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Tuy Phước Bắc",
-    "ward_code": "21964",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Phước Hiệp",
-      "Xã Phước Hưng",
-      "Xã Phước Quang"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Phước Hiệp, Xã Phước Hưng, Xã Phước Quang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Tuy Phước Đông",
-    "ward_code": "21970",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Phước Sơn",
-      "Xã Phước Hòa",
-      "Xã Phước Thắng"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Phước Sơn, Xã Phước Hòa, Xã Phước Thắng",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Tuy Phước Tây",
-    "ward_code": "21985",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Phước An",
-      "Xã Phước Thành"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Phước An, Xã Phước Thành",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Uar",
-    "ward_code": "24109",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ia Rsươm",
-      "Xã Chư Drăng",
-      "Xã Uar"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ia Rsươm, Xã Chư Drăng, Xã Uar",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Vạn Đức",
-    "ward_code": "21703",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Ân Sơn",
-      "Xã Ân Tín",
-      "Xã Ân Thạnh"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Ân Sơn, Xã Ân Tín, Xã Ân Thạnh",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Vân Canh",
-    "ward_code": "21994",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Vân Canh",
-      "Xã Canh Thuận",
-      "Xã Canh Hòa",
-      "Xã Canh Hiệp"
-    ],
-    "old_units_count": 4,
-    "merger_details": "Thị trấn Vân Canh, Xã Canh Thuận, Xã Canh Hòa, Xã Canh Hiệp",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Vĩnh Quang",
-    "ward_code": "21805",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Vĩnh Thuận",
-      "Xã Vĩnh Hòa",
-      "Xã Vĩnh Quang"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Vĩnh Thuận, Xã Vĩnh Hòa, Xã Vĩnh Quang",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Vĩnh Sơn",
-    "ward_code": "21787",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Vĩnh Kim",
-      "Xã Vĩnh Sơn"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Vĩnh Kim, Xã Vĩnh Sơn",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Vĩnh Thạnh",
-    "ward_code": "21786",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Thị trấn Vĩnh Thạnh",
-      "Xã Vĩnh Hảo"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Thị trấn Vĩnh Thạnh, Xã Vĩnh Hảo",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Vĩnh Thịnh",
-    "ward_code": "21796",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Vĩnh Hiệp",
-      "Xã Vĩnh Thịnh"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Vĩnh Hiệp, Xã Vĩnh Thịnh",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Xuân An",
-    "ward_code": "21892",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Cát Nhơn",
-      "Xã Cát Tường"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Cát Nhơn, Xã Cát Tường",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ya Hội",
-    "ward_code": "24007",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Phú An",
-      "Xã Ya Hội"
-    ],
-    "old_units_count": 2,
-    "merger_details": "Xã Phú An, Xã Ya Hội",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
-    "ward_name": "Xã Ya Ma",
-    "ward_code": "23833",
-    "province_code": "52",
-    "province_name": "Gia Lai",
-    "province_short_name": "Gia Lai",
-    "province_code_short": "GLI",
-    "place_type": "Tỉnh",
-    "has_merger": true,
-    "old_units": [
-      "Xã Đăk Tơ Pang",
-      "Xã Kông Yang",
-      "Xã Ya Ma"
-    ],
-    "old_units_count": 3,
-    "merger_details": "Xã Đăk Tơ Pang, Xã Kông Yang, Xã Ya Ma",
-    "province_is_merged": true,
-    "province_merged_with": [
-      "Bình Định"
-    ],
-    "administrative_center": "Bình Định"
-  },
-  {
     "ward_name": "Phường Bắc Hồng Lĩnh",
     "ward_code": "18115",
     "province_code": "42",
@@ -45355,18 +42431,13 @@
     "place_type": "Thành phố Trung Ương",
     "has_merger": true,
     "old_units": [
-      "Phường Nghĩa Tân",
-      "Phường Cổ Nhuế 1",
-      "Phường Mai Dịch",
       "Phường Nghĩa Đô",
-      "Phường Xuân La",
-      "Phường Xuân Tảo",
       "Phường Dịch Vọng (phần còn lại sau khi sáp nhập vào phường Cầu Giấy)",
       "Phường Dịch Vọng Hậu (phần còn lại sau khi sáp nhập vào phường Cầu Giấy)",
       "Phường Quan Hoa (phần còn lại sau khi sáp nhập vào phường Cầu Giấy)"
     ],
-    "old_units_count": 9,
-    "merger_details": "Phường Nghĩa Tân, Phường Cổ Nhuế 1, Phường Mai Dịch, Phường Nghĩa Đô, Phường Xuân La, Phường Xuân Tảo, Phường Dịch Vọng (phần còn lại sau khi sáp nhập vào phường Cầu Giấy), Phường Dịch Vọng Hậu (phần còn lại sau khi sáp nhập vào phường Cầu Giấy), Phường Quan Hoa (phần còn lại sau khi sáp nhập vào phường Cầu Giấy)",
+    "old_units_count": 4,
+    "merger_details": "Phường Nghĩa Đô, Phường Dịch Vọng (phần còn lại sau khi sáp nhập vào phường Cầu Giấy), Phường Dịch Vọng Hậu (phần còn lại sau khi sáp nhập vào phường Cầu Giấy), Phường Quan Hoa (phần còn lại sau khi sáp nhập vào phường Cầu Giấy)",
     "province_is_merged": false,
     "province_merged_with": [],
     "administrative_center": null
@@ -45527,13 +42598,10 @@
     "place_type": "Thành phố Trung Ương",
     "has_merger": true,
     "old_units": [
-      "Phường Phú Diễn",
-      "Phường Cổ Nhuế 1",
-      "Phường Mai Dịch",
-      "Phường Phúc Diễn"
+      "Phường Phú Diễn"
     ],
-    "old_units_count": 4,
-    "merger_details": "Phường Phú Diễn, Phường Cổ Nhuế 1, Phường Mai Dịch, Phường Phúc Diễn",
+    "old_units_count": 1,
+    "merger_details": "Phường Phú Diễn",
     "province_is_merged": false,
     "province_merged_with": [],
     "administrative_center": null
@@ -72560,5 +69628,2842 @@
       "Tiền Giang"
     ],
     "administrative_center": "Tiền Giang"
+  },
+  {
+    "ward_name": "Xã An Hòa",
+    "ward_code": "21628",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã An Hòa",
+      "Xã An Quang",
+      "Xã An Nghĩa"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã An Hòa, Xã An Quang, Xã An Nghĩa",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã An Lão",
+    "ward_code": "21609",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn An Lão",
+      "Xã An Tân",
+      "Xã An Hưng"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn An Lão, Xã An Tân, Xã An Hưng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã An Lương",
+    "ward_code": "21769",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Mỹ Chánh",
+      "Xã Mỹ Thành",
+      "Xã Mỹ Cát"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Mỹ Chánh, Xã Mỹ Thành, Xã Mỹ Cát",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường An Nhơn",
+    "ward_code": "21910",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Đập Đá",
+      "Xã Nhơn Mỹ",
+      "Xã Nhơn Hậu"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Đập Đá, Xã Nhơn Mỹ, Xã Nhơn Hậu",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường An Nhơn Bắc",
+    "ward_code": "21925",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Nhơn Thành",
+      "Xã Nhơn Phong",
+      "Xã Nhơn Hạnh"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Nhơn Thành, Xã Nhơn Phong, Xã Nhơn Hạnh",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường An Nhơn Đông",
+    "ward_code": "21934",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Nhơn Hưng",
+      "Xã Nhơn An"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Phường Nhơn Hưng, Xã Nhơn An",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường An Nhơn Nam",
+    "ward_code": "21943",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Nhơn Hòa",
+      "Xã Nhơn Thọ"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Phường Nhơn Hòa, Xã Nhơn Thọ",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã An Nhơn Tây",
+    "ward_code": "21940",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Nhơn Lộc",
+      "Xã Nhơn Tân"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Nhơn Lộc, Xã Nhơn Tân",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã An Toàn",
+    "ward_code": "21622",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã An Toàn",
+      "Xã An Nghĩa (phần còn lại sau khi sáp nhập vào xã An Hòa)"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã An Toàn, Xã An Nghĩa (phần còn lại sau khi sáp nhập vào xã An Hòa)",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã An Vinh",
+    "ward_code": "21616",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã An Trung (huyện An Lão)",
+      "Xã An Dũng",
+      "Xã An Vinh"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã An Trung (huyện An Lão), Xã An Dũng, Xã An Vinh",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ân Hảo",
+    "ward_code": "21697",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ân Hảo Tây",
+      "Xã Ân Hảo Đông",
+      "Xã Ân Mỹ"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ân Hảo Tây, Xã Ân Hảo Đông, Xã Ân Mỹ",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ân Tường",
+    "ward_code": "21715",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ân Tường Tây",
+      "Xã Ân Hữu",
+      "Xã Đak Mang"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ân Tường Tây, Xã Ân Hữu, Xã Đak Mang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Bình An",
+    "ward_code": "21829",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Tây Vinh",
+      "Xã Tây Bình",
+      "Xã Bình Hòa",
+      "Xã Bình Thành"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Tây Vinh, Xã Tây Bình, Xã Bình Hòa, Xã Bình Thành",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Bình Dương",
+    "ward_code": "21733",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Bình Dương",
+      "Xã Mỹ Lợi",
+      "Xã Mỹ Phong"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Bình Dương, Xã Mỹ Lợi, Xã Mỹ Phong",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Bình Định",
+    "ward_code": "21907",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Bình Định",
+      "Xã Nhơn Khánh",
+      "Xã Nhơn Phúc"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Bình Định, Xã Nhơn Khánh, Xã Nhơn Phúc",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Bình Hiệp",
+    "ward_code": "21817",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Bình Thuận",
+      "Xã Bình Tân",
+      "Xã Tây An"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Bình Thuận, Xã Bình Tân, Xã Tây An",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Bình Khê",
+    "ward_code": "21820",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Tây Giang",
+      "Xã Tây Thuận"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Tây Giang, Xã Tây Thuận",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Bình Phú",
+    "ward_code": "21835",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Vĩnh An",
+      "Xã Bình Tường",
+      "Xã Tây Phú"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Vĩnh An, Xã Bình Tường, Xã Tây Phú",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Bồng Sơn",
+    "ward_code": "21640",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Hoài Đức",
+      "Phường Bồng Sơn"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Phường Hoài Đức, Phường Bồng Sơn",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Canh Liên",
+    "ward_code": "21997",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "-",
+      "Xã Canh Liên (phần còn lại sau khi sáp nhập vào xã Canh Vinh)"
+    ],
+    "old_units_count": 2,
+    "merger_details": "-, Xã Canh Liên (phần còn lại sau khi sáp nhập vào xã Canh Vinh)",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Canh Vinh",
+    "ward_code": "22003",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Canh Vinh",
+      "Xã Canh Hiển",
+      "Xã Canh Liên",
+      "Xã Canh Hiệp (phần còn lại sau khi sáp nhập vào xã Vân Canh)"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Canh Vinh, Xã Canh Hiển, Xã Canh Liên, Xã Canh Hiệp (phần còn lại sau khi sáp nhập vào xã Vân Canh)",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Cát Tiến",
+    "ward_code": "21898",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Cát Tiến",
+      "Xã Cát Thành",
+      "Xã Cát Hải"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Cát Tiến, Xã Cát Thành, Xã Cát Hải",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Đề Gi",
+    "ward_code": "21862",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Cát Khánh",
+      "Xã Cát Minh",
+      "Xã Cát Tài"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Cát Khánh, Xã Cát Minh, Xã Cát Tài",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Hòa Hội",
+    "ward_code": "21871",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Cát Hanh",
+      "Xã Cát Hiệp"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Cát Hanh, Xã Cát Hiệp",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Hoài Ân",
+    "ward_code": "21688",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Tăng Bạt Hổ",
+      "Xã Ân Phong",
+      "Xã Ân Đức",
+      "Xã Ân Tường Đông"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Thị trấn Tăng Bạt Hổ, Xã Ân Phong, Xã Ân Đức, Xã Ân Tường Đông",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Hoài Nhơn",
+    "ward_code": "21664",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Hoài Thanh",
+      "Phường Tam Quan Nam",
+      "Phường Hoài Thanh Tây"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Hoài Thanh, Phường Tam Quan Nam, Phường Hoài Thanh Tây",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Hoài Nhơn Bắc",
+    "ward_code": "21655",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Tam Quan Bắc",
+      "Xã Hoài Sơn",
+      "Xã Hoài Châu Bắc"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Tam Quan Bắc, Xã Hoài Sơn, Xã Hoài Châu Bắc",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Hoài Nhơn Đông",
+    "ward_code": "21670",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Hoài Hương",
+      "Xã Hoài Hải",
+      "Xã Hoài Mỹ"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Hoài Hương, Xã Hoài Hải, Xã Hoài Mỹ",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Hoài Nhơn Nam",
+    "ward_code": "21673",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Hoài Tân",
+      "Phường Hoài Xuân"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Phường Hoài Tân, Phường Hoài Xuân",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Hoài Nhơn Tây",
+    "ward_code": "21661",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Hoài Hảo",
+      "Xã Hoài Phú"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Phường Hoài Hảo, Xã Hoài Phú",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Hội Sơn",
+    "ward_code": "21868",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Cát Lâm",
+      "Xã Cát Sơn"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Cát Lâm, Xã Cát Sơn",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Kim Sơn",
+    "ward_code": "21727",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ân Nghĩa",
+      "Xã Bok Tới"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Ân Nghĩa, Xã Bok Tới",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ngô Mây",
+    "ward_code": "21889",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Cát Hưng",
+      "Xã Cát Thắng",
+      "Xã Cát Chánh"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Cát Hưng, Xã Cát Thắng, Xã Cát Chánh",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Nhơn Châu",
+    "ward_code": "21607",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Phù Cát",
+    "ward_code": "21853",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Ngô Mây",
+      "Xã Cát Trinh",
+      "Xã Cát Tân"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Ngô Mây, Xã Cát Trinh, Xã Cát Tân",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Phù Mỹ",
+    "ward_code": "21730",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Phù Mỹ",
+      "Xã Mỹ Quang",
+      "Xã Mỹ Chánh Tây"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Phù Mỹ, Xã Mỹ Quang, Xã Mỹ Chánh Tây",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Phù Mỹ Bắc",
+    "ward_code": "21739",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Mỹ Đức",
+      "Xã Mỹ Châu",
+      "Xã Mỹ Lộc"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Mỹ Đức, Xã Mỹ Châu, Xã Mỹ Lộc",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Phù Mỹ Đông",
+    "ward_code": "21751",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Mỹ An",
+      "Xã Mỹ Thọ",
+      "Xã Mỹ Thắng"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Mỹ An, Xã Mỹ Thọ, Xã Mỹ Thắng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Phù Mỹ Nam",
+    "ward_code": "21775",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Mỹ Tài",
+      "Xã Mỹ Hiệp"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Mỹ Tài, Xã Mỹ Hiệp",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Phù Mỹ Tây",
+    "ward_code": "21757",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Mỹ Trinh",
+      "Xã Mỹ Hòa"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Mỹ Trinh, Xã Mỹ Hòa",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Tam Quan",
+    "ward_code": "21637",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Tam Quan",
+      "Xã Hoài Châu"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Phường Tam Quan, Xã Hoài Châu",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Tây Sơn",
+    "ward_code": "21808",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Phú Phong",
+      "Xã Tây Xuân",
+      "Xã Bình Nghi"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Phú Phong, Xã Tây Xuân, Xã Bình Nghi",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Tuy Phước",
+    "ward_code": "21952",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Tuy Phước",
+      "Thị trấn Diêu Trì",
+      "Xã Phước Thuận",
+      "Xã Phước Nghĩa",
+      "Xã Phước Lộc"
+    ],
+    "old_units_count": 5,
+    "merger_details": "Thị trấn Tuy Phước, Thị trấn Diêu Trì, Xã Phước Thuận, Xã Phước Nghĩa, Xã Phước Lộc",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Tuy Phước Bắc",
+    "ward_code": "21964",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Phước Hiệp",
+      "Xã Phước Hưng",
+      "Xã Phước Quang"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Phước Hiệp, Xã Phước Hưng, Xã Phước Quang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Tuy Phước Đông",
+    "ward_code": "21970",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Phước Sơn",
+      "Xã Phước Hòa",
+      "Xã Phước Thắng"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Phước Sơn, Xã Phước Hòa, Xã Phước Thắng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Tuy Phước Tây",
+    "ward_code": "21985",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Phước An",
+      "Xã Phước Thành"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Phước An, Xã Phước Thành",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Vạn Đức",
+    "ward_code": "21703",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ân Sơn",
+      "Xã Ân Tín",
+      "Xã Ân Thạnh"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ân Sơn, Xã Ân Tín, Xã Ân Thạnh",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Vân Canh",
+    "ward_code": "21994",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Vân Canh",
+      "Xã Canh Thuận",
+      "Xã Canh Hòa",
+      "Xã Canh Hiệp"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Thị trấn Vân Canh, Xã Canh Thuận, Xã Canh Hòa, Xã Canh Hiệp",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Vĩnh Quang",
+    "ward_code": "21805",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Vĩnh Thuận",
+      "Xã Vĩnh Hòa",
+      "Xã Vĩnh Quang"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Vĩnh Thuận, Xã Vĩnh Hòa, Xã Vĩnh Quang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Vĩnh Sơn",
+    "ward_code": "21787",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Vĩnh Kim",
+      "Xã Vĩnh Sơn"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Vĩnh Kim, Xã Vĩnh Sơn",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Vĩnh Thạnh",
+    "ward_code": "21786",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Vĩnh Thạnh",
+      "Xã Vĩnh Hảo"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Thị trấn Vĩnh Thạnh, Xã Vĩnh Hảo",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Vĩnh Thịnh",
+    "ward_code": "21796",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Vĩnh Hiệp",
+      "Xã Vĩnh Thịnh"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Vĩnh Hiệp, Xã Vĩnh Thịnh",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Xuân An",
+    "ward_code": "21892",
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Cát Nhơn",
+      "Xã Cát Tường"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Cát Nhơn, Xã Cát Tường",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "ward_code": "21580",
+    "ward_name": "Phường Trần Phú",
+    "old_units": [
+      "Phường Lê Hồng Phong",
+      "Phường Lý Thường Kiệt",
+      "Phường Trần Phú"
+    ]
+  },
+  {
+    "province_code": "52",
+    "province_name": "Tỉnh Bình Định",
+    "province_short_name": "Bình Định",
+    "ward_code": "21583",
+    "ward_name": "Phường Thị Nại",
+    "old_units": [
+      "Phường Trần Hưng Đạo",
+      "Phường Lê Lợi",
+      "Phường Thị Nại"
+    ]
+  },
+  {
+    "ward_name": "Xã Al Bá",
+    "ward_code": "23954",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ayun (huyện Chư Sê)",
+      "Xã Kông Htok",
+      "Xã Al Bá"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ayun (huyện Chư Sê), Xã Kông Htok, Xã Al Bá",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường An Bình",
+    "ward_code": "23614",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường An Bình",
+      "Xã Tân An",
+      "Xã Cư An"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường An Bình, Xã Tân An, Xã Cư An",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường An Khê",
+    "ward_code": "23617",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Ngô Mây",
+      "Phường Tây Sơn (thị xã An Khê)",
+      "Phường An Phú",
+      "Phường An Phước",
+      "Phường An Tân",
+      "Xã Thành An"
+    ],
+    "old_units_count": 6,
+    "merger_details": "Phường Ngô Mây, Phường Tây Sơn (thị xã An Khê), Phường An Phú, Phường An Phước, Phường An Tân, Xã Thành An",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường An Phú",
+    "ward_code": "23602",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Thắng Lợi",
+      "Xã Chư Á",
+      "Xã An Phú"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Thắng Lợi, Xã Chư Á, Xã An Phú",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ayun",
+    "ward_code": "23798",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đak Jơ Ta",
+      "Xã Ayun (huyện Mang Yang)"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Đak Jơ Ta, Xã Ayun (huyện Mang Yang)",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Ayun Pa",
+    "ward_code": "24044",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Đoàn Kết",
+      "Phường Sông Bờ",
+      "Phường Cheo Reo",
+      "Phường Hòa Bình"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Phường Đoàn Kết, Phường Sông Bờ, Phường Cheo Reo, Phường Hòa Bình",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Bàu Cạn",
+    "ward_code": "23896",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Thăng Hưng",
+      "Xã Bình Giáo",
+      "Xã Bàu Cạn"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Thăng Hưng, Xã Bình Giáo, Xã Bàu Cạn",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Biển Hồ",
+    "ward_code": "23590",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Nghĩa Hưng",
+      "Xã Chư Đang Ya",
+      "Xã Hà Bầu",
+      "Xã Biển Hồ"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Nghĩa Hưng, Xã Chư Đang Ya, Xã Hà Bầu, Xã Biển Hồ",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Bờ Ngoong",
+    "ward_code": "23947",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Bar Măih",
+      "Xã Ia Tiêm",
+      "Xã Chư Pơng",
+      "Xã Bờ Ngoong"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Bar Măih, Xã Ia Tiêm, Xã Chư Pơng, Xã Bờ Ngoong",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Chơ Long",
+    "ward_code": "23851",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đăk Pơ Pho",
+      "Xã Chơ GLong"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Đăk Pơ Pho, Xã Chơ GLong",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Chư A Thai",
+    "ward_code": "24049",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ayun Hạ",
+      "Xã Ia Ake",
+      "Xã Chư A Thai"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ayun Hạ, Xã Ia Ake, Xã Chư A Thai",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Chư Krey",
+    "ward_code": "23830",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã An Trung (huyện Kông Chro)",
+      "Xã Chư Krey"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã An Trung (huyện Kông Chro), Xã Chư Krey",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Chư Păh",
+    "ward_code": "23722",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Phú Hòa",
+      "Xã Nghĩa Hòa",
+      "Xã Hòa Phú"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Phú Hòa, Xã Nghĩa Hòa, Xã Hòa Phú",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Chư Prông",
+    "ward_code": "23887",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Chư Prông",
+      "Xã Ia Phìn",
+      "Xã Ia Kly",
+      "Xã Ia Drang"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Thị trấn Chư Prông, Xã Ia Phìn, Xã Ia Kly, Xã Ia Drang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Chư Pưh",
+    "ward_code": "23942",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Nhơn Hòa",
+      "Xã Chư Don",
+      "Xã Ia Phang"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Nhơn Hòa, Xã Chư Don, Xã Ia Phang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Chư Sê",
+    "ward_code": "23941",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Chư Sê",
+      "Xã Dun",
+      "Xã Ia Blang",
+      "Xã Ia Pal",
+      "Xã Ia Glai"
+    ],
+    "old_units_count": 5,
+    "merger_details": "Thị trấn Chư Sê, Xã Dun, Xã Ia Blang, Xã Ia Pal, Xã Ia Glai",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Cửu An",
+    "ward_code": "23629",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Tú An",
+      "Xã Xuân An",
+      "Xã Song An",
+      "Xã Cửu An"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Tú An, Xã Xuân An, Xã Song An, Xã Cửu An",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Diên Hồng",
+    "ward_code": "23563",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Yên Đỗ",
+      "Phường Ia Kring",
+      "Phường Diên Hồng",
+      "Xã Diên Phú"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Phường Yên Đỗ, Phường Ia Kring, Phường Diên Hồng, Xã Diên Phú",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Đak Đoa",
+    "ward_code": "23677",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Đak Đoa",
+      "Xã Tân Bình",
+      "Xã Glar"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Đak Đoa, Xã Tân Bình, Xã Glar",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Đak Pơ",
+    "ward_code": "23995",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Đak Pơ",
+      "Xã Hà Tam",
+      "Xã An Thành",
+      "Xã Yang Bắc"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Thị trấn Đak Pơ, Xã Hà Tam, Xã An Thành, Xã Yang Bắc",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Đak Rong",
+    "ward_code": "23644",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Kon Pne",
+      "Xã Đak Rong"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Kon Pne, Xã Đak Rong",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Đak Sơmei",
+    "ward_code": "23683",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Hà Đông",
+      "Xã Đak Sơmei"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Hà Đông, Xã Đak Sơmei",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Đăk Song",
+    "ward_code": "23842",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đăk Pling",
+      "Xã Đăk Song"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Đăk Pling, Xã Đăk Song",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Đức Cơ",
+    "ward_code": "23857",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Chư Ty",
+      "Xã Ia Kriêng"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Thị trấn Chư Ty, Xã Ia Kriêng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Gào",
+    "ward_code": "23611",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Kênh",
+      "Xã Ia Pếch",
+      "Xã Gào"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Kênh, Xã Ia Pếch, Xã Gào",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Hội Phú",
+    "ward_code": "23586",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Trà Bá",
+      "Phường Chi Lăng",
+      "Phường Hội Phú"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Trà Bá, Phường Chi Lăng, Phường Hội Phú",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Hra",
+    "ward_code": "23799",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đak Ta Ley",
+      "Xã Hra"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Đak Ta Ley, Xã Hra",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Băng",
+    "ward_code": "23710",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Băng (huyện Đak Đoa)",
+      "Xã Adơk",
+      "Xã Ia Pết"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Băng (huyện Đak Đoa), Xã Adơk, Xã Ia Pết",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Boòng",
+    "ward_code": "23911",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia O (huyện Chư Prông)",
+      "Xã Ia Me",
+      "Xã Ia Boòng"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia O (huyện Chư Prông), Xã Ia Me, Xã Ia Boòng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Chia",
+    "ward_code": "23788",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Dom",
+    "ward_code": "23872",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Dơk",
+    "ward_code": "23869",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Kla",
+      "Xã Ia Dơk"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Ia Kla, Xã Ia Dơk",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Dreh",
+    "ward_code": "24100",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Rmok",
+      "Xã Krông Năng",
+      "Xã Ia Dreh"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Rmok, Xã Krông Năng, Xã Ia Dreh",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Grai",
+    "ward_code": "23764",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Ia Kha",
+      "Xã Ia Bă",
+      "Xã Ia Grăng"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Ia Kha, Xã Ia Bă, Xã Ia Grăng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Hiao",
+    "ward_code": "24061",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Chrôh Pơnan",
+      "Xã Ia Peng",
+      "Xã Ia Hiao"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Chrôh Pơnan, Xã Ia Peng, Xã Ia Hiao",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Hrú",
+    "ward_code": "23971",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Dreng",
+      "Xã Ia Rong",
+      "Xã HBông",
+      "Xã Ia Hrú"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Ia Dreng, Xã Ia Rong, Xã HBông, Xã Ia Hrú",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Hrung",
+    "ward_code": "23767",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Sao (huyện Ia Grai)",
+      "Xã Ia Yok",
+      "Xã Ia Dêr",
+      "Xã Ia Hrung"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Ia Sao (huyện Ia Grai), Xã Ia Yok, Xã Ia Dêr, Xã Ia Hrung",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Khươl",
+    "ward_code": "23728",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đăk Tơ Ver",
+      "Xã Hà Tây",
+      "Xã Ia Khươl"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Đăk Tơ Ver, Xã Hà Tây, Xã Ia Khươl",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Ko",
+    "ward_code": "23977",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Hlốp",
+      "Xã Ia Hla",
+      "Xã Ia Ko"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Hlốp, Xã Ia Hla, Xã Ia Ko",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Krái",
+    "ward_code": "23776",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Tô",
+      "Xã Ia Khai",
+      "Xã Ia Krái"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Tô, Xã Ia Khai, Xã Ia Krái",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Krêl",
+    "ward_code": "23866",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Lang",
+      "Xã Ia Din",
+      "Xã Ia Krêl"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Lang, Xã Ia Din, Xã Ia Krêl",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Lâu",
+    "ward_code": "23935",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Piơr",
+      "Xã Ia Lâu"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Ia Piơr, Xã Ia Lâu",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Le",
+    "ward_code": "23986",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Blứ",
+      "Xã Ia Le"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Ia Blứ, Xã Ia Le",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Ly",
+    "ward_code": "23734",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Ia Ly",
+      "Xã Ia Mơ Nông",
+      "Xã Ia Kreng"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Ia Ly, Xã Ia Mơ Nông, Xã Ia Kreng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Mơ",
+    "ward_code": "23737",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Nan",
+    "ward_code": "23884",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia O",
+    "ward_code": "23782",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Pa",
+    "ward_code": "24022",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Mrơn",
+      "Xã Kim Tân",
+      "Xã Ia Trôk"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Mrơn, Xã Kim Tân, Xã Ia Trôk",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Phí",
+    "ward_code": "23749",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Ka",
+      "Xã Ia Nhin",
+      "Xã Ia Phí"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Ka, Xã Ia Nhin, Xã Ia Phí",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Pia",
+    "ward_code": "23926",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Ga",
+      "Xã Ia Vê",
+      "Xã Ia Pia"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Ga, Xã Ia Vê, Xã Ia Pia",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Pnôn",
+    "ward_code": "23881",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Púch",
+    "ward_code": "23917",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Rbol",
+    "ward_code": "24065",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Chư Băh",
+      "Xã Ia Rbol"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Chư Băh, Xã Ia Rbol",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Rsai",
+    "ward_code": "24112",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Chư RCăm",
+      "Xã Chư Gu",
+      "Xã Ia Rsai"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Chư RCăm, Xã Chư Gu, Xã Ia Rsai",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Sao",
+    "ward_code": "24073",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Sao (thị xã Ayun Pa)",
+      "Xã Ia Rtô"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Ia Sao (thị xã Ayun Pa), Xã Ia Rtô",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Tôr",
+    "ward_code": "23908",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Băng (huyện Chư Prông)",
+      "Xã Ia Bang",
+      "Xã Ia Tôr"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Băng (huyện Chư Prông), Xã Ia Bang, Xã Ia Tôr",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ia Tul",
+    "ward_code": "24028",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Chư Mố",
+      "Xã Ia Broăi",
+      "Xã Ia Kdăm",
+      "Xã Ia Tul"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Chư Mố, Xã Ia Broăi, Xã Ia Kdăm, Xã Ia Tul",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Kbang",
+    "ward_code": "23638",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Kbang",
+      "Xã Lơ Ku",
+      "Xã Đak Smar"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Kbang, Xã Lơ Ku, Xã Đak Smar",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã KDang",
+    "ward_code": "23714",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Hnol",
+      "Xã Trang",
+      "Xã KDang"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Hnol, Xã Trang, Xã KDang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Kon Chiêng",
+    "ward_code": "23818",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đak Trôi",
+      "Xã Kon Chiêng"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Đak Trôi, Xã Kon Chiêng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Kon Gang",
+    "ward_code": "23701",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đak Krong",
+      "Xã Hneng",
+      "Xã Nam Yang",
+      "Xã Kon Gang"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Xã Đak Krong, Xã Hneng, Xã Nam Yang, Xã Kon Gang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Kông Bơ La",
+    "ward_code": "23674",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đông",
+      "Xã Nghĩa An",
+      "Xã Kông Bơ La"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Đông, Xã Nghĩa An, Xã Kông Bơ La",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Kông Chro",
+    "ward_code": "23824",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Kông Chro",
+      "Xã Yang Trung",
+      "Xã Yang Nam"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Thị trấn Kông Chro, Xã Yang Trung, Xã Yang Nam",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Krong",
+    "ward_code": "23650",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": false,
+    "old_units": [],
+    "old_units_count": 0,
+    "merger_details": "Không sáp nhập",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Lơ Pang",
+    "ward_code": "23812",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đê Ar",
+      "Xã Kon Thụp",
+      "Xã Lơ Pang"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Đê Ar, Xã Kon Thụp, Xã Lơ Pang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Mang Yang",
+    "ward_code": "23794",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Kon Dơng",
+      "Xã Đăk Yă",
+      "Xã Đak Djrăng",
+      "Xã Hải Yang"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Thị trấn Kon Dơng, Xã Đăk Yă, Xã Đak Djrăng, Xã Hải Yang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Phú Thiện",
+    "ward_code": "24043",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Phú Thiện",
+      "Xã Ia Sol",
+      "Xã Ia Piar",
+      "Xã Ia Yeng"
+    ],
+    "old_units_count": 4,
+    "merger_details": "Thị trấn Phú Thiện, Xã Ia Sol, Xã Ia Piar, Xã Ia Yeng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Phú Túc",
+    "ward_code": "24076",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Thị trấn Phú Túc",
+      "Xã Phú Cần",
+      "Xã Chư Ngọc",
+      "Xã Ia Mlah",
+      "Xã Đất Bằng"
+    ],
+    "old_units_count": 5,
+    "merger_details": "Thị trấn Phú Túc, Xã Phú Cần, Xã Chư Ngọc, Xã Ia Mlah, Xã Đất Bằng",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Pleiku",
+    "ward_code": "23575",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Tây Sơn (thành phố Pleiku)",
+      "Phường Hội Thương",
+      "Phường Hoa Lư",
+      "Phường Phù Đổng",
+      "Xã Trà Đa"
+    ],
+    "old_units_count": 5,
+    "merger_details": "Phường Tây Sơn (thành phố Pleiku), Phường Hội Thương, Phường Hoa Lư, Phường Phù Đổng, Xã Trà Đa",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Pờ Tó",
+    "ward_code": "24013",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Chư Răng",
+      "Xã Pờ Tó"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Chư Răng, Xã Pờ Tó",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Sơn Lang",
+    "ward_code": "23647",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Sơ Pai",
+      "Xã Sơn Lang"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Sơ Pai, Xã Sơn Lang",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã SRó",
+    "ward_code": "23839",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đăk Kơ Ning",
+      "Xã SRó"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Đăk Kơ Ning, Xã SRó",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Phường Thống Nhất",
+    "ward_code": "23584",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Phường Đống Đa (thành phố Pleiku)",
+      "Phường Yên Thế",
+      "Phường Thống Nhất"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Phường Đống Đa (thành phố Pleiku), Phường Yên Thế, Phường Thống Nhất",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Tơ Tung",
+    "ward_code": "23668",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Kông Lơng Khơng",
+      "Xã Tơ Tung"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Kông Lơng Khơng, Xã Tơ Tung",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Uar",
+    "ward_code": "24109",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Ia Rsươm",
+      "Xã Chư Drăng",
+      "Xã Uar"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Ia Rsươm, Xã Chư Drăng, Xã Uar",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ya Hội",
+    "ward_code": "24007",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Phú An",
+      "Xã Ya Hội"
+    ],
+    "old_units_count": 2,
+    "merger_details": "Xã Phú An, Xã Ya Hội",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
+  },
+  {
+    "ward_name": "Xã Ya Ma",
+    "ward_code": "23833",
+    "province_code": "64",
+    "province_name": "Tỉnh Gia Lai",
+    "province_short_name": "Gia Lai",
+    "province_code_short": "GLI",
+    "place_type": "Tỉnh",
+    "has_merger": true,
+    "old_units": [
+      "Xã Đăk Tơ Pang",
+      "Xã Kông Yang",
+      "Xã Ya Ma"
+    ],
+    "old_units_count": 3,
+    "merger_details": "Xã Đăk Tơ Pang, Xã Kông Yang, Xã Ya Ma",
+    "province_is_merged": true,
+    "province_merged_with": [
+      "Bình Định"
+    ],
+    "administrative_center": "Bình Định"
   }
 ]

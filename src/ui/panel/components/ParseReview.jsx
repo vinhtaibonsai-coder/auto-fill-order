@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Edit2, User, Phone, MapPin, Hash, Package, DollarSign, FileText, AlertCircle } from 'lucide-react';
+import { Check, Edit2, User, Phone, MapPin, Hash, Package, DollarSign, FileText, AlertCircle, Camera, X } from 'lucide-react';
 
 function formatVND(value) {
   if (value === undefined || value === null || value === '') return '0 đ';
@@ -15,7 +15,7 @@ function isValidPhoneNumber(phone) {
   return /^(0\d{9,10})$/.test(clean);
 }
 
-export default function ParseReview({ data, rawText, onConfirm, onCancel }) {
+export default function ParseReview({ data, rawText, imageThumbnail, onConfirm, onCancel }) {
   const [formData, setFormData] = useState({
     name: data?.name || '',
     phone: data?.phone || '',
@@ -27,6 +27,9 @@ export default function ParseReview({ data, rawText, onConfirm, onCancel }) {
     extraPhones: data?.extraPhones || [],
     extraNote: data?.extraNote || ''
   });
+
+  const [showImageModal, setShowImageModal] = useState(false);
+  const activeThumbnail = imageThumbnail || data?.imageThumbnail;
 
   useEffect(() => {
     setFormData({
@@ -53,8 +56,30 @@ export default function ParseReview({ data, rawText, onConfirm, onCancel }) {
 
   return (
     <div className="af-panel-content" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 700, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span>🔍 Xem lại thông tin tách đơn</span>
+      <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 700, borderBottom: '1px solid #cbd5e1', paddingBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>🔍 Bóc tách cục bộ · Sẵn sàng thẩm định AI</span>
+        </div>
+        {activeThumbnail && (
+          <button 
+            onClick={() => setShowImageModal(true)}
+            style={{ 
+              background: '#e0f2fe', 
+              border: '1px solid #7dd3fc', 
+              borderRadius: '4px', 
+              padding: '2px 6px', 
+              fontSize: '10px', 
+              color: '#0369a1', 
+              fontWeight: 600, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '4px', 
+              cursor: 'pointer' 
+            }}
+          >
+            <Camera size={12} /> Xem ảnh gốc
+          </button>
+        )}
       </div>
 
       {/* Raw text display */}
@@ -62,15 +87,17 @@ export default function ParseReview({ data, rawText, onConfirm, onCancel }) {
         background: '#f1f5f9', 
         border: '1px solid #cbd5e1', 
         borderRadius: '8px', 
-        padding: '10px', 
-        fontSize: '12px', 
+        padding: '8px 10px', 
+        fontSize: '11px', 
         color: '#475569', 
         whiteSpace: 'pre-wrap', 
-        maxHeight: '80px', 
+        maxHeight: '65px', 
         overflowY: 'auto',
         boxSizing: 'border-box'
       }}>
-        <div style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Văn bản gốc</div>
+        <div style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginBottom: '2px' }}>
+          {data?.addressSource === 'gemini_vision' || data?.addressSource === 'google_vision_ocr' ? 'Văn bản quét từ ảnh' : 'Văn bản gốc'}
+        </div>
         {rawText || "Không có nội dung"}
       </div>
 
@@ -197,14 +224,30 @@ export default function ParseReview({ data, rawText, onConfirm, onCancel }) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <button className="af-btn-fill" onClick={() => onConfirm(formData)} style={{ background: '#10b981' }}>
-          <Check size={14} /> Xác nhận
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '10px' }}>
+        <button className="af-btn-fill" onClick={() => onConfirm(formData)} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }} title="Gửi dữ liệu lên AI để đối soát và chuẩn hóa chi tiết">
+          <Check size={14} /> Xác nhận & Thẩm định AI
         </button>
         <button className="af-btn-delete" onClick={onCancel} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>
           <Edit2 size={14} /> Sửa lại
         </button>
       </div>
+      <div style={{ fontSize: '10.5px', color: '#64748b', textAlign: 'center', marginTop: '-4px' }}>
+        ⚡ Bóc tách cục bộ tức thì · Bấm Xác nhận để AI đối soát &amp; chuẩn hóa chi tiết
+      </div>
+
+      {/* MODAL PHÓNG TO ẢNH GỐC ĐỂ ĐỐI CHIẾU */}
+      {showImageModal && activeThumbnail && (
+        <div className="af-image-modal-backdrop" onClick={() => setShowImageModal(false)}>
+          <div className="af-image-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="af-image-modal-close" onClick={() => setShowImageModal(false)}>
+              <X size={16} />
+            </button>
+            <div style={{ color: '#94a3b8', fontSize: '11px', fontWeight: 600, marginBottom: '6px' }}>📸 Ảnh gốc đơn hàng</div>
+            <img src={activeThumbnail} alt="Ảnh gốc đơn hàng" className="af-image-modal-img" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
