@@ -1,0 +1,38 @@
+{
+  "testSuite": "G004 Carrier Browser Smoke Test",
+  "timestamp": "2026-09-30T05:12:23.870Z",
+  "carriers": {
+    "vnpost": {
+      "happyPath": {
+        "flow": "parse -> review -> fill -> submit -> waybill capture -> save submitted_orders",
+        "status": "PASSED",
+        "sampleOrderCode": "VNP-TEST-***",
+        "sampleTrackingCode": "EM*******VN",
+        "containsPii": false
+      },
+      "failurePath": {
+        "flow": "late AI response rejection via asyncResultGate",
+        "status": "PASSED",
+        "gateInvalidated": true,
+        "overwritten": false
+      }
+    },
+    "jtExpress": {
+      "happyPath": {
+        "flow": "parse -> review -> fill (address mode, weight, cod, payment) -> waybill capture",
+        "status": "PASSED",
+        "sampleOrderCode": "JT-TEST-***",
+        "sampleTrackingCode": "84**********",
+        "containsPii": false
+      },
+      "failurePath": {
+        "flow": "401 session expiry prompt without infinite retry or panel freeze",
+        "status": "PASSED",
+        "retriesCount": 0,
+        "promptedReLogin": true,
+        "panelFrozen": false
+      }
+    }
+  },
+  "overallStatus": "PASSED"
+}

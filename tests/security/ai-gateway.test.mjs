@@ -17,7 +17,11 @@ const required = [
 const missing = required.filter(k => !ENV[k]);
 console.log('== AI Gateway Integration Security Test ==');
 if (missing.length > 0) {
-  console.log('SKIP: Missing required environment variables:', missing.join(', '));
+  if (ENV.CI) {
+    console.error('❌ FAIL-CLOSED (CI): Missing required environment variables for security test:', missing.join(', '));
+    process.exit(1);
+  }
+  console.log('SKIP: Missing required environment variables (offline dev mode):', missing.join(', '));
   process.exit(0);
 }
 

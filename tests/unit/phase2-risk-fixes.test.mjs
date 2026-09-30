@@ -9,19 +9,15 @@ const rootDir = path.resolve(__dirname, '../..');
 
 console.log('🧪 Running Phase 2 Risk Fixes Validation Tests...');
 
-// Test 1: T021 - Verify production panel flow does NOT inject fake customer/order data without localhost/dev check
+// Test 1: T021 - Verify no runtime environment injects fake customer/order data
 {
   const panelAppPath = path.join(rootDir, 'src/ui/panel/App.jsx');
   const content = fs.readFileSync(panelAppPath, 'utf-8');
 
-  assert.ok(
-    content.includes("window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'"),
-    'T021 FAILED: App.jsx must gate mock AI data to localhost/127.0.0.1 only'
-  );
-  assert.ok(
-    content.includes('Không kết nối được dịch vụ AI. Sử dụng dữ liệu trích xuất cục bộ.'),
-    'T021 FAILED: App.jsx must degrade gracefully in production without injecting mock data'
-  );
+  assert.doesNotMatch(content, /const mockAi|window\.location\.hostname\s*===\s*['"]localhost['"]/,
+    'T021 FAILED: App.jsx must not inject mock AI data in runtime');
+  assert.ok(content.includes('AI_PROVIDER_UNAVAILABLE') && content.includes("addressSource: 'local_parser'"),
+    'T021 FAILED: App.jsx must degrade gracefully using attributed local data');
   console.log('✅ PASS T021: Production panel flow does not inject fake customer/order data');
 }
 

@@ -59,3 +59,6 @@ for (const status of ['supabase_status', 'auth_status', 'rls_status', 'sync_stat
 }
 
 console.log('Phase 7 admin control-plane tests passed.');
+await import('./admin-fast-operations.test.mjs');
+await import('./commercial-phase2-foundation.test.mjs');
+await import('./commercial-phase3-growth.test.mjs');

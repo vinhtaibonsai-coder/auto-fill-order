@@ -38,8 +38,8 @@ assert.match(deviceManagement, /IF NOT public\.is_system_admin\(\) THEN/, 'Devic
 
 assert.match(aiGateway, /shop_id.*KH[^\n]+tin c[^\n]+y/i, 'AI gateway must document that frontend-provided shop_id is not trusted');
 assert.match(aiGateway, /\.from\('shop_members'\)[\s\S]*\.eq\('user_id', userId\)[\s\S]*\.eq\('shop_id', shopId\)/, 'AI gateway must verify requested shop membership');
-assert.match(aiGateway, /\.eq\('roles\.code', 'SYSTEM_ADMIN'\)/, 'AI gateway must only allow SYSTEM_ADMIN to bypass shop membership');
-assert.match(aiGateway, /userClient\.rpc\('consume_ai_quota', \{[\s\S]*p_shop_id: shopId/, 'AI gateway must consume quota through the user-scoped RPC');
+assert.match(aiGateway, /\.in\('roles\.code', \['SYSTEM_ADMIN', 'SUPPORT_ADMIN'\]\)/, 'AI gateway bypass must be limited to system/support admin roles');
+assert.match(aiGateway, /adminClient\.rpc\('consume_ai_quota', \{[\s\S]*p_shop_id: shopId/, 'AI gateway must consume quota through the server-side atomic RPC after shop authorization');
 
 for (const action of [
   'ADMIN_CHANGE_PLAN',

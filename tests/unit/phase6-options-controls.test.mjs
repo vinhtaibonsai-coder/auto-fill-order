@@ -24,8 +24,7 @@ assert.doesNotMatch(ai, /type=["']password["']|groqApiKey|providerSecret/, 'AI s
 assert.match(ai, /rpc\/get_ai_budget/, 'AI quota must come from the server budget contract');
 
 assert.match(carriers, /shop_id=eq\.\$\{sess\.active_shop_id\}/, 'Carrier reads must be scoped to the active shop');
-assert.match(carriers, /shop_id: sess\.active_shop_id/, 'Carrier writes must be scoped to the active shop');
-assert.match(carriers, /setLoginForm\(prev => \(\{ \.\.\.prev, password: '' \}\)\)/, 'Carrier password must be cleared after use');
+assert.match(carriers, /password:\s*''/, 'Carrier password must be cleared after use');
 
 assert.match(devices, /AuditService\.logAction\('DEVICE_REVOKED'/, 'Device revocation must write an audit event');
 

@@ -33,4 +33,8 @@ assert.ok(findFormIndex > detectIndex, 'Runtime must find the carrier form after
 assert.ok(fillIndex > findFormIndex, 'Runtime must fill only after finding the form');
 assert.ok(verifyIndex > fillIndex, 'Runtime must report verification only after fill completes');
 
+assert.match(runtime, /lastSuccessfulFillPlatform\s*=\s*targetPlatform/, 'Runtime must remember the carrier after the first successful fill');
+assert.match(runtime, /scheduleCarrierRefillAfterEdit\(\)/, 'Panel edits must schedule an update of the already-filled carrier form');
+assert.match(runtime, /field === 'address'[\s\S]*await refreshAddressSuggestion/, 'Address edits must be reparsed before the carrier form is updated');
+
 console.log('Phase 5 panel workflow tests passed.');

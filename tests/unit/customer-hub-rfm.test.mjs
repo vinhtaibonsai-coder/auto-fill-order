@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { calculateCustomerSegment, calculateRiskLevel, maskPhone } from '../../src/application/customer/customer-risk.service.js';
+assert.equal(calculateCustomerSegment({ successfulOrders: 1, totalSpent: 100000 }), 'new');
+assert.equal(calculateCustomerSegment({ successfulOrders: 2, totalSpent: 200000 }), 'repeat');
+assert.equal(calculateCustomerSegment({ successfulOrders: 5, totalSpent: 100000 }), 'vip');
+assert.equal(calculateCustomerSegment({ successfulOrders: 1, failedOrders: 1 }), 'risk');
+assert.equal(calculateRiskLevel({ totalOrders: 3, failedOrders: 1 }), 'warning');
+assert.equal(maskPhone('0912345678'), '0912***678');
+assert.equal(maskPhone('0912345678', true), '0912345678');
+console.log('Customer Hub RFM contracts passed.');

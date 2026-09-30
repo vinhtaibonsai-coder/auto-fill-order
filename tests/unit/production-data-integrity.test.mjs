@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const read = path => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
+const sw = read('src/runtime/service-worker/service-worker.js');
+const repo = read('src/domain/admin/admin.repository.js');
+const members = read('src/domain/member/member.service.js');
+const overview = read('src/ui/admin-dashboard/pages/Overview/Overview.jsx');
+const health = read('src/ui/admin-dashboard/pages/SystemHealth/SystemHealth.jsx');
+const carrierHealth = read('src/ui/admin-dashboard/pages/Carriers/CarrierHealth.jsx');
+const payments = read('src/ui/admin-dashboard/pages/LicenseKeys/LicenseKeys.jsx');
+const carriers = read('src/ui/options/pages/Carriers/Carriers.jsx');
+const panel = read('src/ui/panel/App.jsx');
+const dashboard = read('src/ui/panel/components/PanelDashboard.jsx');
+const crm = read('src/ui/panel/components/CustomerMiniCRM.jsx');
+const workspace = read('src/ui/index/App.jsx');
+const storage = read('src/application/storage.js');
+const versionChecker = read('src/domain/version/version-checker.js');
+
+const legacyMembers = read('admin-dashboard/member.service.js');
+const confidenceReview = read('src/ui/panel/components/ConfidenceReview.jsx');
+const releaseCenter = read('src/ui/admin-dashboard/pages/Releases/ReleaseCenter.jsx');
+
+assert.doesNotMatch(sw, /MOCK_TOKEN_12345|name:\s*['"]VNPOST_SESSION['"]/);
+assert.match(sw, /VNPOST_AUTO_LOGIN_UNSUPPORTED/);
+assert.doesNotMatch(repo, /users_total:\s*3|orders_total:\s*486|orders_today:\s*6|system_health:\s*['"]NORMAL['"]/);
+assert.doesNotMatch(repo, /parseTotal\(profilesRes\)\s*\|\|\s*3|parseTotal\(ordersRes\)\s*\|\|\s*486/);
+assert.doesNotMatch(members, /yen_admin|owner@system\.com|mem_owner|mem_1/);
+assert.doesNotMatch(legacyMembers, /yen_admin|owner@system\.com|mem_owner|mem_1/);
+assert.doesNotMatch(overview, /Demo trend data|99\.8%|28000000|ai_requests_today\s*\|\|\s*850/);
+assert.doesNotMatch(health, /health\.[a-z_]+\s*\|\|\s*['"]healthy['"]|supabase_latency_ms\s*\|\|\s*45|workstations_online\s*\|\|\s*1|HOẠT ĐỘNG HOÀN HẢO/);
+assert.doesNotMatch(health, /ai_success_rate\s*\|\|\s*100/);
+assert.match(health, /ai_success_rate/);
+assert.match(health, /unknown/i);
+assert.doesNotMatch(confidenceReview, /(?:data\?\.confidence|formData\.confidence)\s*\|\|\s*(?:95|100)/);
+assert.match(confidenceReview, /const needsReview = !hasConfidence \|\|/);
+assert.doesNotMatch(releaseCenter, /r\.rollout_percentage\s*\|\|\s*100/);
+assert.doesNotMatch(versionChecker, /rollout_percentage\s*\|\|\s*100/);
+assert.doesNotMatch(carrierHealth, /mode:\s*['"]no-cors['"]/);
+assert.match(carrierHealth, /probeCarrierHealth/);
+assert.doesNotMatch(payments, /mockPayload|TEST_PAYMENT_WEBHOOK|process_payment_webhook/);
+assert.match(payments, /dryRunPaymentWebhook/);
+assert.doesNotMatch(carriers, /ItemCode:[^\n]*Math\.random/);
+assert.match(carriers, /AFO_TEST_/);
+assert.doesNotMatch(panel, /hostname\s*===\s*['"]localhost['"]|const mockAi/);
+assert.doesNotMatch(dashboard, /99\.8%|>24<|>22<|>2</);
+assert.doesNotMatch(crm, /Nguyễn Văn An|0901234567|4\.250\.000|VIP Customer/);
+assert.doesNotMatch(workspace, /order\.id \|\| Math\.random\(\)|id:\s*s\.id\s*\|\|\s*Math\.random\(\)/);
+assert.doesNotMatch(storage, /getOrderKey[\s\S]{0,900}Math\.random\(\)/);
+
+console.log('Production data integrity contracts passed.');

@@ -1,0 +1,10 @@
+{
+  "shop_a": [
+    { "id": "draft-1", "phone": "0912345678", "name": "Nguyễn An", "address": "12 Lê Lợi, Phường Bến Nghé, TP.HCM", "orderCode": "A001", "codAmount": 500000, "status": "pending", "platform": "VNPost" },
+    { "id": "submitted-1", "savedOrderId": "draft-1", "phone": "+84912345678", "name": "Nguyễn An", "address": "12 Lê Lợi, Phường Bến Nghé, TP.HCM", "orderCode": "A001", "trackingCode": "VN000000001", "codAmount": 500000, "status": "success", "platform": "VNPost" },
+    { "id": "submitted-2", "phone": "0912345678", "name": "Nguyễn An", "address": "20 Trần Hưng Đạo, Quận 1, TP.HCM", "orderCode": "A002", "trackingCode": "JT000000002", "codAmount": 750000, "status": "failed", "platform": "J&T" }
+  ],
+  "shop_b": [
+    { "id": "submitted-b1", "phone": "0912345678", "name": "Khách shop B", "address": "Hà Nội", "orderCode": "B001", "codAmount": 100000, "status": "success", "platform": "VNPost" }
+  ]
+}
