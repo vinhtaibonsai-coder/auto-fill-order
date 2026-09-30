@@ -44,8 +44,13 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER
 STABLE
+SET search_path = public, auth
 AS $$
 BEGIN
+    IF NOT public.is_system_admin() THEN
+        RAISE EXCEPTION 'Truy cập bị từ chối: Yêu cầu quyền SYSTEM_ADMIN.';
+    END IF;
+
     RETURN QUERY
     SELECT
         p.id,
@@ -73,11 +78,16 @@ CREATE OR REPLACE FUNCTION public.admin_create_user(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, auth
 AS $$
 DECLARE
     v_user_id UUID;
     v_role_id UUID;
 BEGIN
+    IF NOT public.is_system_admin() THEN
+        RAISE EXCEPTION 'Truy cập bị từ chối: Chỉ Master Admin mới có quyền thực hiện.';
+    END IF;
+
     -- Kiểm tra role tồn tại
     SELECT id INTO v_role_id FROM public.roles WHERE code = p_role_code;
     IF v_role_id IS NULL THEN
@@ -111,10 +121,15 @@ CREATE OR REPLACE FUNCTION public.admin_set_user_role(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, auth
 AS $$
 DECLARE
     v_role_id UUID;
 BEGIN
+    IF NOT public.is_system_admin() THEN
+        RAISE EXCEPTION 'Truy cập bị từ chối: Chỉ Master Admin mới có quyền thực hiện.';
+    END IF;
+
     SELECT id INTO v_role_id FROM public.roles WHERE code = p_role_code;
     IF v_role_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'error', 'Role không tồn tại: ' || p_role_code);

@@ -322,8 +322,13 @@ CREATE OR REPLACE FUNCTION public.admin_delete_shop(p_shop_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, auth
 AS $$
 BEGIN
+    IF NOT public.is_system_admin() THEN
+        RAISE EXCEPTION 'Truy cập bị từ chối: Chỉ Master Admin mới có quyền thực hiện.';
+    END IF;
+
     DELETE FROM public.shops WHERE id = p_shop_id;
     RETURN jsonb_build_object('success', true, 'message', 'Đã xóa Cửa hàng thành công.');
 END;

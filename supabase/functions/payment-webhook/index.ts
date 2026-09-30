@@ -10,13 +10,34 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-const paymentApiKey = Deno.env.get('PAYMENT_WEBHOOK_API_KEY') || 'AUTOFILL_SECURE_PAYMENT_2026';
+const hmacSecret = (Deno.env.get('PAYMENT_WEBHOOK_HMAC_SECRET') || Deno.env.get('PAYMENT_WEBHOOK_SECRET') || '').trim();
+const allowedOrigin = Deno.env.get('PAYMENT_WEBHOOK_ALLOWED_ORIGIN') || 'https://my.sepay.vn';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': allowedOrigin,
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-signature, x-timestamp, x-nonce, idempotency-key, x-idempotency-key',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+// Helpers for P0-4 HMAC hardening
+function hexEncode(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const ab = enc.encode(a);
+  const bb = enc.encode(b);
+  if (ab.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
+}
+async function hmacHex(secret: string, payload: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+  return hexEncode(sig);
+}
 
 const json = (data: any, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -34,29 +55,50 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('authorization') || '';
-    const url = new URL(req.url);
-    const tokenParam = url.searchParams.get('token') || '';
-
-    // 1. Kiểm tra API Key bảo mật
-    const isApiKeyValid = 
-      authHeader.includes(paymentApiKey) ||
-      authHeader === `Apikey ${paymentApiKey}` ||
-      authHeader === `Bearer ${paymentApiKey}` ||
-      tokenParam === paymentApiKey;
-
-    if (!isApiKeyValid && paymentApiKey !== 'AUTOFILL_SECURE_PAYMENT_2026') {
-      return json({ error: 'Unauthorized: Invalid payment API key' }, 401);
+    if (!supabaseUrl || !serviceRoleKey || !hmacSecret) {
+      console.error('[Payment Webhook] Missing required server secrets.');
+      return json({ error: 'Webhook is not configured.' }, 503);
     }
 
-    const payload = await req.json();
-    console.log('[Payment Webhook] Received payload:', JSON.stringify(payload));
+    const rawBody = await req.text();
+    let payload: any;
+    try { payload = rawBody ? JSON.parse(rawBody) : {}; } catch { return json({ error: 'Invalid JSON body' }, 400); }
+    console.log('[Payment Webhook] Received transaction event.');
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const sigHeader = (req.headers.get('x-signature') || req.headers.get('X-Signature') || '').trim();
+    const tsHeader = (req.headers.get('x-timestamp') || req.headers.get('X-Timestamp') || '').trim();
+    const nonceHeader = (req.headers.get('x-nonce') || req.headers.get('X-Nonce') || '').trim();
+    const idemHeader = (req.headers.get('idempotency-key') || req.headers.get('x-idempotency-key') || req.headers.get('Idempotency-Key') || '').trim();
+
+    if (!sigHeader) return json({ error: 'Missing X-Signature', code: 'MISSING_SIGNATURE' }, 401);
+    if (!tsHeader || !nonceHeader) return json({ error: 'Missing X-Timestamp or X-Nonce', code: 'MISSING_TIMESTAMP_NONCE' }, 401);
+    const tsNum = Number(tsHeader);
+    if (!Number.isFinite(tsNum)) return json({ error: 'Invalid X-Timestamp', code: 'TIMESTAMP_INVALID' }, 401);
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (Math.abs(nowSec - tsNum) > 300) {
+      return json({ error: 'Timestamp expired', code: 'TIMESTAMP_EXPIRED', now: nowSec, provided: tsNum }, 401);
+    }
+    if (nonceHeader.length < 8 || nonceHeader.length > 128) return json({ error: 'Invalid nonce', code: 'NONCE_INVALID' }, 401);
+    const expectedHex = await hmacHex(hmacSecret, `${tsHeader}.${nonceHeader}.${rawBody}`);
+    const providedHex = sigHeader.replace(/^sha256=/i, '').trim().toLowerCase();
+    if (!timingSafeEqual(providedHex, expectedHex.toLowerCase())) {
+      return json({ error: 'Invalid signature', code: 'INVALID_SIGNATURE' }, 401);
+    }
+    const { error: nonceErr } = await supabase.from('webhook_nonces').insert({ nonce: nonceHeader, expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() });
+    if (nonceErr) {
+      const isDup = (nonceErr as any).code === '23505' || String(nonceErr.message || '').toLowerCase().includes('duplicate');
+      if (isDup) return json({ error: 'Replay detected', code: 'REPLAY_DETECTED' }, 409);
+      console.warn('[Webhook] nonce insert warn:', nonceErr);
+    }
 
     // 2. Chuẩn hóa dữ liệu từ SePay / VietQR Gateway
     // SePay standard format: { id, gateway, transactionDate, accountNumber, transferType, transferAmount, accumulated, content, referenceCode }
     const amount = Number(payload.transferAmount || payload.amount || 0);
     const content = String(payload.content || payload.description || '').trim();
-    const transactionCode = String(payload.referenceCode || payload.id || payload.transaction_id || `TXN-${Date.now()}`);
+    // P0-4 idempotency: ưu tiên Idempotency-Key header nếu gateway gửi
+    const headerTxn = idemHeader || String(payload.idempotency_key || '').trim();
+    const transactionCode = String(headerTxn || payload.referenceCode || payload.id || payload.transaction_id || `TXN-${Date.now()}`);
     const bankBrand = String(payload.gateway || payload.bankBrandName || 'VIETQR');
     const accountNumber = String(payload.accountNumber || '');
 
@@ -70,6 +112,20 @@ Deno.serve(async (req) => {
     const match = content.match(/AUTOFILL\s+([A-Za-z0-9\-_]+)(?:\s+([A-Za-z0-9_]+))?/i);
     if (!match) {
       console.warn('[Payment Webhook] Nội dung chuyển khoản không khớp cú pháp:', content);
+      // Ghi nhận giao dịch treo (UNMATCHED) vào payment_transactions để Admin đối soát thủ công
+      await supabase.from('payment_transactions').insert({
+        transaction_code: transactionCode,
+        transaction_id: transactionCode,
+        amount,
+        content,
+        gateway: bankBrand,
+        status: 'PENDING',
+        reconciliation_status: 'unmatched',
+        reconciliation_notes: 'Nội dung chuyển khoản không đúng cú pháp AUTOFILL <SHOP_CODE> <PLAN>',
+        raw_payload: payload,
+        raw_webhook_payload: payload
+      }).catch((err: any) => console.warn('[Payment Webhook] Error persisting unmatched transaction:', err));
+
       return json({ 
         success: false, 
         message: 'Nội dung chuyển khoản không đúng định dạng AUTOFILL <SHOP_CODE> <PLAN>' 
@@ -92,7 +148,7 @@ Deno.serve(async (req) => {
       durationMonths = 1;
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    // reuse supabase from above (đã tạo ở đầu hàm để check nonce)
 
     // 4. Tìm kiếm shop_id chính xác (hỗ trợ cả UUID và shop_code)
     let shopId: string | null = null;
@@ -119,6 +175,21 @@ Deno.serve(async (req) => {
 
     if (!shopId) {
       console.error('[Payment Webhook] Không tìm thấy shop với mã:', rawShopIdentifier);
+      // Ghi nhận giao dịch chưa khớp Shop (UNMATCHED) để Admin đối soát và gán shop thủ công
+      await supabase.from('payment_transactions').insert({
+        transaction_code: transactionCode,
+        transaction_id: transactionCode,
+        amount,
+        content,
+        shop_code: rawShopIdentifier,
+        gateway: bankBrand,
+        status: 'PENDING',
+        reconciliation_status: 'unmatched',
+        reconciliation_notes: `Shop not found with identifier: ${rawShopIdentifier}`,
+        raw_payload: payload,
+        raw_webhook_payload: payload
+      }).catch((err: any) => console.warn('[Payment Webhook] Error persisting unmatched transaction:', err));
+
       return json({ error: `Shop not found with identifier: ${rawShopIdentifier}` }, 404);
     }
 
