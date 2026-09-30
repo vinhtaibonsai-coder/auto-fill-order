@@ -32,6 +32,8 @@
    - Hướng dẫn rollback 3 lớp: Chrome Extension, Remote Selectors, và Database Migrations.
 6. [Sao lưu & Phục hồi Dữ liệu Thảm họa (Backup & Restore)](./BACKUP_AND_RESTORE.md)
    - Quy trình tự động tạo snapshot, tính toán kiểm tra mã băm SHA-256, diễn tập khôi phục thảm họa (Disaster Recovery Drill) định kỳ trên môi trường Staging/Non-prod.
+7. [Bằng chứng Đối soát Ví P0-7 & Chạy Pilot (Reconciliation Evidence)](./P0-7-RECONCILIATION-EVIDENCE.md)
+   - Bộ SQL copy-paste trên SQL Editor để thu bằng chứng 7 ngày đối soát 0đ (cron, backfill 30 ngày, alert), kèm checklist KPI pilot 5–10 shop.
 
 ---
 
