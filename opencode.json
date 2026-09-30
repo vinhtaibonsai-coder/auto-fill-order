@@ -1,31 +1,107 @@
 {
-  "$schema": "https://opencode.ai/config.json",
-  "model": "modal/vinhtai-bonsai--ep-kimi-k3-server.us-west.modal.direct",
-  "provider": {
-    "modal": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Modal",
-      "options": {
-        "baseURL": "https://inference.us-west.modal.direct/v1",
-        "apiKey": "{env:MODAL_PROXY_TOKEN}"
-      },
-      "models": {
-        "vinhtai-bonsai--ep-kimi-k3-server.us-west.modal.direct": {
-          "name": "Kimi K3",
-          "attachment": false,
-          "reasoning": true,
-          "temperature": true,
-          "tool_call": true,
-          "modalities": {
-            "input": [
-              "text"
-            ],
-            "output": [
-              "text"
-            ]
-          }
-        }
-      }
-    }
-  }
+    "$schema":  "https://opencode.ai/config.json",
+    "model":  "tokenrouter/z-ai/glm-5.3-free",
+    "providers":  {
+                      "modal":  {
+                                    "name":  "Modal",
+                                    "env":  [
+                                                "MODAL_PROXY_TOKEN"
+                                            ],
+                                    "package":  "@opencode-ai/ai/providers/openai-compatible",
+                                    "settings":  {
+                                                     "baseURL":  "https://inference.us-west.modal.direct/v1"
+                                                 },
+                                    "models":  {
+                                                   "vinhtai-bonsai--ep-kimi-k3-server.us-west.modal.direct":  {
+                                                                                                                  "name":  "Kimi K3",
+                                                                                                                  "limit":  {
+                                                                                                                                "context":  200000,
+                                                                                                                                "output":  32000
+                                                                                                                            }
+                                                                                                              }
+                                               }
+                                },
+                      "tokenrouter":  {
+                                          "name":  "TokenRouter",
+                                          "env":  [
+                                                      "TOKENROUTER_API_KEY"
+                                                  ],
+                                          "package":  "@opencode-ai/ai/providers/openai-compatible",
+                                          "settings":  {
+                                                           "baseURL":  "https://api.tokenrouter.com/v1"
+                                                       },
+                                          "models":  {
+                                                         "z-ai/glm-5.3-free":  {
+                                                                                   "name":  "GLM 5.3 Free (Z.ai via TokenRouter)",
+                                                                                   "limit":  {
+                                                                                                 "context":  128000,
+                                                                                                 "output":  16000
+                                                                                             }
+                                                                               }
+                                                     }
+                                      }
+                  },
+    "provider":  {
+                     "modal":  {
+                                   "npm":  "@ai-sdk/openai-compatible",
+                                   "name":  "Modal",
+                                   "options":  {
+                                                   "baseURL":  "https://inference.us-west.modal.direct/v1",
+                                                   "apiKey":  "{env:MODAL_PROXY_TOKEN}"
+                                               },
+                                   "models":  {
+                                                  "vinhtai-bonsai--ep-kimi-k3-server.us-west.modal.direct":  {
+                                                                                                                 "name":  "Kimi K3",
+                                                                                                                 "attachment":  false,
+                                                                                                                 "reasoning":  true,
+                                                                                                                 "temperature":  true,
+                                                                                                                 "tool_call":  true,
+                                                                                                                 "modalities":  {
+                                                                                                                                    "input":  [
+                                                                                                                                                  "text"
+                                                                                                                                              ],
+                                                                                                                                    "output":  [
+                                                                                                                                                   "text"
+                                                                                                                                               ]
+                                                                                                                                }
+                                                                                                             }
+                                              }
+                               },
+                     "tokenrouter":  {
+                                         "npm":  "@ai-sdk/openai-compatible",
+                                         "name":  "TokenRouter",
+                                         "options":  {
+                                                         "baseURL":  "https://api.tokenrouter.com/v1",
+                                                         "apiKey":  "{env:TOKENROUTER_API_KEY}"
+                                                     },
+                                         "models":  {
+                                                        "z-ai/glm-5.3-free":  {
+                                                                                  "name":  "GLM 5.3 Free (Z.ai via TokenRouter)",
+                                                                                  "attachment":  false,
+                                                                                  "reasoning":  true,
+                                                                                  "temperature":  true,
+                                                                                  "tool_call":  true,
+                                                                                  "modalities":  {
+                                                                                                     "input":  [
+                                                                                                                   "text"
+                                                                                                               ],
+                                                                                                     "output":  [
+                                                                                                                    "text"
+                                                                                                                ]
+                                                                                                 }
+                                                                              }
+                                                    }
+                                     }
+                 },
+    "mcp":  {
+                "graft":  {
+                              "type":  "local",
+                              "command":  [
+                                              "node",
+                                              "C:\\Users\\Administrator\\AppData\\Roaming\\npm\\node_modules\\@nanonets\\graft\\dist\\cli.js",
+                                              "mcp"
+                                          ],
+                              "enabled":  true
+                          }
+            }
 }

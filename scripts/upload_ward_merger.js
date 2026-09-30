@@ -7,11 +7,11 @@ const fs = require('fs');
 const path = require('path');
 
 // Điền cấu hình Supabase của bạn vào đây
-const SUPABASE_URL = 'https://xlgovgynbsahuykyjzcx.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsZ292Z3luYnNhaHV5a3lqemN4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDU4ODYxOSwiZXhwIjoyMTAwMTY0NjE5fQ.PqbHDnTxUDT0zSO8RXVHbr53p0DAmY76IlbUXYjWpR4';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 async function uploadToSupabase() {
-  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error("Vui lòng cấu hình SUPABASE_URL và SUPABASE_SERVICE_ROLE_KEY trong file scripts/upload_ward_merger.js trước khi chạy.");
     process.exit(1);
   }

@@ -7,8 +7,16 @@
         "code-review-graph",
         "serve"
       ],
-      "cwd": "D:\\H\u00ccNH C\u1ee6A Y\u1ebeN\\EXT ANTIGRAVIY",
+      "cwd": "D:\\HÌNH CỦA YẾN\\EXT ANTIGRAVIY",
       "type": "stdio"
+    },
+    "graft": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@nanonets/graft",
+        "mcp"
+      ]
     }
   }
 }

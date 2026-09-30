@@ -9,6 +9,15 @@
       ],
       "cwd": "D:\\H\u00ccNH C\u1ee6A Y\u1ebeN\\EXT ANTIGRAVIY",
       "type": "stdio"
+    },
+    "graft": {
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "graft",
+        "mcp"
+      ],
+      "type": "stdio"
     }
   }
 }

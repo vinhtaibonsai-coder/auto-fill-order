@@ -3,13 +3,13 @@
   "mcp": {
     "code-review-graph": {
       "type": "local",
+      "enabled": true,
       "command": [
-        "uv",
-        "run",
+        "uvx",
         "code-review-graph",
         "serve",
         "--repo",
-        "D:\\H\u00ccNH C\u1ee6A Y\u1ebeN\\EXT ANTIGRAVIY"
+        "D:\\ODER AUTO FILL"
       ]
     }
   }
