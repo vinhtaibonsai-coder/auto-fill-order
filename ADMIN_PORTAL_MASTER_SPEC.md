@@ -1,10 +1,10 @@
 # Kế Hoạch Chi Tiết: Nâng Cấp Toàn Diện Hệ Thống Quản Trị Admin Portal (Commercial SaaS & 2026 Vision)
 
-> **Trạng thái triển khai (28/08/2026):** Giai đoạn 1 — Admin Foundation & Fast Operations Hub đã hoàn thành ở mã nguồn, test và production build. Cần áp dụng `database/migrations/v66_admin_fast_operations.sql` lên Supabase để kích hoạt các thao tác ghi thực tế. Các trụ cột thương mại hóa Giai đoạn 2–3 vẫn là roadmap và không được đánh dấu là đã vận hành khi chưa có tích hợp thanh toán/hạ tầng bên ngoài.
+> **Implementation status — 28/08/2026:** Admin Phase 1 đã hoàn thành ở mã nguồn theo `implementation_plan.md`. Migration triển khai là `database/migrations/v66_admin_fast_operations.sql`; trạng thái nghiệm thu và bước vận hành còn lại được ghi trong `PROJECT_PROGRESS.md`.
 
-> **Tiếp tục Giai đoạn 2:** Billing hardening, Unit Economics, Device Fingerprint Enforcement và Remote Dynamic Selectors đã hoàn thành ở mã nguồn qua `v67_commercial_phase2_foundation.sql`. Trạng thái production vẫn chờ migration, Edge Function secrets và smoke-test gateway thật.
+> **Commercial Phase 2 status:** Đã hoàn thành nền tảng mã nguồn trong `database/migrations/v67_commercial_phase2_foundation.sql`; cần triển khai Supabase/Edge Function thực tế trước khi coi là production-ready.
 
-> **Giai đoạn 3:** Risk Network bảo vệ riêng tư, Prepaid Wallet ledger, Reseller foundation và Telegram Operations outbox đã hoàn thành ở mã nguồn qua `v68_commercial_phase3_growth.sql`. Production activation chờ migration và secret/scheduler Telegram.
+> **Commercial Phase 3 status:** Đã hoàn thành nền tảng mã nguồn trong `database/migrations/v68_commercial_phase3_growth.sql`; các tích hợp Telegram và vận hành ví chỉ production-ready sau khi cấu hình secrets, scheduler và smoke-test giao dịch thật.
 
 Tài liệu này là bản thiết kế kiến trúc và kế hoạch triển khai toàn diện cho hệ thống **Admin Control Plane** của Auto Fill Order, hướng tới chuẩn **Thương Mại Hóa B2B SaaS Chuyên Nghiệp** và đón đầu **Xu hướng Công nghệ 2026**.
 

@@ -1,0 +1,106 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Cơ Chế Hoạt Động Toàn Diện - Auto Fill Order",
+    "subtitle": "Quy trình khép kín: Bóc tách đơn AI -> Hàng đợi nháp -> Điền DOM bưu cục -> Bảng đối chiếu 920px -> Đồng bộ Cloud",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "full-lifecycle",
+        "label": "Toàn bộ chu trình lên đơn",
+        "focus": ["raw_text", "panel_ui", "parser_engine", "address_normalizer", "draft_queue", "carrier_form", "submit_interceptor", "approval_modal", "carrier_api", "submitted_orders"],
+        "note": "Theo dõi đơn hàng từ văn bản thô qua bóc tách AI, kiểm soát đối chiếu đến hệ thống bưu điện và Cloud."
+      },
+      {
+        "id": "intake-and-parse",
+        "label": "Bóc tách AI & Chuẩn hóa địa giới",
+        "focus": ["raw_text", "panel_ui", "parser_engine", "address_normalizer", "draft_queue"],
+        "note": "Xử lý văn bản tự nhiên, nhận diện số điện thoại, tên, tiền COD và bóc tách địa giới 3 cấp."
+      },
+      {
+        "id": "double-check-gate",
+        "label": "Chốt chặn đối chiếu kép (Approval Gate)",
+        "focus": ["carrier_form", "submit_interceptor", "approval_modal", "carrier_api"],
+        "note": "Chặn sự kiện submit bưu cục để mở bảng đối chiếu 920px, kiểm soát lệch COD trước khi gửi."
+      },
+      {
+        "id": "sync-and-hub",
+        "label": "Đồng bộ bưu điện & Customer Hub",
+        "focus": ["approval_modal", "carrier_api", "submitted_orders"],
+        "note": "Lưu trữ lịch sử đơn hàng, cập nhật hồ sơ khách hàng 360 và đồng bộ thời gian thực."
+      }
+    ],
+    "output": "docs/diagrams/auto-fill-order-mechanism.html"
+  },
+  "lanes": [
+    { "id": "operator", "label": "1. Người Dùng & Nguồn Đơn" },
+    { "id": "panel", "label": "2. Panel Shadow DOM (v1.0.1)" },
+    { "id": "engine", "label": "3. Lõi Phân Tích AI & Địa Giới" },
+    { "id": "carrier", "label": "4. Web Bưu Cục (VNPost / J&T)" },
+    { "id": "cloud", "label": "5. Cloud Supabase & Customer Hub" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "Bóc tách & Chuẩn hóa", "fromCol": 0, "toCol": 1 },
+    { "id": "autofill", "label": "Hàng đợi & Điền Form", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "audit", "label": "Chốt chặn Đối chiếu kép", "fromCol": 4, "toCol": 4, "variant": "security" },
+    { "id": "sync", "label": "Gửi bưu điện & Lưu Cloud", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "group_parsing", "label": "Xử lý thông minh (AI/Regex)", "lane": "engine", "fromCol": 1, "toCol": 2, "variant": "emphasis" },
+    { "id": "group_approval", "label": "Chốt chặn bảo vệ tiền COD", "lane": "panel", "fromCol": 4, "toCol": 4, "variant": "security" },
+    { "id": "group_cloud", "label": "Kho dữ liệu & Customer 360", "lane": "cloud", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["raw_text", "panel_ui", "parser_engine", "address_normalizer", "draft_queue", "carrier_form", "submit_interceptor", "approval_modal", "carrier_api", "submitted_orders"],
+  "nodes": [
+    { "id": "raw_text", "lane": "operator", "col": 0, "type": "external", "label": "Văn Bản Đơn Hàng", "sublabel": "Zalo / Messenger / Excel", "width": 136 },
+    { "id": "panel_ui", "lane": "panel", "col": 1, "type": "frontend", "label": "Injected Panel", "sublabel": "Shadow DOM v1.0.1", "tag": "Floating/Docked", "width": 136 },
+    { "id": "parser_engine", "lane": "engine", "col": 1, "type": "backend", "label": "OrderProcessor", "sublabel": "Regex + Gemini OCR", "tag": "Tách đa trường", "width": 136 },
+    { "id": "address_normalizer", "lane": "engine", "col": 2, "type": "backend", "label": "Address Engine", "sublabel": "63 Tỉnh Thành 3 Cấp", "tag": "Fuzzy matching", "width": 136 },
+    { "id": "draft_queue", "lane": "panel", "col": 2, "type": "database", "label": "Draft Queue", "sublabel": "Hàng đợi đơn nháp", "tag": "Thu gọn & Realtime", "width": 136 },
+    { "id": "carrier_form", "lane": "carrier", "col": 3, "type": "frontend", "label": "Form Bưu Cục", "sublabel": "VNPost / J&T DOM", "tag": "Điền tự động", "width": 136 },
+    { "id": "submit_interceptor", "lane": "carrier", "col": 4, "type": "security", "label": "Submit Interceptor", "sublabel": "Bắt nút Tạo đơn", "tag": "Chặn gửi sớm", "width": 136 },
+    { "id": "approval_modal", "lane": "panel", "col": 4, "type": "security", "label": "Approval Modal", "sublabel": "Đối chiếu 920px & COD", "tag": "Kiểm soát kép", "width": 136 },
+    { "id": "carrier_api", "lane": "carrier", "col": 5, "type": "cloud", "label": "Hệ Thống Bưu Điện", "sublabel": "Máy chủ phát hành mã", "tag": "Tạo vận đơn thật", "width": 136 },
+    { "id": "submitted_orders", "lane": "cloud", "col": 5, "type": "database", "label": "Customer Hub 360", "sublabel": "Lưu đơn & Sổ bạ khách", "tag": "Supabase RLS", "width": 136 }
+  ],
+  "edges": [
+    { "id": "e-paste-text", "from": "raw_text", "to": "panel_ui", "label": "Paste đơn", "variant": "emphasis" },
+    { "id": "e-parse-req", "from": "panel_ui", "to": "parser_engine", "label": "Phân tích", "variant": "default" },
+    { "id": "e-address-norm", "from": "parser_engine", "to": "address_normalizer", "label": "Địa giới 3 cấp", "variant": "default" },
+    { "id": "e-save-draft", "from": "address_normalizer", "to": "draft_queue", "label": "Lưu hàng đợi", "variant": "emphasis" },
+    { "id": "e-fill-form", "from": "draft_queue", "to": "carrier_form", "label": "1-Click Nhập đơn", "variant": "emphasis" },
+    { "id": "e-user-submit", "from": "carrier_form", "to": "submit_interceptor", "label": "Bấm Tạo đơn", "variant": "default" },
+    { "id": "e-intercept-gate", "from": "submit_interceptor", "to": "approval_modal", "label": "Chặn & Mở modal", "variant": "security" },
+    { "id": "e-confirm-send", "from": "approval_modal", "to": "carrier_api", "label": "Xác nhận gửi", "variant": "emphasis" },
+    { "id": "e-save-submitted", "from": "carrier_api", "to": "submitted_orders", "label": "Lưu lịch sử & Hub", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Kiến Trúc Độc Lập Shadow DOM",
+      "items": [
+        "Panel và Modal hoạt động bên trong Shadow DOM v1.0.1, hoàn toàn cách ly CSS và JS với web bưu cục.",
+        "Hỗ trợ cả chế độ Thả nổi (Floating) lẫn Ghim cố định (Docked Sidebar) không làm biến dạng giao diện VNPost/J&T."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Chốt Chặn Kiểm Soát Kép (Zero-Mistake)",
+      "items": [
+        "Submit Interceptor tự động chặn nút gửi của hãng, kích hoạt Approval Modal 920px đối chiếu song song.",
+        "Tiêu điểm COD 38px đọc số tiền thành chữ và cảnh báo lệch tiền, ngăn chặn thất thoát tài chính triệt để."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Hệ Sinh Thái Dữ Liệu Khép Kín",
+      "items": [
+        "Lưu trữ đơn hàng chính xác với nguồn AUTO_FILL (Tách đơn AI) hoặc MANUAL (Nhập tay).",
+        "Tự động tích lũy hồ sơ khách hàng 360, gắn thẻ khách quen và cảnh báo nguy cơ boom hàng theo số điện thoại."
+      ]
+    }
+  ]
+}

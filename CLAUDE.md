@@ -168,3 +168,18 @@ Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 2. Use `detect_changes_tool` for code review.
 3. Use `get_affected_flows_tool` to understand impact.
 4. Use `query_graph_tool` pattern="tests_for" to check coverage.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in GitHub Issues (`vinhtaibonsai-coder/auto-fill-order`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context repo with `CONTEXT.md` and `docs/adr/` at the root. See `docs/agents/domain.md`.
+

@@ -1,5 +1,7 @@
 # GEMINI_CODE_REWRITE_TASK_LIST.md
 
+> Công việc rewrite nền tảng trong tài liệu này đã hoàn thành. Backlog production tiếp theo là `PLAN/GEMINI_REMAINING_PRODUCTION_PLAN.md`; Gemini phải thực hiện từ G001 theo thứ tự và ghi bằng chứng vào `PLAN/GEMINI_PRODUCTION_EVIDENCE.md`.
+
 ## Feature
 
 Full system rewrite plan for Auto Fill Order commercial architecture.

@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo Cáo Đánh Giá Toàn Diện Hệ Thống — Auto Fill Order | 31.08.2026</title>
+<meta name="description" content="Báo cáo audit 360° hệ thống Auto Fill Order — Code, Backend, UX/UI, Bảo mật, Thương mại, Vận hành, Lộ trình 2026">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8fafc; --bg2:#ffffff; --bg3:#f1f5f9; --line:#e2e8f0; --line2:#cbd5e1;
+  --text:#0f172a; --muted:#64748b; --muted2:#94a3b8;
+  --brand:#2563eb; --brand2:#1d4ed8; --brandSoft:#eff6ff;
+  --emerald:#059669; --emeraldSoft:#ecfdf5;
+  --amber:#d97706; --amberSoft:#fffbeb;
+  --red:#dc2626; --redSoft:#fef2f2;
+  --violet:#7c3aed; --violetSoft:#f5f3ff;
+  --radius:16px; --radiusLg:20px; --shadow:0 8px 32px rgba(15,23,42,.08); --shadowLg:0 20px 60px rgba(15,23,42,.12);
+}
+@media(prefers-color-scheme:dark){
+  :root{ --bg:#020617; --bg2:#0f172a; --bg3:#1e293b; --line:#1e293b; --line2:#334155; --text:#f1f5f9; --muted:#94a3b8; --muted2:#64748b; --brandSoft:#1e293b; --emeraldSoft:#022c22; --amberSoft:#422006; --redSoft:#450a0a; --violetSoft:#2e1065; }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--brand);text-decoration:none}
+.mono{font-family:'JetBrains Mono',monospace}
+.container{max-width:1180px;margin:0 auto;padding:0 20px}
+.topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);background:color-mix(in srgb, var(--bg) 82%, transparent);border-bottom:1px solid var(--line)}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:16px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#2563eb 0%,#7c3aed 55%,#06b6d4 100%);display:grid;place-items:center;color:white;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 8px 20px rgba(37,99,235,.35)}
+.brand h1{font-size:15px;margin:0;font-weight:800;letter-spacing:-.02em}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{appearance:none;border:1px solid var(--line);background:var(--bg2);color:var(--text);padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.15s}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:var(--line2)}
+.btn--primary{background:var(--brand);color:white;border-color:var(--brand);box-shadow:0 8px 20px rgba(37,99,235,.28)}
+.btn--ghost{background:transparent}
+.hero{padding:28px 0 10px}
+.hero-grid{display:grid;grid-template-columns:1.45fr .85fr;gap:18px}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radiusLg);box-shadow:var(--shadow)}
+.hero-main{padding:22px 22px 18px;position:relative;overflow:hidden}
+.hero-main::after{content:"";position:absolute;inset:auto -40px -40px auto;width:220px;height:220px;background:radial-gradient(300px 200px at 30% 30%, rgba(37,99,235,.18), transparent 70%);pointer-events:none}
+.kicker{display:inline-flex;align-items:center;gap:8px;background:var(--brandSoft);border:1px solid color-mix(in srgb, var(--brand) 14%, var(--line));color:var(--brand);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.hero h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:34px;line-height:1.05;letter-spacing:-.04em;margin:12px 0 10px}
+@media(max-width:640px){.hero h2{font-size:26px}}
+.hero h2 span{background:linear-gradient(135deg,#2563eb,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lead{color:var(--muted);font-size:14.5px;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{font-size:12px;padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg3);color:var(--muted);font-weight:600}
+.chip b{color:var(--text)}
+.hero-side{padding:18px;display:flex;flex-direction:column;gap:14px}
+.score-hero{display:flex;align-items:center;gap:16px}
+.score-ring{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(from 0deg, #2563eb 0% 72%, #e2e8f0 72% 100%);padding:6px}
+.score-ring i{position:absolute;inset:6px;background:var(--bg2);border-radius:50%}
+.score-ring b{position:relative;font-size:26px;font-weight:800;letter-spacing:-.03em}
+.score-ring b small{font-size:13px;color:var(--muted);font-weight:700}
+.legend{flex:1}
+.legend h4{margin:0 0 4px;font-size:13px}
+.legend p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5}
+.mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini{padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--bg3)}
+.mini b{font-size:18px}
+.mini span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.toc{position:sticky;top:64px;z-index:20;margin:14px 0 0;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;gap:8px;overflow:auto;scrollbar-width:none}
+.toc::-webkit-scrollbar{display:none}
+.toc a{white-space:nowrap;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--muted)}
+.toc a.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.section{margin-top:18px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:8px 2px 12px}
+.section-head h3{margin:0;font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+.section-head h3 i{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:white;font-style:normal;font-size:16px}
+.section-head p{margin:0;color:var(--muted);font-size:13px;max-width:520px;text-align:right}
+@media(max-width:800px){.section-head{flex-direction:column;align-items:flex-start}.section-head p{text-align:left}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+.kpi{padding:16px}
+.kpi h4{margin:0 0 6px;font-size:13px;letter-spacing:.02em}
+.kpi .score{font-size:28px;font-weight:800;letter-spacing:-.03em}
+.kpi .bar{height:8px;background:var(--bg3);border-radius:999px;overflow:hidden;margin:10px 0 8px;border:1px solid var(--line)}
+.kpi .fill{height:100%;border-radius:999px}
+.kpi small{color:var(--muted);font-size:12px}
+.badge{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;border:1px solid var(--line)}
+.badge--ok{background:var(--emeraldSoft);color:var(--emerald);border-color:color-mix(in srgb, var(--emerald) 18%, var(--line))}
+.badge--warn{background:var(--amberSoft);color:var(--amber);border-color:color-mix(in srgb, var(--amber) 18%, var(--line))}
+.badge--bad{background:var(--redSoft);color:var(--red);border-color:color-mix(in srgb, var(--red) 18%, var(--line))}
+.badge--info{background:var(--brandSoft);color:var(--brand);border-color:color-mix(in srgb, var(--brand) 18%, var(--line))}
+.table-wrap{overflow:auto;border-radius:14px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--bg2)}
+th{ text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:var(--bg3); padding:10px 12px; border-bottom:1px solid var(--line); white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.radar{padding:16px}
+.radar svg{width:100%;height:auto;display:block}
+.details{padding:16px 18px}
+.details h4{margin:0 0 8px;font-size:14px}
+.details ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px}
+.details ul b{color:var(--text)}
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.pros-cons{grid-template-columns:1fr}}
+.pros{border-left:3px solid var(--emerald);padding-left:14px}
+.cons{border-left:3px solid var(--amber);padding-left:14px}
+.callout{padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--bg3);display:flex;gap:12px}
+.callout i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;color:white}
+.collapse{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg2)}
+.collapse summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.collapse summary::-webkit-details-marker{display:none}
+.collapse[open] summary{border-bottom:1px solid var(--line);background:var(--bg3)}
+.collapse .body{padding:14px 16px;color:var(--muted);font-size:13.5px}
+.pill-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.pill-tabs button{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg2);font-weight:700;font-size:13px;cursor:pointer;color:var(--muted)}
+.pill-tabs button.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.panel{display:none}
+.panel.active{display:block}
+.timeline{position:relative;padding-left:22px}
+.timeline::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl{position:relative;padding:10px 0 10px 0}
+.tl::before{content:"";position:absolute;left:-18px;top:16px;width:10px;height:10px;border-radius:50%;background:var(--bg2);border:2px solid var(--brand);box-shadow:0 0 0 4px var(--brandSoft)}
+.footer{margin:22px 0 30px;padding:18px;text-align:center;color:var(--muted);font-size:12.5px}
+@media print{ .topbar,.toc,.top-actions{display:none} body{background:white;color:#0f172a} .card{box-shadow:none;break-inside:avoid} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="container topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">AF</div>
+      <div>
+        <h1>AUTO FILL ORDER — SYSTEM AUDIT 360°</h1>
+        <p>Báo cáo đánh giá toàn diện • Code • Backend • UX/UI • Bảo mật • Thương mại • Vận hành</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn" onclick="window.print()">🖨️ In / Xuất PDF</button>
+      <button class="btn btn--primary" onclick="document.getElementById('remediation').scrollIntoView({behavior:'smooth'})">→ Phương án khắc phục</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-grid">
+      <div class="card hero-main">
+        <span class="kicker">● Audit thực chứng trên mã nguồn • 31.08.2026 • v1.0 • Confidential</span>
+        <h2>Hệ thống đã <span>thương mại hóa nền tảng</span> rất tốt — nhưng còn 4 điểm nghẽn phải khóa trước khi scale 1.000+ shop.</h2>
+        <p class="lead">Đánh giá độc lập trên toàn bộ repo: <b>~90 migration SQL, 100+ file src, 60+ test suite, 3 surface chính (Extension / Options / Admin), 2 carrier live (VNPost, J&T)</b>. Đã đối chiếu incident, RLS, quota, device, parser và pipeline build.</p>
+        <div class="meta">
+          <span class="chip"><b>Phạm vi:</b> extension/ • src/ • supabase/ • database/migrations • tests/</span>
+          <span class="chip"><b>Phương pháp:</b> Static review + graph + contract test</span>
+          <span class="chip"><b>Chuẩn:</b> OWASP • RLS • SaaS B2B • A11y</span>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge--ok">● 7.2 / 10 — Khá tốt, sẵn sàng vận hành có kiểm soát</span>
+          <span class="badge badge--warn">4 P0 cần khóa trước scale</span>
+          <span class="badge badge--info">12 P1 cải tiến 30 ngày</span>
+        </div>
+      </div>
+      <div class="card hero-side">
+        <div class="score-hero">
+          <div class="score-ring"><i></i><b>7.2<small>/10</small></b></div>
+          <div class="legend">
+            <h4>Điểm tổng hợp hệ thống</h4>
+            <p>Trung bình có trọng số 9 trụ cột. Điểm kéo xuống bởi <b>Vận hành & Quan sát (5.8)</b> và <b>Testing/CI (6.0)</b>. Điểm mạnh nhất: <b>Parser & Address Engine (8.6)</b>.</p>
+          </div>
+        </div>
+        <div class="mini-stats">
+          <div class="mini"><span>Migration SQL</span><br><b>90+</b><div style="font-size:12px;color:var(--muted)">từ v1 → v90</div></div>
+          <div class="mini"><span>Test Suites</span><br><b>60+</b><div style="font-size:12px;color:var(--muted)">unit + security</div></div>
+          <div class="mini"><span>Carrier Adapter</span><br><b>2 live</b><div style="font-size:12px;color:var(--muted)">VNPost • J&T</div></div>
+          <div class="mini"><span>Surface</span><br><b>3 + PWA</b><div style="font-size:12px;color:var(--muted)">Panel • Options • Admin</div></div>
+        </div>
+        <div class="callout" style="padding:10px 12px">
+          <i style="background:var(--brand)">⚡</i>
+          <div style="font-size:12.5px"><b>Kết luận nhanh cho lãnh đạo:</b> Giữ nguyên kiến trúc. Ưu tiên khóa <b>P0: RLS đồng bộ + Secret rotation + Extension sync + Quota idempotency</b> trong 7 ngày → rồi mới mở bán rộng.</div>
+        </div>
+      </div>
+    </div>
+    <nav class="toc" id="toc">
+      <a href="#tongquan">Tổng quan</a><a href="#kientruc">Kiến trúc</a><a href="#code">Code</a><a href="#backend">Backend</a><a href="#parser">Parser & AI</a><a href="#uxui">UX/UI</a><a href="#baomat">Bảo mật</a><a href="#hieunang">Hiệu năng</a><a href="#thuongmai">Thương mại</a><a href="#vanhanh">Vận hành</a><a href="#testing">Testing</a><a href="#risk">Rủi ro</a><a href="#remediation">Khắc phục</a><a href="#roadmap">Lộ trình</a>
+    </nav>
+  </div>
+
+  <!-- TỔNG QUAN ĐIỂM -->
+  <section id="tongquan" class="section">
+    <div class="section-head">
+      <h3><i style="background:linear-gradient(135deg,#2563eb,#06b6d4)">◎</i> 1 — Tổng quan điểm & Sức khỏe 9 trụ cột</h3>
+      <p>Chấm trên thang 10, có trọng số theo tác động tới doanh thu & rủi ro vận hành</p>
+    </div>
+    <div class="grid3">
+      <div class="card radar" style="grid-column:span 1">
+        <h4 style="margin:0 0 8px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)">Radar sức khỏe</h4>
+        <!-- simple radar via SVG polygon -->
+        <svg viewBox="0 0 260 260" role="img" aria-label="radar">
+          <rect width="260" height="260" rx="16" fill="var(--bg3)"></rect>
+          <!-- grid -->
+          <g stroke="var(--line)" fill="none" opacity=".9">
+            <polygon points="130,30 225,85 225,185 130,235 35,185 35,85"></polygon>
+            <polygon points="130,55 205,95 205,170 130,210 55,170 55,95" stroke-dasharray="4 4"></polygon>
+            <polygon points="130,80 185,110 185,160 130,185 75,160 75,110" stroke-dasharray="3 4"></polygon>
+          </g>
+          <g stroke="var(--line2)" opacity=".55">
+            <line x1="130" y1="30" x2="130" y2="235"/><line x1="35" y1="85" x2="225" y2="185"/><line x1="225" y1="85" x2="35" y2="185"/>
+          </g>
+          <!-- data polygon: scores [Arch 7.5, Code 6.8, Backend 7.0, Parser 8.6, UX 7.8, Sec 6.9, Perf 6.5, Commerce 7.4, Ops 5.8] mapped -->
+          <polygon points="130,52 203,97 205,165 130,205 62,168 52,98" fill="rgba(37,99,235,.18)" stroke="#2563eb" stroke-width="2.2"></polygon>
+          <g font-size="8.5" font-weight="800" fill="var(--muted)" text-anchor="middle">
+            <text x="130" y="22">Kiến trúc 7.5</text><text x="235" y="82">Code 6.8</text><text x="235" y="198">Backend 7.0</text><text x="130" y="250">Parser 8.6</text><text x="25" y="198">UX/UI 7.8</text><text x="25" y="82">Bảo mật 6.9</text>
+          </g>
+          <g font-size="7.5" fill="var(--muted2)" text-anchor="middle">
+            <text x="130" y="238">Thương mại 7.4 • Vận hành 5.8 • Hiệu năng 6.5</text>
+          </g>
+        </svg>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <span class="badge badge--ok">Mạnh: Parser • UX</span><span class="badge badge--warn">Yếu: Vận hành • Test</span>
+        </div>
+      </div>
+      <div style="grid-column:span 2;display:grid;gap:12px">
+        <div class="grid3">
+          <div class="card kpi"><h4>🏗️ Kiến trúc</h4><div class="score">7.5</div><div class="bar"><div class="fill" style="width:75%;background:#2563eb"></div></div><small>Đã tách domain/infra/ui, còn lẫn content_scripts cũ</small></div>
+          <div class="card kpi"><h4>🧩 Code quality</h4><div class="score">6.8</div><div class="bar"><div class="fill" style="width:68%;background:#0ea5e9"></div></div><small>Parser xuất sắc; service còn thiếu type & guard</small></div>
+          <div class="card kpi"><h4>🗄️ Backend / DB</h4><div class="score">7.0</div><div class="bar"><div class="fill" style="width:70%;background:#7c3aed"></div></div><small>RLS + RPC khá, migration dày đặc cần gom</small></div>
+          <div class="card kpi"><h4>🧠 Parser & AI</h4><div class="score" style="color:var(--emerald)">8.6</div><div class="bar"><div class="fill" style="width:86%;background:var(--emerald)"></div></div><small>Điểm sáng nhất: COD, SĐT, địa chỉ, AI fallback</small></div>
+          <div class="card kpi"><h4>🎨 UX/UI</h4><div class="score">7.8</div><div class="bar"><div class="fill" style="width:78%;background:#f59e0b"></div></div><small>Panel Shadow DOM tốt, Options 13 màn hình đã Việt hóa</small></div>
+          <div class="card kpi"><h4>🔒 Bảo mật</h4><div class="score">6.9</div><div class="bar"><div class="fill" style="width:69%;background:#ef4444"></div></div><small>Đã SHA256 SĐT, RLS còn lỗ hổng đồng bộ role</small></div>
+        </div>
+        <div class="grid3">
+          <div class="card kpi"><h4>⚡ Hiệu năng</h4><div class="score">6.5</div><div class="bar"><div class="fill" style="width:65%;background:#06b6d4"></div></div><small>Ward DB 63k tốt, thiếu lazy & cache version</small></div>
+          <div class="card kpi"><h4>💳 Thương mại</h4><div class="score">7.4</div><div class="bar"><div class="fill" style="width:74%;background:#8b5cf6"></div></div><small>Billing VietQR, quota, device, wallet — nền đã xong</small></div>
+          <div class="card kpi"><h4>🚀 Vận hành</h4><div class="score" style="color:var(--amber)">5.8</div><div class="bar"><div class="fill" style="width:58%;background:var(--amber)"></div></div><small>Thiếu CI, thiếu quan sát, sync extension mong manh</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="card details" style="margin-top:12px">
+      <h4>Đọc nhanh 30 giây cho founder</h4>
+      <div class="pros-cons">
+        <div class="pros">
+          <b style="color:var(--emerald)">● Điểm mạnh giữ lại</b>
+          <ul>
+            <li><b>Parser COD/SĐT/Địa chỉ</b> rất robust, xử lý 1tr8, 300k, tr/k, freeship phủ định — hiếm extension VN làm tới mức này.</li>
+            <li><b>Address Engine + Ward DB ~63k</b> + học máy fuzzy + AI Groq fallback = tỉ lệ điền đúng cao.</li>
+            <li><b>Thương mại hóa B2B</b> đã có đủ: subscription, quota, device seat, prepaid wallet, reseller, risk network (SHA256).</li>
+            <li><b>UX Panel Shadow DOM</b> + Options/Admin tách rõ, đã Việt hóa 100% 13 màn hình.</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <b style="color:var(--amber)">● Điểm nghẽn phải khóa (P0)</b>
+          <ul>
+            <li><b>RLS & role đồng bộ</b> từng có 4 incident — vẫn còn nguy cơ lệch <code class="mono">profiles.role</code> vs <code class="mono">user_roles/shop_members</code>.</li>
+            <li><b>Extension sync</b> <code class="mono">extension/</code> phải là bundle production — dev stub từng lọt vào.</li>
+            <li><b>Secret & webhook</b> — fail-closed đã làm, nhưng thiếu rotation & replay guard.</li>
+            <li><b>Quan sát = 0</b>: chưa có log tập trung, alert khi AI lỗi &gt;5% / carrier đổi DOM.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KIẾN TRÚC -->
+  <section id="kientruc" class="section">
+    <div class="section-head">
+      <h3><i style="background:#2563eb">🏗️</i> 2 — Kiến trúc hệ thống</h3>
+      <p>3 surface • 2 carrier • 1 Supabase • Edge Functions • Ward DB local</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Sơ đồ kiến trúc thực tế (đã đối chiếu manifest & src)</h4>
+        <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto">
+<svg viewBox="0 0 760 360" width="100%" style="min-width:560px" role="img">
+  <rect width="760" height="360" rx="14" fill="var(--bg2)" stroke="var(--line)"/>
+  <!-- Extension -->
+  <g>
+    <rect x="18" y="18" width="220" height="150" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>
+    <text x="28" y="38" font-size="11" font-weight="800" fill="#1d4ed8">EXTENSION (MV3)</text>
+    <rect x="28" y="50" width="200" height="28" rx="8" fill="white" stroke="#dbeafe"/><text x="38" y="68" font-size="11" font-weight="700" fill="#0f172a">Content Scripts (VNPost/J&T)</text>
+    <rect x="28" y="84" width="200" height="28" rx="8" fill="white" stroke="#dbeafe"/><text x="38" y="102" font-size="11" font-weight="700" fill="#0f172a">Panel Shadow DOM + Toast</text>
+    <rect x="28" y="118" width="200" height="28" rx="8" fill="white" stroke="#dbeafe"/><text x="38" y="136" font-size="11" font-weight="700" fill="#0f172a">Service Worker + Alarms</text>
+    <text x="28" y="160" font-size="9.5" fill="#64748b">host_permissions: supabase, jtexpress, vnpost</text>
+  </g>
+  <!-- Web App -->
+  <g>
+    <rect x="270" y="18" width="220" height="150" rx="12" fill="#f5f3ff" stroke="#ddd6fe"/>
+    <text x="280" y="38" font-size="11" font-weight="800" fill="#6d28d9">WEB APP (Vite + React)</text>
+    <rect x="280" y="50" width="200" height="28" rx="8" fill="white" stroke="#e9d5ff"/><text x="290" y="68" font-size="11" font-weight="700">Options (13 pages) — Shop</text>
+    <rect x="280" y="84" width="200" height="28" rx="8" fill="white" stroke="#e9d5ff"/><text x="290" y="102" font-size="11" font-weight="700">Admin Portal — SYSTEM_ADMIN</text>
+    <rect x="280" y="118" width="200" height="28" rx="8" fill="white" stroke="#e9d5ff"/><text x="290" y="136" font-size="11" font-weight="700">Mobile Workspace (PWA)</text>
+  </g>
+  <!-- Supabase -->
+  <g>
+    <rect x="522" y="18" width="220" height="150" rx="12" fill="#ecfdf5" stroke="#a7f3d0"/>
+    <text x="532" y="38" font-size="11" font-weight="800" fill="#065f46">SUPABASE CLOUD</text>
+    <rect x="532" y="50" width="200" height="28" rx="8" fill="white" stroke="#a7f3d0"/><text x="542" y="68" font-size="11" font-weight="700">Postgres + RLS + 90 migrations</text>
+    <rect x="532" y="84" width="200" height="28" rx="8" fill="white" stroke="#a7f3d0"/><text x="542" y="102" font-size="11" font-weight="700">Auth + Realtime + Storage</text>
+    <rect x="532" y="118" width="200" height="28" rx="8" fill="white" stroke="#a7f3d0"/><text x="542" y="136" font-size="11" font-weight="700">Edge Functions (ai-gateway…)</text>
+  </g>
+  <!-- Engine -->
+  <g>
+    <rect x="18" y="188" width="724" height="100" rx="12" fill="#fffbeb" stroke="#fde68a"/>
+    <text x="28" y="208" font-size="11" font-weight="800" fill="#92400e">ENGINE LÕI — chạy 100% tại máy khách (offline-first)</text>
+    <g font-size="11" font-weight="700">
+      <rect x="28" y="218" width="170" height="26" rx="8" fill="white" stroke="#fde68a"/><text x="38" y="235" fill="#0f172a">Order Parser (COD/SĐT/Tên)</text>
+      <rect x="206" y="218" width="170" height="26" rx="8" fill="white" stroke="#fde68a"/><text x="216" y="235" fill="#0f172a">Address Engine (63k ward)</text>
+      <rect x="384" y="218" width="170" height="26" rx="8" fill="white" stroke="#fde68a"/><text x="394" y="235" fill="#0f172a">Groq/Gemini AI fallback</text>
+      <rect x="562" y="218" width="170" height="26" rx="8" fill="white" stroke="#fde68a"/><text x="572" y="235" fill="#0f172a">Carrier Autofill (VNPost/JT)</text>
+    </g>
+    <text x="28" y="268" font-size="10" fill="#92400e">Offline-first → không phụ thuộc mạng khi bóc tách • AI chỉ sửa lỗi địa chỉ • Carrier selector có thể remote qua system_configs</text>
+  </g>
+  <!-- Arrows -->
+  <g stroke="#94a3b8" stroke-width="1.4" marker-end="url(#arrow)" fill="none" opacity=".9">
+    <path d="M238 80 H270"/><path d="M490 80 H522"/><path d="M380 168 V188"/>
+  </g>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/></marker></defs>
+  <text x="18" y="312" font-size="10" fill="#64748b">Build: Vite + @crxjs/vite-plugin • extension/ là bundle production (sync via scripts/sync-extension.js) • Deploy: Vercel</text>
+  <text x="18" y="330" font-size="10" fill="#64748b">Carrier health probe + remote selectors versioning • Device fingerprint SHA-256 • Quota theo subscription</text>
+</svg>
+        </div>
+        <ul style="margin-top:10px">
+          <li><b>Điểm mạnh:</b> Tách rõ <span class="mono">src/domain • src/application • src/infrastructure • src/ui • src/runtime</span> — dễ scale thêm carrier mới.</li>
+          <li><b>Điểm yếu:</b> <span class="mono">manifest.json</span> liệt kê 15 file content_scripts tuần tự — thứ tự load mong manh, chưa có bundler cho content.</li>
+          <li><b>Rủi ro:</b> Vẫn còn file legacy <span class="mono">content.js/ui.js/style.css</span> trong spec cũ (AGENTS.md) dễ gây nhầm.</li>
+        </ul>
+      </div>
+      <div class="card details">
+        <h4>Đánh giá chi tiết kiến trúc</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Thành phần</th><th>Hiện trạng</th><th>Điểm</th></tr>
+            <tr><td><b>Tách lớp</b></td><td>Domain/Application/Infrastructure/UI tách khá sạch. Ổn.</td><td><span class="badge badge--ok">7.8</span></td></tr>
+            <tr><td><b>Extension MV3</b></td><td>MV3 chuẩn, service_worker type module, host_permissions tối thiểu.</td><td><span class="badge badge--ok">8.0</span></td></tr>
+            <tr><td><b>Web surfaces</b></td><td>Options/Admin/Mobile tách entry Vite — tốt.</td><td><span class="badge badge--ok">8.2</span></td></tr>
+            <tr><td><b>Carrier adapter</b></td><td>VNPost/JT có selector+autofill riêng, carrier-runtime điều phối — dễ thêm Viettel/GHTK.</td><td><span class="badge badge--ok">7.6</span></td></tr>
+            <tr><td><b>Build & sync</b></td><td><span class="mono">vite build && sync-extension.js</span> — đúng invariant, nhưng chưa có CI guard.</td><td><span class="badge badge--warn">5.5</span></td></tr>
+            <tr><td><b>Phụ thuộc</b></td><td>React 19, Supabase-js 2.112, Vite 5 — hiện đại, chưa lock peer dep.</td><td><span class="badge badge--ok">7.2</span></td></tr>
+          </table>
+        </div>
+        <div class="callout" style="margin-top:12px">
+          <i style="background:#7c3aed">◐</i>
+          <div style="font-size:13px"><b>Khuyến nghị kiến trúc (P1):</b> Gom 15 file content_scripts thành 1 bundle <span class="mono">content.bundle.js</span> qua Vite; giữ <span class="mono">manifest.json</span> chỉ trỏ 1 file để tránh lỗi thứ tự. Xóa tham chiếu <span class="mono">content.js/ui.js</span> khỏi AGENTS.md.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CODE -->
+  <section id="code" class="section">
+    <div class="section-head">
+      <h3><i style="background:#0ea5e9">🧩</i> 3 — Chất lượng mã nguồn</h3>
+      <p>Parser là viên ngọc — phần còn lại cần guard & type</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Điểm mạnh nổi bật</h4>
+        <ul>
+          <li><b>Order Parser (src/application/order-parser/parser.js ~643 dòng):</b> Phủ cực rộng — COD dạng <span class="mono">1.8tr / 1tr800 / 300k / 1.800.000</span>, SĐT chuẩn hóa +84, tách SĐT dính liền <span class="mono">segmentPhoneDigits</span>, tên theo họ VN, địa chỉ với province alias, phủ định freeship trước khẳng định. Có <span class="mono">preprocessText</span> tách dòng ngầm — rất thực chiến.</li>
+          <li><b>Address Engine:</b> <span class="mono">data.js</span> + <span class="mono">aliases.js</span> + <span class="mono">fuzzy.js</span> + <span class="mono">rules.js</span> + <span class="mono">validator</span> + <span class="mono">ai.js</span> + <span class="mono">learning.js</span> — pipeline đầy đủ, có học từ sửa tay.</li>
+          <li><b>Carrier:</b> Selector/autofill tách riêng VNPost/JT — dễ test probe.</li>
+        </ul>
+        <h4 style="margin-top:14px">Nợ kỹ thuật & rủi ro</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Vấn đề</th><th>Mức</th><th>Ảnh hưởng</th></tr>
+            <tr><td>Thiếu TypeScript / JSDoc type guard — nhiều service trả <span class="mono">JSONB</span> không schema</td><td><span class="badge badge--warn">P1</span></td><td>Lỗi runtime khi carrier đổi DOM</td></tr>
+            <tr><td>Không có linter/format thống nhất (không thấy eslint/prettier config)</td><td><span class="badge badge--warn">P1</span></td><td>Style drift, review tốn thời gian</td></tr>
+            <tr><td>File rời rạc trong <span class="mono">content_scripts</span> — globalThis pollution</td><td><span class="badge badge--warn">P1</span></td><td>Thứ tự load vỡ là vỡ cả panel</td></tr>
+            <tr><td>Một số hàm dài &gt;80 dòng, regex phức tạp thiếu test fuzz</td><td><span class="badge badge--bad">P2</span></td><td>Regression khi sửa COD</td></tr>
+            <tr><td>Thiếu dead-code scan (graft có nhưng chưa gắn CI)</td><td><span class="badge badge--warn">P2</span></td><td>Bundle phình</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card details">
+        <h4>Chỉ số nhanh (ước lượng từ repo)</h4>
+        <div class="grid2">
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:800">~180</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:800">Files src</div>
+            <div style="font-size:11px;color:var(--muted)">~90 migrations</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:800">~643</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:800">Parser LOC</div>
+            <div style="font-size:11px;color:var(--muted)">1 file xử lý 8 loại COD</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:800">ESM + IIFE</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:800">Module hỗn hợp</div>
+            <div style="font-size:11px;color:var(--muted)">Cần thống nhất ESM</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:800">No TS</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:800">Type safety</div>
+            <div style="font-size:11px;color:var(--red)">Rủi ro cao</div>
+          </div>
+        </div>
+        <h4 style="margin-top:14px">Phương án khắc phục Code (P1 — 2 tuần)</h4>
+        <ul>
+          <li>Thêm <span class="mono">eslint + prettier</span> + <span class="mono">jsconfig.json</span> checkJs, bật <span class="mono">noUncheckedIndexedAccess</span>.</li>
+          <li>Gom content_scripts → 1 bundle Vite, loại bỏ <span class="mono">globalThis</span> leak.</li>
+          <li>Viết <span class="mono">parser.fuzz.test.mjs</span> — 500 case COD/SĐT/địa chỉ biên.</li>
+          <li>Chạy <span class="mono">graft build</span> trong CI để phát hiện dead code & vòng import.</li>
+        </ul>
+        <div class="callout" style="margin-top:12px">
+          <i style="background:var(--emerald)">✓</i>
+          <div style="font-size:13px"><b>Giữ nguyên:</b> Đừng refactor parser khi đang ổn — chỉ thêm test bao phủ, không đổi regex nếu chưa có benchmark.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BACKEND -->
+  <section id="backend" class="section">
+    <div class="section-head">
+      <h3><i style="background:#7c3aed">🗄️</i> 4 — Backend & Supabase (DB, RLS, RPC)</h3>
+      <p>90 migration là tài sản nhưng cũng là gánh nặng vận hành</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Hiện trạng DB — những gì làm tốt</h4>
+        <ul>
+          <li><b>RLS + SECURITY DEFINER RPC</b> làm đúng hướng: mọi ghi nhạy cảm qua RPC check <span class="mono">SYSTEM_ADMIN</span>, có audit.</li>
+          <li><b>Chuỗi migration v66→v90</b> đã khóa các lỗ hổng lớn: <span class="mono">admin_create_shop_with_account</span>, <span class="mono">is_system_admin</span> overload, device v2, auth login repair, multi-profile sync, order isolation.</li>
+          <li><b>Incident-driven hardening:</b> 8 file <span class="mono">docs/incidents/2026-08-*</span> là điểm cộng hiếm — có invariant và test đi kèm.</li>
+          <li><b>Supabase functions:</b> <span class="mono">ai-gateway / payment-webhook / telegram-ops / vnpost-webhook</span> tách rõ, fail-closed khi thiếu secret.</li>
+        </ul>
+        <h4>Vấn đề còn tồn</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Vấn đề</th><th>Mức</th><th>Ghi chú</th></tr>
+            <tr><td>90 migration + 104 file trong <span class="mono">database/migrations</span> — khó áp dụng idempotent trên prod</td><td><span class="badge badge--warn">P0</span></td><td>Cần <span class="mono">RUN_ALL_MIGRATIONS.sql</span> + baseline squash</td></tr>
+            <tr><td>RLS recursion từng xảy ra (v10, v58) — vẫn có nguy cơ nếu thêm policy mới</td><td><span class="badge badge--warn">P0</span></td><td>Thiếu test RLS isolation trong CI</td></tr>
+            <tr><td><span class="mono">profiles.role</span> legacy vs <span class="mono">user_roles/shop_members</span> — đã fix nhưng thiếu guard runtime</td><td><span class="badge badge--warn">P0</span></td><td>Cần DB trigger chặn ghi legacy role</td></tr>
+            <tr><td>Thiếu <span class="mono">pg_cron</span> / scheduler đáng tin cậy cho <span class="mono">telegram-ops</span> & quota sweep</td><td><span class="badge badge--warn">P1</span></td><td>Đã ghi trong PROJECT_PROGRESS nhưng chưa có</td></tr>
+            <tr><td>Thiếu backup/restore drill & PITR test</td><td><span class="badge badge--bad">P1</span></td><td>Rủi ro mất dữ liệu khi RLS sai</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card details">
+        <h4>Bản đồ migration trọng yếu (rút gọn)</h4>
+        <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto">
+          <div class="mono" style="font-size:11.5px;line-height:1.7;color:var(--muted)">
+            <b style="color:var(--text)">v1→v9</b>  baseline shops/members/roles/auth<br>
+            <b style="color:var(--text)">v10→v20</b>  RLS recursion fix, device, order lifecycle<br>
+            <b style="color:var(--text)">v24→v35</b>  commercial master, AI usage, system_configs<br>
+            <b style="color:var(--text)">v48→v62</b>  order isolation, quotas, shop deletion<br>
+            <b style="color:#dc2626">v66</b>  ★ Admin fast operations (P0)<br>
+            <b style="color:#dc2626">v67</b>  ★ Commercial phase2 — VietQR, device fingerprint, remote selectors<br>
+            <b style="color:#dc2626">v68</b>  ★ Commercial phase3 — risk network, wallet, reseller, telegram<br>
+            <b style="color:#059669">v80→v84</b>  device v2, auth repair, multi-profile, is_system_admin overload fix<br>
+            <b style="color:#059669">v87→v90</b>  shop defaults sync, client quota, health control plane
+          </div>
+        </div>
+        <h4 style="margin-top:12px">Khuyến nghị Backend (P0 — 7 ngày)</h4>
+        <ol style="margin:0;padding-left:18px;color:var(--muted);font-size:13px">
+          <li><b>Squash baseline:</b> tạo <span class="mono">database/migrations/BASELINE_v90.sql</span> cho cài mới; giữ incremental cho prod.</li>
+          <li><b>RLS contract test trong CI:</b> chạy <span class="mono">npm run test:security</span> (rls-isolation + ai-gateway) bắt buộc pass trước merge.</li>
+          <li><b>Trigger guard:</b> chặn ghi <span class="mono">profiles.role != 'member'</span> nếu <span class="mono">user_roles</span> đã có.</li>
+          <li><b>Áp dụng prod:</b> v66→v90 + smoke-test bằng SYSTEM_ADMIN thật (đã ghi trong PROJECT_PROGRESS — phải làm).</li>
+        </ol>
+        <div class="callout" style="margin-top:12px">
+          <i style="background:#dc2626">!</i>
+          <div style="font-size:13px"><b>Không dùng DROP CASCADE</b> cho hàm <span class="mono">is_system_admin</span> — đã có incident. Luôn <span class="mono">DROP FUNCTION schema.name(arg_types)</span> + restore grants.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARSER -->
+  <section id="parser" class="section">
+    <div class="section-head">
+      <h3><i style="background:var(--emerald)">🧠</i> 5 — Parser, Địa chỉ & AI</h3>
+      <p>Trụ cột mạnh nhất — cần khóa để không regression</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Vì sao 8.6/10 — Rất tốt</h4>
+        <ul>
+          <li><b>COD:</b> Phủ <span class="mono">1.8tr / 1tr8 / 2tr500k / 300k / 1.500k / 1.800.000</span>, tách “tr” + suffix 1-3 chữ số, chuẩn hóa “k/nghìn”, số &lt;1000 auto ×1000 — đúng insight “COD 300 = 300.000đ”.</li>
+          <li><b>SĐT:</b> Regex <span class="mono">\+84/84/0</span> + chuẩn hóa đầu 84, tách chuỗi SĐT dính liền 20-43 số, chống false-positive bằng check ký tự trước.</li>
+          <li><b>Tên:</b> Ưu tiên nhãn <span class="mono">khách/tên/người nhận</span>, họ VN phổ biến, lọc chatter (freeship, inbox, fb), tách tên trước SĐT — giảm nhầm.</li>
+          <li><b>Địa chỉ:</b> Province alias DB, fallback số nhà + dấu phẩy, chuẩn hóa Q/P/H/TX/TP/TT, strip COD đuôi, xóa hội thoại “e nhé”.</li>
+          <li><b>Ward DB:</b> 63k+ xã/phường sau sáp nhập — lợi thế cạnh tranh.</li>
+          <li><b>AI:</b> Groq/Gemini chỉ sửa lỗi địa chỉ, không bóc chính — tiết kiệm token, đúng triết lý offline-first.</li>
+        </ul>
+        <div class="callout">
+          <i style="background:var(--emerald)">★</i>
+          <div style="font-size:13px"><b>Giữ nguyên triết lý:</b> Máy khách bóc 100% offline, AI chỉ là “bác sĩ địa chỉ”. Đừng chuyển thành AI-first — sẽ chậm, tốn tiền, và mất offline.</div>
+        </div>
+      </div>
+      <div class="card details">
+        <h4>Khoảng trống & cải tiến</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Hạng mục</th><th>Hiện trạng</th><th>Đề xuất</th></tr>
+            <tr><td>Vision OCR</td><td>Đã có <span class="mono">vision-pipeline.js</span> + evaluator + schema</td><td>Thêm benchmark ảnh mờ/chữ viết tay; chặn auto-fill khi OCR &lt;0.75</td></tr>
+            <tr><td>Học từ sửa tay</td><td><span class="mono">learning.js</span> đã có</td><td>Đồng bộ cloud theo shop + toggle on/off</td></tr>
+            <tr><td>Bulk parse</td><td>Chưa có (Phase 3 trong PROJECT_PROGRESS)</td><td>Ưu tiên P1: <span class="mono">splitRawTextToChunks</span> + bảng lưới + export Excel BOM</td></tr>
+            <tr><td>Test biên</td><td>Đã có <span class="mono">order-parser-*.test.mjs</span> nhưng chưa fuzz</td><td>Thêm 500 case ngẫu nhiên + snapshot</td></tr>
+            <tr><td>Hiệu năng</td><td>Ward DB load toàn bộ</td><td>Lazy load theo tỉnh + cache version</td></tr>
+          </table>
+        </div>
+        <h4 style="margin-top:12px">Đề xuất AI tiết kiệm (P1)</h4>
+        <ul>
+          <li><b>Smart Model Router:</b> &lt;100 ký tự & rõ ràng → Llama-3.1-8B (rẻ, 300ms); phức tạp → Llama-70B/Gemini Flash — đã ghi trong ADMIN spec, nên triển khai.</li>
+          <li>Cache kết quả chuẩn hóa địa chỉ theo hash (24h) để không gọi AI trùng.</li>
+          <li>Đo <b>AI margin per shop</b> = doanh thu gói − tokens×đơn giá — đã có spec, cần dashboard.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- UX/UI -->
+  <section id="uxui" class="section">
+    <div class="section-head">
+      <h3><i style="background:#f59e0b">🎨</i> 6 — UX/UI & Design System</h3>
+      <p>Panel tốt, Options đã Việt hóa 100%, Admin còn thiếu polish</p>
+    </div>
+    <div class="grid3">
+      <div class="card details">
+        <h4>Extension Panel (Shadow DOM)</h4>
+        <ul>
+          <li>Inject floating panel qua <span class="mono">frontend/panel/panel.js</span> + <span class="mono">styling/styles.js</span> + <span class="mono">toast</span> — cô lập CSS tốt, không vỡ site hãng.</li>
+          <li>Luồng <b>paste → parse → review → fill</b> đúng insight, giữ nguyên theo AGENTS.md.</li>
+          <li>Thiếu: phím tắt <span class="mono">Ctrl+Shift+V</span> & tự nhận diện hãng (Phase 1 chưa làm), mini dock/bubble, dark mode.</li>
+        </ul>
+        <span class="badge badge--ok">7.8/10 — Tốt</span> <span class="badge badge--warn">Thiếu shortcut & dark mode</span>
+      </div>
+      <div class="card details">
+        <h4>Options — Shop Workspace</h4>
+        <ul>
+          <li>13 màn hình đã Việt hóa 100% (Phase 0 done) — Sidebar, Overview KPI, AI settings, Carriers, Team/PermissionMatrix, Sync Outbox, Notifications, Security/Device, Audit, Subscription VietQR, Database.</li>
+          <li>Có debounce 300ms, CSV UTF-8 BOM — đúng spec.</li>
+          <li>Cần: empty/skeleton/error states, mobile responsive cho PWA.</li>
+        </ul>
+        <span class="badge badge--ok">8.0/10 — Tốt, production-ready</span>
+      </div>
+      <div class="card details">
+        <h4>Admin Portal & Mobile</h4>
+        <ul>
+          <li><b>Admin:</b> 13 phân hệ + Fast Ops Hub, impersonation banner, pagination 10/25/50/100, Top 10 AI, carrier probe — mã nguồn xong, chờ áp migration v66.</li>
+          <li><b>Mobile:</b> <span class="mono">index.html</span> PWA chuẩn (theme-color, manifest, apple-touch-icon) — tốt.</li>
+          <li>Thiếu: design tokens thống nhất, dark/light variables, motion.</li>
+        </ul>
+        <span class="badge badge--warn">6.8/10 — Chức năng đủ, UI cần polish</span>
+      </div>
+    </div>
+    <div class="card details" style="margin-top:12px">
+      <h4>Design System — Đánh giá & Lộ trình</h4>
+      <div class="grid2">
+        <div>
+          <b style="color:var(--amber)">Vấn đề hiện tại</b>
+          <ul>
+            <li>Chưa có token 3 lớp (primitive → semantic → component) như trong <span class="mono">design-system/</span> — màu/space/typo chưa đồng bộ giữa Panel/Options/Admin.</li>
+            <li>Panel dùng <span class="mono">style.css</span> riêng, Options/Admin dùng inline — khó bảo trì theme.</li>
+            <li>Thiếu a11y: focus ring, keyboard nav, contrast check.</li>
+          </ul>
+        </div>
+        <div>
+          <b style="color:var(--emerald)">Lộ trình P1 (2 tuần)</b>
+          <ul>
+            <li>Ban hành <span class="mono">design-system/tokens.css</span> với <span class="mono">--bg-primary, --text-primary, --border</span> cho dark/light.</li>
+            <li>Chuẩn hóa <span class="mono">FilterBar/Pagination/ExportButton</span> dùng chung Options ↔ Admin.</li>
+            <li>Thêm skeleton + empty + error boundary cho mọi danh sách.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BẢO MẬT -->
+  <section id="baomat" class="section">
+    <div class="section-head">
+      <h3><i style="background:#dc2626">🔒</i> 7 — Bảo mật</h3>
+      <p>Đã làm nhiều việc đúng — còn 3 lỗ hổng phải khóa trước khi thu tiền</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Những gì đã làm rất tốt</h4>
+        <ul>
+          <li><b>Ẩn danh SĐT</b> bằng SHA-256 phone hash cho risk network — không chia sẻ số thô, chỉ trả kết luận khi ≥2 shop — đúng NĐ 13/2023.</li>
+          <li><b>Webhook fail-closed:</b> thiếu secret thì từ chối, không dùng secret mặc định, không để token trên query string (đã fix Phase 2).</li>
+          <li><b>RLS + RPC</b> cho mọi ghi nhạy cảm, audit log before/after, check <span class="mono">SYSTEM_ADMIN</span>.</li>
+          <li><b>Device fingerprint SHA-256</b> + quota theo subscription + kill-switch (revoked/blocked/unapproved).</li>
+          <li><b>HTTPS strict, không tắt SSL validation</b> — đúng AGENTS.md.</li>
+        </ul>
+        <div class="callout" style="background:var(--emeraldSoft);border-color:color-mix(in srgb, var(--emerald) 18%, var(--line))">
+          <i style="background:var(--emerald)">✓</i>
+          <div style="font-size:13px"><b>Giữ vững:</b> Fail-closed, SHA256, RLS — đây là nền tảng để bán cho bưu cục/kho fulfillment.</div>
+        </div>
+      </div>
+      <div class="card details">
+        <h4>3 lỗ hổng P0 & các P1</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>#</th><th>Lỗ hổng</th><th>Mức</th><th>Khắc phục</th></tr>
+            <tr><td><b>P0-1</b></td><td>Đồng bộ role lệch giữa <span class="mono">profiles.role</span> và <span class="mono">user_roles/shop_members</span> — từng gây incident 29/08</td><td><span class="badge badge--bad">P0</span></td><td>Trigger DB chặn + test <span class="mono">admin-create-shop-profile-role</span> trong CI</td></tr>
+            <tr><td><b>P0-2</b></td><td>Thiếu rotation/replay guard cho <span class="mono">payment-webhook</span> & <span class="mono">telegram-ops</span></td><td><span class="badge badge--bad">P0</span></td><td>Thêm nonce + timestamp ±5m + HMAC verify</td></tr>
+            <tr><td><b>P0-3</b></td><td>XSS qua ghi chú đơn hàng (extraNote từ text thô) nếu render bằng innerHTML</td><td><span class="badge badge--bad">P0</span></td><td>Escape HTML + CSP + audit render path</td></tr>
+            <tr><td>P1-1</td><td>Thiếu rate-limit AI gateway theo shop (đã có quota nhưng chưa token bucket)</td><td><span class="badge badge--warn">P1</span></td><td>Thêm sliding window 60s</td></tr>
+            <tr><td>P1-2</td><td>Device telemetry thiếu IP/location anomaly alert</td><td><span class="badge badge--warn">P1</span></td><td>Alert khi login từ IP lạ</td></tr>
+          </table>
+        </div>
+        <h4 style="margin-top:12px">Checklist bảo mật trước khi thu tiền</h4>
+        <ul>
+          <li>☐ Chạy <span class="mono">npm run test:security</span> pass 100% + RLS isolation fuzz.</li>
+          <li>☐ Xoay toàn bộ webhook secret, lưu trong Supabase Vault / Edge Function secrets — không commit.</li>
+          <li>☐ Bật Supabase leaked password protection + MFA cho SYSTEM_ADMIN.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- HIỆU NĂNG -->
+  <section id="hieunang" class="section">
+    <div class="section-head">
+      <h3><i style="background:#06b6d4">⚡</i> 8 — Hiệu năng & Độ tin cậy</h3>
+      <p>Nhanh ở parser, chậm ở khởi động panel & đồng bộ</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Điểm mạnh</h4>
+        <ul>
+          <li>Parser chạy 100% sync, không await — bóc 1 đơn &lt;5ms, 20 đơn bulk &lt;80ms (ước lượng).</li>
+          <li>Ward DB local → không gọi mạng khi bóc địa chỉ.</li>
+          <li>Debounce 300ms cho FilterBar — giảm spam RPC.</li>
+          <li>Edge Functions fail-closed nhanh, không treo.</li>
+        </ul>
+        <h4>Nút thắt</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Nút thắt</th><th>Tác động</th><th>Fix</th></tr>
+            <tr><td>Ward DB load toàn bộ đầu phiên</td><td>Khởi động panel chậm, tốn RAM</td><td>Lazy theo tỉnh + Web Worker</td></tr>
+            <tr><td>Content_scripts 15 file tuần tự</td><td>FCP panel chậm</td><td>Bundling + defer non-critical</td></tr>
+            <tr><td>Chưa có cache version cho remote selectors</td><td>Mỗi lần mở panel đều fetch</td><td>Cache + ETag 30s như spec</td></tr>
+            <tr><td>Thiếu retry/backoff cho AI gateway</td><td>Lỗi mạng → mất bóc</td><td>Retry 2 lần + fallback offline</td></tr>
+            <tr><td>Không có perf budget trong CI</td><td>Bundle phình không ai biết</td><td>Thêm <span class="mono">vite --profile</span> + limit 250kb content</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card details">
+        <h4>Mục tiêu SLO đề xuất</h4>
+        <div class="grid2">
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px">
+            <div style="font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted)">P95 PARSE 1 ĐƠN</div><div style="font-size:22px;font-weight:800">&lt;15ms</div><div style="font-size:12px;color:var(--muted)">Offline, không AI</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px">
+            <div style="font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted)">P95 AI SỬA ĐỊA CHỈ</div><div style="font-size:22px;font-weight:800">&lt;900ms</div><div style="font-size:12px;color:var(--muted)">Groq 8B → 70B fallback</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px">
+            <div style="font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted)">AUTOFILL VNPost/J&T</div><div style="font-size:22px;font-weight:800">&lt;1.2s</div><div style="font-size:12px;color:var(--muted)">Kể cả chờ autocomplete</div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px">
+            <div style="font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted)">UPTIME PANEL</div><div style="font-size:22px;font-weight:800">99.9%</div><div style="font-size:12px;color:var(--muted)">Đo qua health probe</div>
+          </div>
+        </div>
+        <h4 style="margin-top:12px">Bổ sung quan sát (P0)</h4>
+        <ul>
+          <li>Gắn <span class="mono">logger.js</span> → Supabase <span class="mono">audit_logs</span> + console structured (JSON) — hiện chỉ local.</li>
+          <li>Alert khi AI error &gt;5%/15m hoặc carrier probe fail 3 lần liên tiếp → Telegram Ops.</li>
+          <li>Dashboard “Carrier Health” đã có UI — cần nối probe thật chạy mỗi 5 phút.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- THƯƠNG MẠI -->
+  <section id="thuongmai" class="section">
+    <div class="section-head">
+      <h3><i style="background:#8b5cf6">💳</i> 9 — Chức năng thương mại (B2B SaaS)</h3>
+      <p>Đã có nền tảng 5 trụ cột — cần khóa vòng tiền & chống churn</p>
+    </div>
+    <div class="card details">
+      <h4>5 trụ cột thương mại hóa — trạng thái thực tế</h4>
+      <div class="grid2" style="margin-top:8px">
+        <div style="border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg3)">
+          <b>1. No-Touch Billing (VietQR + SePay/Casso)</b> <span class="badge badge--ok">Nền xong</span>
+          <ul style="margin:8px 0 0 16px;font-size:13px">
+            <li>VietQR động <span class="mono">AFO &lt;SHOP_ID&gt; &lt;PLAN&gt;</span>, webhook idempotent <span class="mono">process_vietqr_payment</span>.</li>
+            <li>Thiếu: webhook replay guard, reconciliation job hằng ngày, Realtime unlock extension.</li>
+          </ul>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg3)">
+          <b>2. Unit Economics & AI Margin</b> <span class="badge badge--warn">Thiếu dashboard</span>
+          <ul style="margin:8px 0 0 16px;font-size:13px">
+            <li>Spec đã có công thức Margin, Smart Router — chưa có chart MRR/tokens/gross margin per shop.</li>
+            <li>Cần: bảng Top 10 shop tốn token, cảnh báo shop lỗ.</li>
+          </ul>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg3)">
+          <b>3. Retention & Anti-Churn</b> <span class="badge badge--warn">Chưa có</span>
+          <ul style="margin:8px 0 0 16px;font-size:13px">
+            <li>Spec Activity Index 🟢🟡🔴 + Trial funnel — chưa implement.</li>
+            <li>Cần: job quét shop 3 ngày không tạo đơn → Telegram/Email nudge.</li>
+          </ul>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg3)">
+          <b>4. Device Fingerprint & Seat Enforcement</b> <span class="badge badge--ok">Khá tốt</span>
+          <ul style="margin:8px 0 0 16px;font-size:13px">
+            <li>SHA-256 fingerprint, quota theo gói, kill-switch, <span class="mono">device.telemetry.js</span>.</li>
+            <li>Thiếu: UI “vượt giới hạn thiết bị” trong panel + OTP khi +1 device.</li>
+          </ul>
+        </div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg3);margin-top:12px">
+        <b>5. Remote Dynamic Selectors (Zero-Downtime)</b> <span class="badge badge--ok">Nền xong</span> — Lưu <span class="mono">carrier_dom_selectors</span> trong <span class="mono">system_configs</span>, version hóa, phát hành có audit, extension cache + fallback. Khi VNPost/J&T đổi DOM, admin đẩy selector mới → extension nhận trong 30s không cần duyệt Store. Cần nối probe thật + rollback 1-click.
+      </div>
+      <h4 style="margin-top:14px">5 tính năng đột phá 2026 — đã chọn & trạng thái</h4>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Tính năng</th><th>Giá trị</th><th>Trạng thái</th><th>Khuyến nghị</th></tr>
+          <tr><td><b>Fraud/Boom Shield 360°</b></td><td>Upsell PRO — cảnh báo 85% bom hàng khi SĐT có 3 hoàn/30 ngày</td><td><span class="badge badge--ok">DB xong (SHA256, ≥2 shop)</span></td><td>Thêm UI cảnh báo đỏ trong panel + Customer Hub tra cứu</td></tr>
+          <tr><td><b>AI Self-Healing DOM</b></td><td>Giảm 99% downtime khi hãng đổi giao diện</td><td><span class="badge badge--warn">Vision pipeline mới stub</span></td><td>Ưu tiên P2 — train layout model nhẹ client-side</td></tr>
+          <tr><td><b>Prepaid Wallet (Pay-as-you-go)</b></td><td>Hút shop nhỏ lẻ: 50k→500 token</td><td><span class="badge badge--ok">Ledger + idempotency xong</span></td><td>Thêm UI nạp/rút + Commission cho reseller</td></tr>
+          <tr><td><b>Reseller Portal</b></td><td>Bưu cục/POS tự bán lại — 0đ marketing</td><td><span class="badge badge--ok">Schema xong</span></td><td>Thêm link affiliate + hoa hồng tự động</td></tr>
+          <tr><td><b>Telegram AI Ops</b></td><td>Báo cáo 20:00 + alert realtime</td><td><span class="badge badge--warn">Outbox + retry xong, thiếu scheduler</span></td><td>Gắn cron thật + secret rotation</td></tr>
+        </table>
+      </div>
+      <div class="callout" style="margin-top:12px">
+        <i style="background:#8b5cf6">₫</i>
+        <div style="font-size:13px"><b>Ưu tiên tiền (P0 — 7 ngày):</b> Khóa webhook idempotency + reconciliation hằng ngày + test nạp/rút ví bằng tiền thật 10k trước khi mở bán. Một lỗi double-credit là mất niềm tin.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VẬN HÀNH -->
+  <section id="vanhanh" class="section">
+    <div class="section-head">
+      <h3><i style="background:#334155">🚀</i> 10 — Vận hành, Triển khai & Phân phối</h3>
+      <p>Điểm yếu nhất — phải bổ sung trước khi scale</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Build & Phân phối Extension</h4>
+        <ul>
+          <li><b>Đúng:</b> <span class="mono">npm run build = vite build && node scripts/sync-extension.js</span> — đảm bảo <span class="mono">extension/</span> luôn là bundle production, đã có invariant + test <span class="mono">extension-built-pages</span>.</li>
+          <li><b>Rủi ro:</b> Chưa có CI check — dev stub từng lọt vào <span class="mono">extension/</span> (incident 29/08). Chưa có checksum/version guard.</li>
+          <li><b>Vite:</b> <span class="mono">vite.config.js</span> tách 3 entry (main/options/admin), <span class="mono">@crxjs/vite-plugin</span> chỉ khi không phải Vercel — gọn.</li>
+          <li><b>Deploy:</b> Vercel cho web, Supabase cho DB/functions — thiếu IaC & env parity.</li>
+        </ul>
+        <h4>Khoảng trống P0</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Hạng mục</th><th>Hiện trạng</th><th>Cần làm</th></tr>
+            <tr><td>CI/CD</td><td>Chưa có GitHub Actions</td><td>Thêm workflow: lint → test → build → sync-check → deploy preview</td></tr>
+            <tr><td>Secrets</td><td>Supabase config trong <span class="mono">supabase-config.js</span></td><td>Chuyển sang Edge secrets + Vault, không hardcode</td></tr>
+            <tr><td>Release</td><td>Đã có <span class="mono">ReleaseCenter</span> (version/min/force/rollout)</td><td>Nối với <span class="mono">system_health_control_plane</span> (v90)</td></tr>
+            <tr><td>Quan sát</td><td>Chưa có log/ alert tập trung</td><td>Thêm audit_logs → Telegram Ops + Sentry</td></tr>
+            <tr><td>Backup</td><td>Chưa drill</td><td>Weekly PITR test + export mã hóa</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card details">
+        <h4>Lộ trình vận hành 30 ngày</h4>
+        <div class="timeline">
+          <div class="tl"><b>Tuần 1 — Khóa P0</b><br><span style="font-size:13px;color:var(--muted)">Áp v66→v90 lên prod, CI guard cho <span class="mono">extension/</span>, secret rotation, RLS test bắt buộc.</span></div>
+          <div class="tl"><b>Tuần 2 — Quan sát</b><br><span style="font-size:13px;color:var(--muted)">Gắn logger → audit, probe carrier 5m, alert AI &gt;5% & DOM đổi → Telegram.</span></div>
+          <div class="tl"><b>Tuần 3 — Tiền</b><br><span style="font-size:13px;color:var(--muted)">Reconciliation ví + webhook, dashboard Unit Economics, Top 10 token hog.</span></div>
+          <div class="tl"><b>Tuần 4 — Scale</b><br><span style="font-size:13px;color:var(--muted)">Bundling content_scripts, lazy ward DB, perf budget, rollout Reseller & Wallet UI.</span></div>
+        </div>
+        <div class="callout" style="margin-top:12px">
+          <i style="background:#0ea5e9">⚙️</i>
+          <div style="font-size:13px"><b>Invariant bắt buộc:</b> Mọi thay đổi auth/session/migration/extension phải chạy <span class="mono">npm test</span> + <span class="mono">test:repeat-order</span> + <span class="mono">test:security</span> trước khi merge — đã ghi trong AGENTS.md.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTING -->
+  <section id="testing" class="section">
+    <div class="section-head">
+      <h3><i style="background:#059669">🧪</i> 11 — Testing & Chất lượng</h3>
+      <p>Nhiều test nhưng chưa thành lưới an toàn CI</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Đã làm tốt</h4>
+        <ul>
+          <li><b>60+ test files</b> trong <span class="mono">tests/unit/*.mjs</span> — phủ: parser, customer hub, device contract, auth, RLS, panel state, carrier normalization, quota, vision, admin.</li>
+          <li><b>Security tests</b> riêng: <span class="mono">tests/security/rls-isolation + ai-gateway</span>.</li>
+          <li><b>Invariant tests</b> cho 3 incident P0: <span class="mono">repeat-order / admin-create-shop-role / is-system-admin overload</span> — rất tốt.</li>
+          <li><span class="mono">vitest</span> đã có (4.1.10) + <span class="mono">npm run test:vitest</span>.</li>
+        </ul>
+        <h4>Khoảng trống</h4>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Thiếu</th><th>Ảnh hưởng</th><th>Ưu tiên</th></tr>
+            <tr><td>Chưa có CI bắt buộc chạy <span class="mono">npm test</span> trước merge</td><td>Regression lọt prod</td><td><span class="badge badge--bad">P0</span></td></tr>
+            <tr><td>Không có coverage threshold</td><td>Không biết vùng mù</td><td><span class="badge badge--warn">P1</span></td></tr>
+            <tr><td>Thiếu E2E (Playwright) cho autofill VNPost/J&T</td><td>Đổi DOM không phát hiện</td><td><span class="badge badge--warn">P1</span></td></tr>
+            <tr><td>Thiếu fuzz test cho parser (500 case ngẫu nhiên)</td><td>Lỗi COD lẻ</td><td><span class="badge badge--warn">P1</span></td></tr>
+            <tr><td>Thiếu contract test cho Edge Functions</td><td>Webhook vỡ không biết</td><td><span class="badge badge--warn">P2</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card details">
+        <h4>Đề xuất Test Strategy 30 ngày</h4>
+        <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--muted)">
+          <li><b>CI gate:</b> GitHub Actions chạy <span class="mono">npm test</span> + <span class="mono">test:security</span> + <span class="mono">test:repeat-order</span> — fail là block merge.</li>
+          <li><b>Coverage:</b> bật <span class="mono">vitest --coverage</span>, threshold 70% cho parser/address, 60% cho service.</li>
+          <li><b>E2E:</b> 2 spec Playwright: VNPost create order + J&T create order với data thật (staging).</li>
+          <li><b>Fuzz:</b> sinh 1.000 dòng order ngẫu nhiên (đủ loại COD/SĐT/địa chỉ) → assert không throw.</li>
+          <li><b>Visual:</b> Chromatic hoặc screenshot diff cho panel/options/admin khi đổi token.</li>
+        </ol>
+        <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px">
+          <div style="font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--muted)">LỆNH BẮT BUỘC TRƯỚC MỌI PR</div>
+          <div class="mono" style="font-size:11.5px;margin-top:6px;line-height:1.7">npm test<br>npm run test:repeat-order<br>npm run test:security<br>npm run build</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RISK -->
+  <section id="risk" class="section">
+    <div class="section-head">
+      <h3><i style="background:#dc2626">⚠️</i> 12 — Ma trận rủi ro & Nợ ẩn</h3>
+      <p>Ưu tiên theo Xác suất × Tác động</p>
+    </div>
+    <div class="card" style="padding:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <h4 style="margin:0 0 8px">Ma trận 2×2</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12.5px">
+            <div style="background:var(--redSoft);border:1px solid color-mix(in srgb,var(--red) 18%, var(--line));border-radius:12px;padding:12px">
+              <b style="color:var(--red)">🔴 Cao × Cao — Làm ngay (P0)</b>
+              <ul style="margin:6px 0 0 16px">
+                <li>RLS đồng bộ lệch → lộ/mất dữ liệu shop</li>
+                <li>Webhook double-credit → mất tiền</li>
+                <li>Extension sync vỡ → toàn bộ user không bóc được</li>
+              </ul>
+            </div>
+            <div style="background:var(--amberSoft);border:1px solid color-mix(in srgb,var(--amber) 18%, var(--line));border-radius:12px;padding:12px">
+              <b style="color:var(--amber)">🟠 Cao × Trung — 30 ngày</b>
+              <ul style="margin:6px 0 0 16px">
+                <li>Carrier đổi DOM → autofill fail hàng loạt</li>
+                <li>AI quota vượt → shop bị khóa oan</li>
+                <li>Thiếu backup drill → mất DB</li>
+              </ul>
+            </div>
+            <div style="background:var(--brandSoft);border:1px solid color-mix(in srgb,var(--brand) 18%, var(--line));border-radius:12px;padding:12px">
+              <b style="color:var(--brand)">🔵 Thấp × Cao — Chuẩn bị</b>
+              <ul style="margin:6px 0 0 16px">
+                <li>Incident <span class="mono">is_system_admin</span> overload lặp lại</li>
+                <li>XSS qua extraNote</li>
+                <li>Reseller gian lận hoa hồng</li>
+              </ul>
+            </div>
+            <div style="background:var(--emeraldSoft);border:1px solid color-mix(in srgb,var(--emerald) 18%, var(--line));border-radius:12px;padding:12px">
+              <b style="color:var(--emerald)">🟢 Thấp × Thấp — Backlog</b>
+              <ul style="margin:6px 0 0 16px">
+                <li>Dark mode chưa có</li>
+                <li>Bulk 20 đơn chưa xong</li>
+                <li>PWA icon thiếu maskable</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h4 style="margin:0 0 8px">Top 6 rủi ro chi tiết</h4>
+          <div class="table-wrap">
+            <table>
+              <tr><th>Rủi ro</th><th>Xác suất</th><th>Tác động</th><th>Mitigation</th></tr>
+              <tr><td><b>R1</b> Migration drift prod</td><td>Cao</td><td>Cao</td><td>Baseline squash + dry-run</td></tr>
+              <tr><td><b>R2</b> Remote selector bị tiêm</td><td>Trung</td><td>Cao</td><td>Allow-list + audit + rollback</td></tr>
+              <tr><td><b>R3</b> Device quota bypass</td><td>Trung</td><td>Cao</td><td>Server-side check + telemetry</td></tr>
+              <tr><td><b>R4</b> Order overwrite (repeat customer)</td><td>Thấp</td><td>Cao</td><td>Đã fix — giữ test repeat-order</td></tr>
+              <tr><td><b>R5</b> AI cost bùng nổ</td><td>Cao</td><td>Trung</td><td>Router + cache + quota</td></tr>
+              <tr><td><b>R6</b> Chrome Store review fail</td><td>Trung</td><td>Trung</td><td>Remote selector để không cần resubmit</td></tr>
+            </table>
+          </div>
+          <div class="callout" style="margin-top:10px">
+            <i style="background:var(--amber)">!</i>
+            <div style="font-size:13px"><b>Nợ ẩn lớn nhất:</b> 90 migration không squash — mỗi lần cài môi trường mới là một canh bạc. Squash ngay tuần 1.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REMEDIATION -->
+  <section id="remediation" class="section">
+    <div class="section-head">
+      <h3><i style="background:var(--emerald)">🛠️</i> 13 — Phương án khắc phục (Remediation Plan)</h3>
+      <p>Phân tầng P0/P1/P2 — có owner, thời hạn, tiêu chí nghiệm thu</p>
+    </div>
+    <div class="pill-tabs" id="tabs">
+      <button class="active" onclick="switchTab('p0')">🔴 P0 — 7 ngày (Khóa trước khi thu tiền)</button>
+      <button onclick="switchTab('p1')">🟠 P1 — 30 ngày (Sẵn sàng scale)</button>
+      <button onclick="switchTab('p2')">🔵 P2 — 60-90 ngày (Đột phá 2026)</button>
+    </div>
+
+    <div id="tab-p0" class="panel active">
+      <div class="grid2">
+        <div class="card details">
+          <h4>Checklist P0 — Không xong không mở bán rộng</h4>
+          <div class="table-wrap">
+            <table>
+              <tr><th>#</th><th>Việc</th><th>Owner</th><th>Done khi</th></tr>
+              <tr><td><b>P0-1</b></td><td>Áp <span class="mono">v66→v90</span> lên Supabase prod + smoke-test SYSTEM_ADMIN (tạo shop, cấp quota, impersonate)</td><td>Backend</td><td>4 RPC pass + audit log có</td></tr>
+              <tr><td><b>P0-2</b></td><td>CI guard cho <span class="mono">extension/</span>: build xong so checksum, chặn dev stub</td><td>DevOps</td><td>PR fail nếu <span class="mono">extension/</span> chứa vite stub</td></tr>
+              <tr><td><b>P0-3</b></td><td>Trigger chặn <span class="mono">profiles.role</span> lệch + test <span class="mono">admin-create-shop-profile-role</span> trong CI</td><td>Backend</td><td>Insert sai role bị reject</td></tr>
+              <tr><td><b>P0-4</b></td><td>Webhook HMAC + nonce + timestamp ±5m + idempotency key cho <span class="mono">payment-webhook</span></td><td>Backend</td><td>Replay attack bị từ chối</td></tr>
+              <tr><td><b>P0-5</b></td><td>Escape HTML cho <span class="mono">extraNote</span> + audit mọi <span class="mono">innerHTML</span></td><td>Frontend</td><td>XSS payload không render</td></tr>
+              <tr><td><b>P0-6</b></td><td>Gắn <span class="mono">npm run test:security</span> vào CI gate (block merge nếu fail)</td><td>QA</td><td>3 PR liên tiếp pass gate</td></tr>
+              <tr><td><b>P0-7</b></td><td>Reconciliation ví: job hằng ngày đối soát ledger vs gateway</td><td>Backend</td><td>Lệch 0đ trong 7 ngày</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card details">
+          <h4>Tiêu chí “Được phép thu tiền” (Exit criteria P0)</h4>
+          <ul>
+            <li>☐ <span class="mono">npm test</span> + <span class="mono">test:security</span> + <span class="mono">test:repeat-order</span> pass trên main.</li>
+            <li>☐ Smoke-test prod bằng tài khoản SYSTEM_ADMIN thật — đã tạo shop, cấp quota, đổi gói, thu hồi device.</li>
+            <li>☐ Nạp 10k thật qua VietQR → ví + quota tăng, hoàn 10k → ledger đúng, không double.</li>
+            <li>☐ Panel bóc 5 đơn mẫu (COD tr/k, SĐT +84, địa chỉ sáp nhập) → điền VNPost/J&T đúng 100%.</li>
+            <li>☐ <span class="mono">extension/</span> là bundle production (không chứa <span class="mono">/src/</span> thô).</li>
+          </ul>
+          <div class="callout" style="margin-top:12px;background:var(--redSoft)">
+            <i style="background:var(--red)">✕</i>
+            <div style="font-size:13px"><b>Quy tắc:</b> Nếu 1 P0 chưa xong → không chạy quảng cáo, không mời bưu cục. Rẻ hơn sửa trước.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-p1" class="panel">
+      <div class="grid2">
+        <div class="card details">
+          <h4>P1 — 30 ngày: Sẵn sàng 1.000 shop</h4>
+          <div class="table-wrap">
+            <table>
+              <tr><th>#</th><th>Việc</th><th>Tác động</th></tr>
+              <tr><td><b>P1-1</b></td><td>Bundling content_scripts → 1 bundle + ESLint/Prettier</td><td>Ổn định panel, dễ review</td></tr>
+              <tr><td><b>P1-2</b></td><td>Lazy ward DB + Web Worker + cache selector version</td><td>Panel mở nhanh 40%</td></tr>
+              <tr><td><b>P1-3</b></td><td>Dashboard Unit Economics (MRR, tokens, margin/shop) + Top 10 hog</td><td>Biết shop nào lỗ để chặn</td></tr>
+              <tr><td><b>P1-4</b></td><td>Retention engine: quét shop 3 ngày không đơn → nudge</td><td>Giảm churn 15-25%</td></tr>
+              <tr><td><b>P1-5</b></td><td>Bulk 5-20 đơn + Excel BOM + E2E Playwright VNPost/J&T</td><td>Tăng throughput x10</td></tr>
+              <tr><td><b>P1-6</b></td><td>Carrier health probe 5m + auto-rollback selector</td><td>Giảm downtime 99%</td></tr>
+              <tr><td><b>P1-7</b></td><td>Phím tắt <span class="mono">Ctrl+Shift+V</span>, mini dock, dark mode</td><td>UX power-user</td></tr>
+              <tr><td><b>P1-8</b></td><td>Design tokens + skeleton/empty/error cho mọi list</td><td>Polish SaaS B2B</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card details">
+          <h4>Thứ tự ưu tiên P1 (đề xuất)</h4>
+          <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--muted)">
+            <li><b>Tuần 1:</b> P1-1 + P1-2 (nền kỹ thuật)</li>
+            <li><b>Tuần 2:</b> P1-6 + P1-5 E2E (độ tin cậy)</li>
+            <li><b>Tuần 3:</b> P1-3 + P1-4 (tiền & giữ chân)</li>
+            <li><b>Tuần 4:</b> P1-7 + P1-8 (UX polish)</li>
+          </ol>
+          <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px">
+            <b style="font-size:13px">KPI 30 ngày</b>
+            <ul style="margin:6px 0 0 16px;font-size:13px">
+              <li>P95 autofill &lt;1.2s, AI &gt;95% success</li>
+              <li>0 incident P0, carrier downtime &lt;2h/tháng</li>
+              <li>Churn &lt;8%/tháng, trial→paid &gt;18%</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-p2" class="panel">
+      <div class="grid2">
+        <div class="card details">
+          <h4>P2 — 60-90 ngày: Đột phá 2026</h4>
+          <div class="table-wrap">
+            <table>
+              <tr><th>#</th><th>Việc</th><th>Giá trị</th></tr>
+              <tr><td><b>P2-1</b></td><td>AI Self-Healing DOM (vision layout model nhẹ)</td><td>Không sợ hãng đổi giao diện</td></tr>
+              <tr><td><b>P2-2</b></td><td>Mở rộng Viettel Post + GHTK adapter</td><td>Tăng TAM 35%</td></tr>
+              <tr><td><b>P2-3</b></td><td>Reseller portal + affiliate + hoa hồng tự động</td><td>Kênh phân phối 0đ</td></tr>
+              <tr><td><b>P2-4</b></td><td>Prepaid Wallet UI + tặng token + lịch sử</td><td>Hút shop nhỏ lẻ</td></tr>
+              <tr><td><b>P2-5</b></td><td>Customer Hub 360 + risk network UI + export</td><td>Upsell PRO</td></tr>
+              <tr><td><b>P2-6</b></td><td>Squash migration + IaC + PITR drill định kỳ</td><td>Vận hành bền</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card details">
+          <h4>Nguyên tắc P2</h4>
+          <ul>
+            <li><b>Không làm P2 khi P0 chưa xong.</b> P2 là đòn bẩy, không phải phao cứu sinh.</li>
+            <li>Mỗi P2 phải có <b>flag</b> trong <span class="mono">system_configs/feature_flags</span> + rollout % (đã có ReleaseCenter).</li>
+            <li>Đo lường: mỗi P2 gắn 1 metric — ví dụ Self-Healing = % autofill thành công sau khi DOM đổi.</li>
+          </ul>
+          <div class="callout">
+            <i style="background:var(--violet)">✦</i>
+            <div style="font-size:13px"><b>Gợi ý thứ tự:</b> P2-6 (nền) → P2-2 (carrier) → P2-5 (hub) → P2-4 (wallet) → P2-3 (reseller) → P2-1 (vision).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section id="roadmap" class="section">
+    <div class="section-head">
+      <h3><i style="background:linear-gradient(135deg,#2563eb,#7c3aed)">🗺️</i> 14 — Định hướng phát triển 2026-2027</h3>
+      <p>Tầm nhìn: Nền tảng điền đơn số 1 cho shop VN — 10.000 shop, 4 hãng, 0 downtime</p>
+    </div>
+    <div class="grid2">
+      <div class="card details">
+        <h4>Lộ trình 4 quý (đã khớp PROJECT_PROGRESS & ADMIN spec)</h4>
+        <div class="timeline">
+          <div class="tl"><b>Q4/2026 — Củng cố & Monetize</b><br><span style="font-size:13px;color:var(--muted)">Khóa P0+P1, mở bán gói Device Seat + Staff Seat + CRM 360. Mục tiêu: 300 shop trả phí, MRR 45tr, churn &lt;8%.</span></div>
+          <div class="tl"><b>Q1/2027 — Mở rộng hãng & Wallet</b><br><span style="font-size:13px;color:var(--muted)">Viettel Post + GHTK live, Prepaid Wallet + tặng token, Reseller pilot 5 bưu cục. Mục tiêu: 1.200 shop.</span></div>
+          <div class="tl"><b>Q2/2027 — Risk & Ops tự động</b><br><span style="font-size:13px;color:var(--muted)">Boom Shield 360° PRO, Self-Healing DOM v1, Telegram Ops auto-report 20:00. Mục tiêu: 3.000 shop, gross margin &gt;68%.</span></div>
+          <div class="tl"><b>Q3/2027 — Platform</b><br><span style="font-size:13px;color:var(--muted)">Public API + Webhook cho POS, White-label cho fulfillment, Mobile PWA offline bulk. Mục tiêu: 10.000 shop, mở API marketplace.</span></div>
+        </div>
+      </div>
+      <div class="card details">
+        <h4>6 quyết định chiến lược đề xuất</h4>
+        <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--muted)">
+          <li><b>Giữ offline-first:</b> Đừng biến thành SaaS phụ thuộc AI — đó là lợi thế cạnh tranh duy nhất mà đối thủ AI-cloud không có.</li>
+          <li><b>Định giá theo seat + usage:</b> Gói 1/3/10 device + prepaid token — đã đúng spec, chỉ cần dashboard để không lỗ token.</li>
+          <li><b>Zero-downtime là tính năng bán hàng:</b> Quảng bá “Đổi giao diện hãng → tự vá trong 30s” cho bưu cục — họ sợ downtime nhất.</li>
+          <li><b>Reseller trước Ads:</b> 1 bưu cục giới thiệu 50 shop rẻ hơn 50tr ads.</li>
+          <li><b>Đo lường mọi thứ:</b> MRR, AI cost/shop, autofill success, churn, trial conversion — đã có spec, chỉ cần nối chart.</li>
+          <li><b>Đầu tư vào parser, không phải UI màu mè:</b> Mỗi 1% tăng tỉ lệ điền đúng = giảm 1h support/ngày.</li>
+        </ol>
+        <div class="callout" style="margin-top:12px">
+          <i style="background:var(--brand)">♛</i>
+          <div style="font-size:13px"><b>North Star Metric đề xuất:</b> <b>Số đơn điền thành công / shop / tuần</b> — tăng metric này = tăng retention = tăng MRR.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid3" style="margin-top:12px">
+      <div class="card details">
+        <h4>📚 Tài liệu tham chiếu trong repo</h4>
+        <ul>
+          <li><span class="mono">AGENTS.md</span> — 4 invariant bắt buộc (order, auth, role, extension sync)</li>
+          <li><span class="mono">docs/incidents/2026-08-*</span> — 8 incident đã fix kèm test</li>
+          <li><span class="mono">ADMIN_PORTAL_MASTER_SPEC.md</span> — 5 trụ cột + 5 đột phá 2026</li>
+          <li><span class="mono">COMMERCIALIZATION_VIBE_SPEC.md</span> — Team/Device/Security spec</li>
+          <li><span class="mono">PROJECT_PROGRESS.md</span> — Tracker phase 0→5 + commercial phase 1-3</li>
+        </ul>
+      </div>
+      <div class="card details">
+        <h4>✅ Checklist nghiệm thu báo cáo này</h4>
+        <ul>
+          <li>☐ Đã chạy <span class="mono">npm run build</span> → <span class="mono">extension/</span> là bundle production</li>
+          <li>☐ Đã chạy <span class="mono">npm test</span> + <span class="mono">test:security</span> + <span class="mono">test:repeat-order</span> — pass</li>
+          <li>☐ Đã áp <span class="mono">v66→v90</span> lên staging và smoke-test SYSTEM_ADMIN</li>
+          <li>☐ Đã xoay webhook secrets + bật RLS isolation test trong CI</li>
+          <li>☐ Đã in PDF báo cáo này và ký duyệt P0</li>
+        </ul>
+      </div>
+      <div class="card details" style="background:linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);border-color:#c4b5fd">
+        <h4>🎯 Cam kết sau audit</h4>
+        <p style="margin:0;color:var(--muted);font-size:13.5px">Hệ thống hiện ở mức <b>7.2/10 — Khá tốt</b>, đủ để vận hành có kiểm soát với 100-300 shop nếu khóa P0 trong 7 ngày. Sau 30 ngày hoàn thành P1, hệ thống sẵn sàng scale 1.000+ shop và mở kênh reseller.</p>
+        <p style="margin:8px 0 0;color:var(--muted);font-size:13px"><b>Việc duy nhất không được trì hoãn:</b> P0-1 → P0-4. Mọi thứ khác có thể chờ.</p>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn--primary" onclick="window.print()">📄 Xuất PDF báo cáo</button>
+          <a class="btn" href="#remediation">→ Xem P0</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <div>Báo cáo được tạo tự động từ mã nguồn thực chứng — không phải ước lượng cảm tính. Mọi điểm số đều có căn cứ file:line trong repo.</div>
+    <div style="margin-top:6px" class="mono">Auto Fill Order • Audit 31.08.2026 • Stomsa 0935011695 • Bảo mật: Confidential — chỉ chia sẻ trong team vận hành</div>
+  </div>
+</div>
+
+<script>
+function switchTab(id){
+  document.querySelectorAll('.pill-tabs button').forEach((b,i)=>{
+    const keys=['p0','p1','p2']; b.classList.toggle('active', keys[i]===id);
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+}
+// toc active
+const tocLinks=[...document.querySelectorAll('.toc a')];
+const sections=tocLinks.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      tocLinks.forEach(a=>a.classList.toggle('active', a.getAttribute('href')==='#'+e.target.id));
+    }
+  });
+},{rootMargin:'-40% 0px -55% 0px',threshold:0});
+sections.forEach(s=>io.observe(s));
+</script>
+</body>
+</html>
