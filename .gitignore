@@ -1,9 +1,25 @@
 node_modules
+.env
 .env.local
+.env.*.local
 .gemini/
 .claude/
 .agents/
 .vscode/
 scratch/
-dist/
+dist
 *.log
+
+# One-off ops scripts containing plaintext credentials — NEVER commit
+database/migrations/SET_PASSWORD_NGA.sql
+
+# Regenerable local artifacts
+backups/
+
+desktop.ini
+Desktop.ini
+Thumbs.db
+.DS_Store
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
