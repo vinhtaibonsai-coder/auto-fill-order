@@ -1,0 +1,38 @@
+name: p0-security-gate
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run security tests (RLS, AI gateway, XSS, webhook HMAC)
+        env:
+          TEST_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          TEST_SUPABASE_ANON_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
+          TEST_MEMBER_EMAIL: ${{ secrets.TEST_MEMBER_EMAIL }}
+          TEST_MEMBER_PASS: ${{ secrets.TEST_MEMBER_PASS }}
+          TEST_SHOP_A_ID: ${{ secrets.TEST_SHOP_A_ID }}
+          TEST_SHOP_B_ID: ${{ secrets.TEST_SHOP_B_ID }}
+          TEST_OTHER_USER_ID: ${{ secrets.TEST_OTHER_USER_ID }}
+          PAYMENT_WEBHOOK_SECRET: test_secret_for_ci
+        run: npm run test:security
+      - name: Repeat-order, profile-role & carrier DOM E2E regression
+        run: |
+          npm run test:repeat-order
+          npm run test:e2e
+          node tests/unit/admin-create-shop-profile-role.test.mjs
+          node tests/unit/is-system-admin-overload-migration.test.mjs
+      - name: Audit innerHTML escape (P0-5)
+        run: node scripts/audit-innerhtml.js
+      - name: Extension guard sanity (P0-2)
+        run: node scripts/check-extension-build.js
