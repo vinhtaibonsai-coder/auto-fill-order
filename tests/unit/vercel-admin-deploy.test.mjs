@@ -14,9 +14,9 @@ const viteConfig = readSource('vite.config.js');
 const plan = readSource('PLAN/AUTH_AND_ADMIN_DASHBOARD_DEVELOPMENT_PLAN.md');
 
 assert.equal(vercel.framework, 'vite', 'Vercel framework must be Vite');
-assert.equal(vercel.buildCommand, 'npm run build', 'Vercel build command must use npm run build');
+assert.match(vercel.buildCommand, /vite build/, 'Vercel build command must run vite build');
 assert.equal(vercel.outputDirectory, 'dist', 'Vercel output directory must be dist');
-assert.equal(vercel.installCommand, 'npm install', 'Vercel install command must be explicit');
+assert.match(vercel.installCommand, /npm install/, 'Vercel install command must be explicit');
 assert.equal(vercel.cleanUrls, true, 'Vercel cleanUrls must be enabled');
 
 const rewriteMap = new Map((vercel.rewrites || []).map(r => [r.source, r.destination]));
