@@ -46,11 +46,16 @@ const MENU_ITEMS = [
   }
 ];
 
-export default function Sidebar({ activeTab, setActiveTab, userRole = 'SYSTEM_ADMIN' }) {
+export default function Sidebar({ activeTab, setActiveTab, userRole = 'SYSTEM_ADMIN', isOpen = false, onClose }) {
   const isSupportStaff = userRole === 'SUPPORT_STAFF';
 
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+    if (onClose) onClose();
+  };
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       {/* Brand Header */}
       <div className="sidebar-header">
         <div className="sidebar-brand-badge">
@@ -81,7 +86,7 @@ export default function Sidebar({ activeTab, setActiveTab, userRole = 'SYSTEM_AD
                   <div
                     key={item.id}
                     className={`sidebar-item ${isActive ? 'active' : ''}`}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => handleTabClick(item.id)}
                   >
                     <div className="sidebar-item-icon">
                       <Icon size={16} color={isActive ? '#2563eb' : '#64748b'} />

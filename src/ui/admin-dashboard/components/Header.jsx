@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Shield, ExternalLink, Store, LogOut } from 'lucide-react';
+import { Search, Shield, ExternalLink, Store, LogOut, Menu } from 'lucide-react';
 
-export default function Header({ onLogout, operations, userRole, onSearch, searchResults = [], searchLoading = false, onSearchResult }) {
+export default function Header({ onLogout, operations, userRole, onSearch, searchResults = [], searchLoading = false, onSearchResult, onToggleSidebar }) {
   const [query, setQuery] = useState('');
   useEffect(() => {
     const timer = setTimeout(() => onSearch?.(query), 350);
@@ -28,6 +28,16 @@ export default function Header({ onLogout, operations, userRole, onSearch, searc
 
   return (
     <header className="header">
+      {/* Mobile Hamburger Button */}
+      <button
+        type="button"
+        className="admin-mobile-menu-btn"
+        onClick={onToggleSidebar}
+        aria-label="Mở menu quản trị SaaS"
+      >
+        <Menu size={20} />
+      </button>
+
       {/* Left: Quick Search */}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: 12, pointerEvents: 'none' }} />

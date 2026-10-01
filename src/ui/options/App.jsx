@@ -97,8 +97,10 @@ export default function App() {
     }
   });
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const setActiveTab = (tab) => {
     setActiveTabState(tab);
+    setMobileMenuOpen(false);
     try {
       const url = new URL(window.location.href);
       url.searchParams.set('tab', tab);
@@ -204,24 +206,30 @@ export default function App() {
             role: sess?.role || 'SYSTEM_ADMIN'
           });
 
-          if (sess && sess.active_shop_id) {
-            const res = await fetch(`${configRes.url}/rest/v1/shops?select=name&id=eq.${sess.active_shop_id}`, {
-              headers: {
-                'apikey': configRes.anonKey,
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            if (res.ok) {
-              const data = await res.json();
-              if (data && data.length > 0 && data[0].name) {
-                setShopName(data[0].name);
-                if (sess.shop_name !== data[0].name) {
-                  sess.shop_name = data[0].name;
-                  await AuthSession.saveSession(sess);
+          if (sess && sess.active_shop_id && configRes?.url) {
+            try {
+              const res = await fetch(`${configRes.url.replace(/\/$/, '')}/rest/v1/shops?select=name&id=eq.${encodeURIComponent(sess.active_shop_id)}`, {
+                headers: {
+                  'apikey': configRes.anonKey,
+                  'Authorization': `Bearer ${token}`
+                },
+                signal: AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined
+              }).catch(() => null);
+              if (res && res.ok) {
+                const data = await res.json().catch(() => null);
+                if (data && data.length > 0 && data[0].name) {
+                  setShopName(data[0].name);
+                  if (sess.shop_name !== data[0].name) {
+                    sess.shop_name = data[0].name;
+                    await AuthSession.saveSession(sess);
+                  }
+                } else {
+                  setShopName(sess.shop_name || 'Cửa hàng của tôi');
                 }
+              } else {
+                setShopName(sess?.shop_name || 'Cửa hàng của tôi');
               }
-              else setShopName(sess.shop_name || 'Cửa hàng của tôi');
-            } else {
+            } catch {
               setShopName(sess?.shop_name || 'Cửa hàng của tôi');
             }
           } else {
@@ -229,19 +237,25 @@ export default function App() {
           }
 
           // RBAC thật: resolve_dashboard_role (2 tầng global + shop)
-          if (token && !token.startsWith('local_dev_token_')) {
+          if (token && !token.startsWith('local_dev_token_') && configRes?.url) {
             try {
-              const rpcRes = await fetch(`${configRes.url}/rest/v1/rpc/resolve_dashboard_role`, {
+              const rpcRes = await fetch(`${configRes.url.replace(/\/$/, '')}/rest/v1/rpc/resolve_dashboard_role`, {
                 method: 'POST',
                 headers: {
                   'apikey': configRes.anonKey,
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify({}),
+                signal: AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined
+              }).catch(err => {
+                // Network error, offline hoặc URL unreachable
+                console.debug?.('resolve_dashboard_role fetch failed:', err?.message || err);
+                return null;
               });
-              if (rpcRes.ok) {
-                const roleData = await rpcRes.json();
+
+              if (rpcRes && rpcRes.ok) {
+                const roleData = await rpcRes.json().catch(() => null);
                 if (roleData && roleData.length > 0 && roleData[0].ui_role) {
                   setUserRole(roleData[0].real_role || 'VIEWER');
                   resolvedUiRole = roleData[0].ui_role;
@@ -249,7 +263,7 @@ export default function App() {
                 }
               }
             } catch (e) {
-              console.warn('resolve_dashboard_role lỗi:', e);
+              console.debug?.('resolve_dashboard_role error:', e?.message || e);
             }
           }
 
@@ -657,9 +671,18 @@ export default function App() {
   };
 
   return (
-    <div className="options-layout">
+    <div className={`options-layout ${mobileMenuOpen ? 'mobile-menu-active' : ''}`}>
+      {/* MOBILE BACKDROP OVERLAY */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-sidebar-overlay"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* SIDEBAR */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="nav-brand">
           <div className="nav-brand-badge">AF</div>
           <div className="nav-brand-info">
@@ -735,6 +758,7 @@ export default function App() {
           onSearch={handleGlobalSearch}
           onNavigate={handleNavigateWithSearch}
           onLogout={handleLogout}
+          onToggleMobileMenu={() => setMobileMenuOpen(prev => !prev)}
         />
 
         {/* CONTENT */}

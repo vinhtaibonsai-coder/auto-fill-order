@@ -51,6 +51,7 @@ export default function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [impersonation, setImpersonation] = useState(() => { try { return JSON.parse(sessionStorage.getItem('afo_admin_impersonation') || 'null'); } catch (_) { return null; } });
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const setActiveTab = tab => {
     let target = tab;
@@ -58,6 +59,7 @@ export default function App() {
       target = 'overview';
     }
     setActiveTabState(PAGES[target] ? target : 'overview');
+    setMobileSidebarOpen(false);
     const url = new URL(window.location.href); url.searchParams.set('tab', target); window.history.replaceState(null, '', url);
   };
 
@@ -201,8 +203,22 @@ export default function App() {
     window.history.replaceState(null, '', url);
   };
 
-  return <div className="admin-layout">
-    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={userRole} />
+  return <div className={`admin-layout ${mobileSidebarOpen ? 'mobile-sidebar-active' : ''}`}>
+    {/* Mobile Overlay */}
+    {mobileSidebarOpen && (
+      <div
+        className="admin-mobile-overlay"
+        onClick={() => setMobileSidebarOpen(false)}
+        aria-hidden="true"
+      />
+    )}
+    <Sidebar
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      userRole={userRole}
+      isOpen={mobileSidebarOpen}
+      onClose={() => setMobileSidebarOpen(false)}
+    />
     <main className="main-content">
       <Header
         onLogout={logout}
@@ -211,6 +227,7 @@ export default function App() {
         searchResults={searchResults}
         searchLoading={searchLoading}
         onSearchResult={openSearchResult}
+        onToggleSidebar={() => setMobileSidebarOpen(prev => !prev)}
         operations={userRole === 'SUPPORT_STAFF' ? null : (
           <FastOperationsHub
             onCreateShop={() => setModal('shop')}

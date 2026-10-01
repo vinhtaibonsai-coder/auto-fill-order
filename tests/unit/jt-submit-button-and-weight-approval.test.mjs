@@ -191,7 +191,7 @@ assert.match(
 // ─── 5. KIỂM TRA ĐỐI CHIẾU GHI CHÚ TRÊN J&T KHI ĐÃ GỘP VÀO PRODUCTITEM (panel.js) ───
 assert.match(
   panelJs,
-  /!cNote\s*&&\s*isJT\s*&&\s*currentOrderData\.productItem\s*&&\s*pNote/,
+  /!cNote(?:Raw)?\s*&&\s*isJT\s*&&\s*currentOrderData\.productItem\s*&&\s*pNote(?:Raw)?/,
   'panel.js must fallback cNote from productItem if J&T merged notes into goods name'
 );
 

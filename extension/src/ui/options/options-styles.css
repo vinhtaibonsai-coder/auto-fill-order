@@ -2151,3 +2151,136 @@ html, body {
     scroll-behavior: auto !important;
   }
 }
+
+/* =========================================================================
+   MOBILE WEBAPP & PWA ADAPTATION (OPTIONS SHOP CONTROL)
+   ========================================================================= */
+.mobile-hamburger-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-main);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.mobile-hamburger-btn:active {
+  background: var(--primary-light);
+  color: var(--primary);
+  transform: scale(0.95);
+}
+
+.mobile-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 99;
+}
+
+@media (max-width: 900px) {
+  .mobile-hamburger-btn {
+    display: inline-flex;
+  }
+
+  .options-layout {
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobile-sidebar-overlay {
+    display: block;
+  }
+
+  .topbar-container {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .topbar-shop-badge,
+  .topbar-version-badge,
+  .lang-btn {
+    display: none;
+  }
+
+  .topbar-search-wrapper {
+    max-width: 100%;
+  }
+
+  .content-container {
+    padding: 12px 14px;
+  }
+
+  .main-content {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar-db-badge .db-text {
+    display: none;
+  }
+  .topbar-db-badge {
+    padding: 6px 8px;
+  }
+  .search-capsule {
+    padding: 5px 10px;
+  }
+  .search-input {
+    font-size: 13px;
+  }
+
+  /* Touch-friendly inputs and buttons */
+  button, input, select {
+    touch-action: manipulation;
+  }
+
+  /* Responsive Table Container */
+  .table-responsive,
+  .dash-table-wrapper,
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile Data Card optimizations */
+  .order-card-mobile,
+  .customer-card-mobile {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+}
+
+

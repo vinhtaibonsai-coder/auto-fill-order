@@ -16,8 +16,9 @@
     
     // J&T tracking code patterns
     const jtRegex = /^8\d{11,14}$/i;
+    const jtRegex2 = /^jt\d{10,14}$/i;
     
-    return vnpostRegex.test(s) || vnpostRegex2.test(s) || vnpostRegex3.test(s) || jtRegex.test(s);
+    return vnpostRegex.test(s) || vnpostRegex2.test(s) || vnpostRegex3.test(s) || jtRegex.test(s) || jtRegex2.test(s);
   }
 
   function extractTrackingCode(body) {

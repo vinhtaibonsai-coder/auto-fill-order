@@ -14,5 +14,28 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Workspace Bán Hàng",
+      "short_name": "Đơn Hàng",
+      "description": "Bóc tách tin nhắn & danh sách vận đơn",
+      "url": "/index.html",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Cấu Hình Cửa Hàng",
+      "short_name": "Cài Đặt Shop",
+      "description": "Quản lý đơn, khách hàng, nhân viên",
+      "url": "/options.html",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Quản Trị Admin",
+      "short_name": "Master Admin",
+      "description": "Trung tâm quản trị hệ thống SaaS",
+      "url": "/admin.html",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "any" }]
+    }
   ]
 }

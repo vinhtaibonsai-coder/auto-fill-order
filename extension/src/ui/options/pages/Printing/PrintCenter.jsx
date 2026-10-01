@@ -1188,6 +1188,21 @@ export default function PrintCenter() {
     }
   }
 
+  // LIVE PAPER SIMULATOR GEOMETRY (aspect ratio + real-time margin padding + live font scale)
+  const SIM_PAPER_DIMS = {
+    A6: { width: 105, height: 148 },
+    A5: { width: 148, height: 210 },
+    A4: { width: 210, height: 297 },
+    K100: { width: 100, height: 150 }
+  };
+  const simDim = SIM_PAPER_DIMS[paperSize] || SIM_PAPER_DIMS.A6;
+  const simVmm = marginMode === 'split' ? marginVerticalMm : marginMm;
+  const simHmm = marginMode === 'split' ? marginHorizontalMm : marginMm;
+  const simPadV = Math.min(42, (simVmm / simDim.width) * 100);
+  const simPadH = Math.min(42, (simHmm / simDim.width) * 100);
+  const simFont = (base) => `${(base * fontScale).toFixed(1)}px`;
+  const simBarcodeBars = [3, 1, 2, 1, 1, 3, 1, 2, 2, 1, 3, 1, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1, 1, 3, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1];
+
   return (
     <div className="print-center-container" style={{ padding: '20px 32px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: '0 auto', fontFamily: 'Inter, -apple-system, sans-serif', color: 'var(--text-main, #0f172a)' }}>
       {/* FLOATING DEFAULT SAVED TOAST */}
@@ -1340,91 +1355,7 @@ export default function PrintCenter() {
 
         {/* TOP CONFIG & ACTIONS */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* Paper Size selector with clear Default indicator */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#ffffff', padding: '6px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px' }}>
-            <span style={{ color: '#64748b', fontWeight: 600 }}>Khổ giấy:</span>
-            <select
-              value={paperSize}
-              onChange={e => {
-                const s = e.target.value;
-                setPaperSize(s);
-                handleUpdateSenderConfig({ paperSize: s });
-              }}
-              style={{ border: 'none', background: 'transparent', fontWeight: 800, color: '#0f172a', outline: 'none', cursor: 'pointer' }}
-            >
-              <option value="A6">A6 (105 x 148 mm - Bưu điện)</option>
-              <option value="A5">A5 (148 x 210 mm)</option>
-              <option value="A4">A4 (210 x 297 mm)</option>
-              <option value="K100">100 x 150 mm (K100 TMĐT)</option>
-            </select>
-            {paperSize === defaultPaperSize ? (
-              <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 7px', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                ⭐ Khổ mặc định
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleSetDefaultPaperSize(paperSize)}
-                style={{ fontSize: '11px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                title="Lưu khổ giấy này làm mặc định cho tất cả lần in sau"
-              >
-                ⭐ Đặt làm mặc định
-              </button>
-            )}
-          </div>
-
-          {/* Quick Margin Indicator in Top Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#ffffff', padding: '6px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px' }}>
-            <span style={{ color: '#64748b', fontWeight: 600 }}>Căn lề:</span>
-            <span style={{ fontWeight: 800, color: '#0f172a' }}>{printMargin}</span>
-            {printMargin === defaultPrintMargin ? (
-              <span style={{ fontSize: '11px', background: '#fef3c7', color: '#b45309', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>
-                ⭐ Lề mặc định
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleSetDefaultMargin(printMargin)}
-                style={{ fontSize: '11px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                title="Lưu mức lề này làm mặc định cho tất cả lần in sau"
-              >
-                ⭐ Đặt làm mặc định
-              </button>
-            )}
-          </div>
-
-          {/* Font Scale Selector with clear Default indicator */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#ffffff', padding: '6px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12.5px' }}>
-            <span style={{ color: '#64748b', fontWeight: 600 }}>Cỡ chữ:</span>
-            <select
-              value={fontScale}
-              onChange={e => {
-                const sc = parseFloat(e.target.value) || 2.0;
-                setFontScale(sc);
-                handleUpdateSenderConfig({ fontScale: sc });
-              }}
-              style={{ border: 'none', background: 'transparent', fontWeight: 800, color: '#0f172a', outline: 'none', cursor: 'pointer' }}
-            >
-              <option value="2">Gấp đôi (200% - Rõ to mặc định)</option>
-              <option value="1.5">Lớn (150%)</option>
-              <option value="1">Chuẩn (100%)</option>
-              <option value="2.5">Cực lớn (250%)</option>
-            </select>
-            {Math.abs(Number(fontScale) - Number(defaultFontScale)) < 0.05 ? (
-              <span style={{ fontSize: '11px', background: '#ede9fe', color: '#6d28d9', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>
-                ⭐ Chữ mặc định
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleSetDefaultFontScale(fontScale)}
-                style={{ fontSize: '11px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                title="Lưu cỡ chữ này làm mặc định cho tất cả lần in sau"
-              >
-                ⭐ Đặt làm mặc định
-              </button>
-            )}
-          </div>
+          {/* Paper / Margin / Font pickers live in the Visual Print Studio card below */}
 
           <button
             onClick={() => setTemplateModalOpen(true)}
@@ -1669,42 +1600,45 @@ export default function PrintCenter() {
         )}
       </div>
 
-      {/* DEDICATED PAPER SIZE & MARGIN CONFIGURATION CARD ("THIẾT LẬP KHỔ GIẤY MẶC ĐỊNH & CĂNG LỀ RÕ RÀNG") */}
-      <div className="pc-card" style={{ padding: '16px 20px', marginBottom: '16px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+      {/* VISUAL PRINT STUDIO CARD ("CẤU HÌNH KHỔ GIẤY & CĂN LỀ IN MẶC ĐỊNH") */}
+      <div className="pc-card" style={{ padding: '16px 20px', marginBottom: '16px', background: 'linear-gradient(180deg, #f8fbff 0%, #ffffff 45%)', border: '2px solid #93c5fd', boxShadow: '0 2px 10px rgba(37, 99, 235, 0.10)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
               <Sliders size={18} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 800, color: '#0f172a' }}>
-                📐 Cấu hình khổ giấy &amp; Căng lề in mặc định (Rõ ràng &amp; Trực quan)
+              <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
+                📐 Visual Print Studio — Cấu hình khổ giấy &amp; Căn lề in mặc định
               </h2>
               <div style={{ fontSize: '12px', color: '#64748b' }}>
-                Thiết lập khổ giấy và độ căng lề in tem nhãn. Hệ thống tự động ghi nhớ làm mặc định cho mọi lượt in.
+                Chọn khổ giấy, cỡ chữ và căn lề ở cột trái — xem ngay kết quả in ở mô phỏng trực tiếp bên phải trước khi in.
               </div>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-            <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '6px', fontWeight: 700 }}>
-              Khổ mặc định: <strong style={{ color: '#2563eb' }}>{defaultPaperSize}</strong>
+            <span style={{ background: '#eff6ff', color: '#1d4ed8', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, border: '1px solid #bfdbfe' }}>
+              Khổ mặc định: <strong style={{ color: '#1d4ed8' }}>{defaultPaperSize}</strong>
             </span>
-            <span style={{ background: '#fef3c7', color: '#b45309', padding: '4px 10px', borderRadius: '6px', fontWeight: 700 }}>
+            <span style={{ background: '#fef3c7', color: '#b45309', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, border: '1px solid #fde68a' }}>
               Lề mặc định: <strong style={{ color: '#b45309' }}>{defaultPrintMargin}</strong>
+            </span>
+            <span style={{ background: '#ede9fe', color: '#6d28d9', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, border: '1px solid #ddd6fe' }}>
+              Chữ mặc định: <strong style={{ color: '#6d28d9' }}>{Math.round(defaultFontScale * 100)}%</strong>
             </span>
           </div>
         </div>
 
-        {/* 2-COLUMN CONFIGURATION DECK */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
+        {/* 2-COLUMN VISUAL PRINT STUDIO: LEFT = CONTROLS, RIGHT = LIVE SIMULATOR */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1.05fr) minmax(320px, 0.95fr)', gap: '20px', alignItems: 'start' }}>
           
-          {/* COLUMN 1: THIẾT LẬP KHỔ GIẤY MẶC ĐỊNH */}
-          <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+          {/* COLUMN 1 (ROW 1): KHỔ GIẤY + CỠ CHỮ */}
+          <div style={{ gridColumn: 1, gridRow: 1, background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>📄</span>
-                <span>1. CHỌN &amp; THIẾT LẬP KHỔ GIẤY MẶC ĐỊNH</span>
+                <span>1. CHỌN KHỔ GIẤY &amp; CỠ CHỮ MẶC ĐỊNH</span>
               </div>
               <span style={{ fontSize: '11px', color: '#64748b' }}>
                 Đang dùng: <strong style={{ color: '#0f172a' }}>{paperSize}</strong>
@@ -1721,6 +1655,12 @@ export default function PrintCenter() {
                   desc: 'Tem nhiệt bưu điện VNPost, Viettel Post, J&T Express'
                 },
                 {
+                  id: 'K100',
+                  title: '100 x 150 mm (K100)',
+                  badge: 'Tem cuộn TMĐT',
+                  desc: 'Khổ cuộn in nhiệt phổ biến Shopee, TikTok, Lazada'
+                },
+                {
                   id: 'A5',
                   title: 'A5 (148 x 210 mm)',
                   badge: 'Nửa trang A4',
@@ -1731,12 +1671,6 @@ export default function PrintCenter() {
                   title: 'A4 (210 x 297 mm)',
                   badge: 'Khổ A4 lớn',
                   desc: 'In văn phòng tiêu chuẩn kèm phiếu xuất kho'
-                },
-                {
-                  id: 'K100',
-                  title: '100 x 150 mm (K100)',
-                  badge: 'Tem cuộn TMĐT',
-                  desc: 'Khổ cuộn in nhiệt phổ biến Shopee, TikTok, Lazada'
                 }
               ].map(item => {
                 const isSelected = paperSize === item.id;
@@ -1823,10 +1757,78 @@ export default function PrintCenter() {
                 Khổ giấy in mặc định: <strong style={{ color: '#1d4ed8' }}>{defaultPaperSize}</strong>. Khổ giấy này sẽ được tự động áp dụng khi in đơn hàng loạt.
               </span>
             </div>
+
+            {/* FONT SCALE SEGMENTED PICKER (mặc định 200%) */}
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed #cbd5e1' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🔤</span>
+                  <span>Cỡ chữ in:</span>
+                </div>
+                {Math.abs(Number(fontScale) - Number(defaultFontScale)) < 0.05 ? (
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CheckCircle2 size={13} color="#16a34a" />
+                    <span>Đang là mặc định ({Math.round(defaultFontScale * 100)}%)</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleSetDefaultFontScale(fontScale)}
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid #bfdbfe',
+                      background: '#eff6ff',
+                      color: '#2563eb',
+                      cursor: 'pointer'
+                    }}
+                    title="Lưu cỡ chữ này làm mặc định cho tất cả lần in sau"
+                  >
+                    ⭐ Đặt làm mặc định
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                {[
+                  { v: 2, label: '200%', sub: 'Gấp đôi' },
+                  { v: 1.5, label: '150%', sub: 'Lớn' },
+                  { v: 1, label: '100%', sub: 'Chuẩn' },
+                  { v: 2.5, label: '250%', sub: 'Cực lớn' }
+                ].map(opt => {
+                  const isActive = Math.abs(Number(fontScale) - opt.v) < 0.05;
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => {
+                        setFontScale(opt.v);
+                        handleUpdateSenderConfig({ fontScale: opt.v });
+                      }}
+                      style={{
+                        padding: '8px 4px',
+                        borderRadius: '8px',
+                        border: isActive ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                        background: isActive ? '#f5f3ff' : '#ffffff',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={`Đặt cỡ chữ ${opt.label} (${opt.sub})`}
+                    >
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: isActive ? '#6d28d9' : '#0f172a' }}>{opt.label}</div>
+                      <div style={{ fontSize: '10px', fontWeight: 600, color: isActive ? '#7c3aed' : '#64748b' }}>{opt.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          {/* COLUMN 2: ĐIỀU CHỈNH CĂNG LỀ IN (CANH LỀ CHI TIẾT & MẶC ĐỊNH) */}
-          <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+          {/* COLUMN 1 (ROW 2): ĐIỀU CHỈNH CĂNG LỀ IN (CANH LỀ CHI TIẾT & MẶC ĐỊNH) */}
+          <div style={{ gridColumn: 1, gridRow: 2, background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>📏</span>
@@ -2072,6 +2074,266 @@ export default function PrintCenter() {
                   ⭐ Đặt mức lề "{printMargin}" làm mặc định
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* COLUMN 3: MÔ PHỎNG TRỰC QUAN TRANG IN THỰC TẾ (LIVE PAPER SIMULATOR) */}
+          <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Eye size={15} color="#2563eb" />
+                <span>3. MÔ PHỎNG TRỰC QUAN NHÃN IN</span>
+              </div>
+              <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                {paperSize === 'A6' ? '105 x 148 mm' : paperSize === 'K100' ? '100 x 150 mm' : paperSize === 'A5' ? '148 x 210 mm' : '210 x 297 mm'}
+              </span>
+            </div>
+
+            {/* LIVE PAPER CANVAS */}
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#e2e8f0',
+              padding: '16px 8px',
+              borderRadius: '8px',
+              minHeight: '340px',
+              position: 'relative'
+            }}>
+              {(() => {
+                const isK100 = paperSize === 'K100';
+                const isA5 = paperSize === 'A5';
+                const isA4 = paperSize === 'A4';
+                const sheetWidth = isA4 ? 240 : isA5 ? 220 : isK100 ? 210 : 215;
+                const sheetHeight = isA4 ? 336 : isA5 ? 310 : isK100 ? 315 : 305;
+                
+                const vMarginPx = marginMode === 'split' ? Math.round(marginVerticalMm * 1.2) : Math.round(marginMm * 1.2);
+                const hMarginPx = marginMode === 'split' ? Math.round(marginHorizontalMm * 1.2) : Math.round(marginMm * 1.2);
+                const clampedV = Math.min(38, Math.max(0, vMarginPx));
+                const clampedH = Math.min(38, Math.max(0, hMarginPx));
+                const fontMultiplier = fontScale ? fontScale / 2.0 : 1.0;
+
+                return (
+                  <div style={{
+                    width: `${sheetWidth}px`,
+                    height: `${sheetHeight}px`,
+                    background: '#ffffff',
+                    borderRadius: '4px',
+                    boxShadow: '0 8px 20px rgba(15, 23, 42, 0.16)',
+                    border: '1px solid #cbd5e1',
+                    position: 'relative',
+                    boxSizing: 'border-box',
+                    padding: `${clampedV}px ${clampedH}px`,
+                    transition: 'padding 0.15s ease',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}>
+                    {/* VISUAL MARGIN GUIDELINE OVERLAY */}
+                    <div style={{
+                      position: 'absolute',
+                      top: `${clampedV}px`,
+                      left: `${clampedH}px`,
+                      right: `${clampedH}px`,
+                      bottom: `${clampedV}px`,
+                      border: '1px dashed #93c5fd',
+                      pointerEvents: 'none',
+                      borderRadius: '2px',
+                      zIndex: 1
+                    }}>
+                      <span style={{
+                        position: 'absolute',
+                        top: '-15px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        color: '#3b82f6',
+                        background: '#eff6ff',
+                        padding: '1px 5px',
+                        borderRadius: '3px',
+                        lineHeight: 1
+                      }}>
+                        Lề: {printMargin}
+                      </span>
+                    </div>
+
+                    {/* MOCK LABEL CONTENT */}
+                    <div style={{
+                      flex: 1,
+                      border: '1.5px solid #0f172a',
+                      borderRadius: '3px',
+                      padding: '5px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      background: '#ffffff',
+                      overflow: 'hidden',
+                      position: 'relative',
+                      zIndex: 2
+                    }}>
+                      {/* HEADER WITH LOGO & BARCODE */}
+                      <div style={{ borderBottom: '1px solid #0f172a', paddingBottom: '3px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                          <span style={{ fontSize: `${Math.round(10.5 * fontMultiplier)}px`, fontWeight: 900, color: '#d97706' }}>
+                            VNPOST BƯU ĐIỆN
+                          </span>
+                          <span style={{ fontSize: `${Math.round(8.5 * fontMultiplier)}px`, fontWeight: 800, background: '#0f172a', color: '#fff', padding: '1px 4px', borderRadius: '2px' }}>
+                            {paperSize}
+                          </span>
+                        </div>
+                        {/* MOCK BARCODE */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '3px 0 1px 0' }}>
+                          <div style={{ display: 'flex', gap: '2px', height: '18px', alignItems: 'center' }}>
+                            {[2,3,1,3,1,4,2,3,1,3,2,1,3,2,3,1,3,2,1,4,3,1,2].map((w, idx) => (
+                              <div key={idx} style={{ width: `${w}px`, height: '100%', background: '#000000' }} />
+                            ))}
+                          </div>
+                          <span style={{ fontSize: '7.5px', fontWeight: 800, letterSpacing: '0.8px', color: '#0f172a' }}>
+                            EM123456789VN
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* SENDER & RECIPIENT */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '4px', borderBottom: '1px solid #0f172a', padding: '3px 0' }}>
+                        <div style={{ borderRight: '1px solid #e2e8f0', paddingRight: '3px' }}>
+                          <div style={{ fontSize: '7px', fontWeight: 800, color: '#64748b' }}>NGƯỜI GỬI:</div>
+                          <div style={{ fontSize: `${Math.round(9 * fontMultiplier)}px`, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {senderName || 'NGUYỄN THANH NHỰT'}
+                          </div>
+                          <div style={{ fontSize: `${Math.round(8 * fontMultiplier)}px`, color: '#334155' }}>
+                            {senderPhone || '0901 234 567'}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '7px', fontWeight: 800, color: '#64748b' }}>NGƯỜI NHẬN:</div>
+                          <div style={{ fontSize: `${Math.round(9.5 * fontMultiplier)}px`, fontWeight: 900, color: '#0f172a' }}>
+                            Chị Bé Vy Mi
+                          </div>
+                          <div style={{ fontSize: `${Math.round(8.5 * fontMultiplier)}px`, fontWeight: 800, color: '#2563eb' }}>
+                            0833 324 908
+                          </div>
+                          <div style={{ fontSize: `${Math.round(7.5 * fontMultiplier)}px`, color: '#334155', lineHeight: 1.15 }}>
+                            51 Lê Thành Phương, P. 2, Tuy Hòa, Phú Yên
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* COD & FOOTER */}
+                      <div style={{ paddingTop: '3px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '7px', fontWeight: 800, color: '#64748b' }}>TIỀN THU HỘ (COD):</div>
+                          <div style={{ fontSize: `${Math.round(12 * fontMultiplier)}px`, fontWeight: 900, color: '#dc2626', lineHeight: 1 }}>
+                            1.400.000 đ
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '7px', fontWeight: 800, color: '#64748b' }}>MÃ ĐƠN:</div>
+                          <div style={{ fontSize: `${Math.round(9.5 * fontMultiplier)}px`, fontWeight: 800, color: '#0f172a' }}>
+                            pt280
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* SIMULATOR QUICK FOOTER BADGE */}
+            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
+              <span>📐 Khổ <strong>{paperSize}</strong></span>
+              <span>📏 Viền <strong>{printMargin}</strong></span>
+              <span>🔤 Chữ <strong>{Math.round(fontScale * 100)}%</strong></span>
+            </div>
+          </div>
+
+          {/* COLUMN 2: INTERACTIVE LIVE PAPER SIMULATOR */}
+          <div style={{ gridColumn: 2, gridRow: '1 / span 2', position: 'sticky', top: '12px', background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)', padding: '14px', borderRadius: '10px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>🖼️</span>
+                <span>3. MÔ PHỎNG IN TRỰC TIẾP (LIVE)</span>
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#bfdbfe', background: 'rgba(37, 99, 235, 0.30)', border: '1px solid rgba(147, 197, 253, 0.35)', padding: '3px 9px', borderRadius: '999px' }}>
+                {paperSize} · {simDim.width}×{simDim.height}mm
+              </span>
+            </div>
+
+            {/* PAPER PREVIEW STAGE */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '360px', padding: '14px 10px', borderRadius: '8px', background: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 8px, rgba(255,255,255,0.07) 8px 16px)' }}>
+              <div style={{
+                height: '330px',
+                maxWidth: '100%',
+                aspectRatio: `${simDim.width} / ${simDim.height}`,
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                borderRadius: '3px',
+                boxShadow: '0 12px 30px rgba(0, 0, 0, 0.5)',
+                boxSizing: 'border-box',
+                padding: `${simPadV}% ${simPadH}%`,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div style={{ fontSize: simFont(6.5), color: '#475569', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  NGƯỜI GỬI: {senderName || 'Cửa hàng của bạn'}
+                </div>
+                <div style={{ fontSize: simFont(6), color: '#64748b', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {senderPhone || '0900 000 000'} — {senderAddress}
+                </div>
+
+                <div style={{ fontSize: simFont(8), fontWeight: 800, color: '#0f172a', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  NGUYỄN VĂN A
+                </div>
+                <div style={{ fontSize: simFont(7), color: '#1f2937', lineHeight: 1.35, overflow: 'hidden' }}>
+                  123 Nguyễn Huệ, P. Bến Nghé, Quận 1, TP. Hồ Chí Minh
+                </div>
+
+                {/* BARCODE LINES */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1px', height: `${(18 * fontScale).toFixed(1)}px`, marginTop: '2px', overflow: 'hidden' }}>
+                  {simBarcodeBars.map((b, i) => (
+                    <div key={i} style={{ width: `${b}px`, height: '100%', background: i % 2 === 0 ? '#0f172a' : '#ffffff' }} />
+                  ))}
+                </div>
+                <div style={{ fontSize: simFont(6.5), fontWeight: 700, letterSpacing: simFont(1), color: '#0f172a', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                  VT998877665VN
+                </div>
+
+                <div style={{ marginTop: 'auto', border: `${Math.max(1, Math.round(fontScale))}px solid #0f172a`, borderRadius: '3px', padding: '3px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                  <span style={{ fontSize: simFont(6), fontWeight: 700, color: '#334155' }}>COD</span>
+                  <span style={{ fontSize: simFont(8), fontWeight: 900, color: '#dc2626', whiteSpace: 'nowrap' }}>350.000đ</span>
+                </div>
+                <div style={{ fontSize: simFont(5.5), color: '#94a3b8', textAlign: 'center' }}>
+                  Tem mẫu · Cỡ chữ {Math.round(fontScale * 100)}%
+                </div>
+              </div>
+            </div>
+
+            {/* SIMULATOR READOUT */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+              <div style={{ background: 'rgba(148, 163, 184, 0.12)', border: '1px solid #334155', borderRadius: '6px', padding: '6px 8px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '2px' }}>
+                  Căn lề
+                </div>
+                <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#f8fafc' }}>
+                  {marginMode === 'split' ? `${simVmm}mm × ${simHmm}mm` : `${simVmm}mm đều`}
+                </div>
+              </div>
+              <div style={{ background: 'rgba(148, 163, 184, 0.12)', border: '1px solid #334155', borderRadius: '6px', padding: '6px 8px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '2px' }}>
+                  Cỡ chữ
+                </div>
+                <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#f8fafc' }}>
+                  {Math.round(fontScale * 100)}%
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '10.5px', color: '#94a3b8', lineHeight: 1.45 }}>
+              Thanh lề mô phỏng đúng tỷ lệ khổ {paperSize} ({simDim.width}×{simDim.height}mm) — đổi khổ giấy, cỡ chữ hoặc lề ở cột trái để thấy ngay thay đổi trước khi in.
             </div>
           </div>
 

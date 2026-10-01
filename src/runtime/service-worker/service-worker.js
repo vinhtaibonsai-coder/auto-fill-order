@@ -1487,9 +1487,14 @@ async function autoFetchJtWaybillInBackground(order) {
             }
           }
         }
+      } else {
+        console.warn('[J&T Waybill] HTTP ' + resp.status + ' từ ' + ep);
       }
-    } catch (_) {}
+    } catch (err) {
+      console.warn('[J&T Waybill] Lỗi fetch ' + ep + ': ' + (err && err.message ? err.message : err));
+    }
   }
+  console.warn('[J&T Waybill] Không tìm thấy mã vận đơn khớp với đơn ' + orderId);
 }
 
 // ─── TỰ ĐỘNG LẤY MÃ VẬN ĐƠN VNPOST CHẠY NGẦM HOÀN TOÀN TRONG BACKGROUND ───

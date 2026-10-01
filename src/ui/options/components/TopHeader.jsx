@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Search, Globe, Moon, Sun, Bell, Shield, Store, Database,
-  LogOut, ExternalLink, Check, Clock, AlertCircle, Package, User, ArrowRight
+  LogOut, ExternalLink, Check, Clock, AlertCircle, Package, User, ArrowRight, Menu
 } from 'lucide-react';
 import { AuthService } from '../../../domain/auth/auth.service.esm.js';
 import { OrderStorage } from '../../../application/storage.esm.js';
@@ -45,7 +45,8 @@ export default function TopHeader({
   onSearch,
   onNavigate,
   globalSearch = '',
-  onLogout
+  onLogout,
+  onToggleMobileMenu
 }) {
   const [searchValue, setSearchValue] = useState(globalSearch || '');
   const [searchResults, setSearchResults] = useState({ orders: [], customers: [], totalOrders: 0, totalCustomers: 0 });
@@ -318,6 +319,17 @@ export default function TopHeader({
 
   return (
     <header className="topbar-container">
+      {/* MOBILE HAMBURGER BUTTON */}
+      <button
+        type="button"
+        className="mobile-hamburger-btn"
+        onClick={onToggleMobileMenu}
+        aria-label="Mở menu quản lý cửa hàng"
+        title="Menu"
+      >
+        <Menu size={20} />
+      </button>
+
       {/* SEARCH CAPSULE BAR (LEFT/CENTER) */}
       <div className="topbar-search-wrapper" ref={searchWrapperRef}>
         <div className="search-capsule">

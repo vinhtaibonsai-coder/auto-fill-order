@@ -1294,11 +1294,14 @@
             const rawErr = chrome.runtime.lastError?.message || response?.error || 'Lỗi kết nối AI';
             console.warn('[AI Verify] Lỗi thẩm định AI:', rawErr);
 
-            // Xử lý thông báo thân thiện, tuyệt đối không quăng raw JSON hoặc mã lỗi 503 cho người dùng
+            // Xử lý thông báo thân thiện, tuyệt đối không quăng raw JSON hoặc mã lỗi kỹ thuật cho người dùng
             let friendlyNotice = 'Không thể kết nối AI, đã giữ kết quả cục bộ để bạn kiểm tra.';
             const isCapacityIssue = /503|429|unavailable|capacity|overload|rate limit|quota|busy/i.test(String(rawErr));
+            const isChannelClosed = /message channel closed|listener indicated/i.test(String(rawErr));
             if (isCapacityIssue) {
               friendlyNotice = 'AI đang quá tải, hệ thống đã dùng kết quả local để bạn kiểm tra.';
+            } else if (isChannelClosed) {
+              friendlyNotice = 'Kết nối nền tạm gián đoạn, hệ thống đã dùng kết quả local để bạn kiểm tra.';
             }
 
             if (isManual && typeof showVnpostToast === 'function') {
@@ -1306,7 +1309,7 @@
             }
             if (progContainer) {
               if (progBar) progBar.style.width = '100%';
-              if (txtStatus) txtStatus.textContent = isCapacityIssue ? '⚠️ AI quá tải - Đã dùng kết quả local' : '✅ Đã lưu kết quả cục bộ';
+              if (txtStatus) txtStatus.textContent = (isCapacityIssue || isChannelClosed) ? '⚠️ Gián đoạn AI - Đã dùng kết quả local' : '✅ Đã lưu kết quả cục bộ';
               if (txtPercent) txtPercent.textContent = '100%';
               setTimeout(() => { if (progContainer) progContainer.style.display = 'none'; }, 2000);
             }
@@ -1314,7 +1317,7 @@
               currentData.confidence = {
                 score: (currentData.phone && currentData.address) ? 80 : 50,
                 level: 'offline',
-                reasons: [isCapacityIssue ? 'AI đang quá tải, giữ kết quả cục bộ' : 'Dữ liệu bóc tách cục bộ (chưa qua thẩm định AI)']
+                reasons: [isCapacityIssue ? 'AI đang quá tải, giữ kết quả cục bộ' : (isChannelClosed ? 'Kết nối nền gián đoạn, giữ kết quả cục bộ' : 'Dữ liệu bóc tách cục bộ (chưa qua thẩm định AI)')]
               };
               if (typeof displayParsedData === 'function') {
                 displayParsedData(currentData);
@@ -1501,8 +1504,15 @@
   };
 
   // ─── THEO DÕI MÃ VẬN ĐƠN SAU KHI LÊN ĐƠN ───
-  function startTrackingCodeMonitor(savedOrderId, targetPlatform, onCodeFound) {
+  function startTrackingCodeMonitor(savedOrderId, targetPlatform, onCodeFound, targetOrderInfo) {
     let found = false;
+    let jtPollTimer1 = null;
+    let jtPollTimer2 = null;
+    let jtPollTimer3 = null;
+    let urlCheckTimer = null;
+    let trackTimer = null;
+    let fetchRestore = null;
+
     function extractCode(text) {
       if (!text) return null;
       const patterns = [
@@ -1512,7 +1522,8 @@
         /\b(MP\d{8,12}VN)\b/i,
         /\b(E[A-Z]\d{8,12}VN)\b/i,
         /\b([A-Z]{2}\d{9,13}VN)\b/i,
-        /\b(8\d{11,14})\b/
+        /\b(8\d{11,14})\b/i,
+        /\b(jt\d{10,14})\b/i
       ];
       for (const p of patterns) {
         const m = text.match(p);
@@ -1538,6 +1549,10 @@
       if (trackMo) trackMo.disconnect();
       if (fetchRestore && typeof fetchRestore === 'function') fetchRestore();
       if (trackTimer) clearTimeout(trackTimer);
+      if (urlCheckTimer) clearInterval(urlCheckTimer);
+      if (jtPollTimer1) clearTimeout(jtPollTimer1);
+      if (jtPollTimer2) clearTimeout(jtPollTimer2);
+      if (jtPollTimer3) clearTimeout(jtPollTimer3);
     }
 
     // DOM monitoring
@@ -1553,8 +1568,7 @@
     });
     trackMo.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-    // Fetch API interception — bắt response từ API tạo đơn của VNPost
-    let fetchRestore = null;
+    // Fetch API interception — bắt response từ API tạo đơn của VNPost / J&T
     if (targetPlatform === 'vnpost' || targetPlatform === 'jt') {
       const origFetch = window.fetch.bind(window);
       window.fetch = async function(input, init) {
@@ -1565,8 +1579,12 @@
             const clone = response.clone();
             clone.json().then(body => {
               if (!body || found) return;
-              const code = body.orderId || body.orderCode || body.trackingCode || body.maVanDon || body.shipmentNumber || body.id || null;
-              if (code && /^[A-Z0-9]{8,20}$/i.test(String(code))) tryNotify(String(code));
+              const d = body.data || body.result || body;
+              const firstItem = (Array.isArray(d) && d.length > 0) ? d[0] : ((Array.isArray(body.data) && body.data.length > 0) ? body.data[0] : null);
+              const code = body.billCode || body.waybillNo || body.trackingCode || body.maVanDon || body.shipmentNumber || body.itemCode || body.barcode || body.orderId || body.orderCode || body.code || body.id ||
+                           d?.billCode || d?.waybillNo || d?.trackingCode || d?.maVanDon || d?.shipmentNumber || d?.itemCode || d?.orderCode ||
+                           firstItem?.billCode || firstItem?.waybillNo || firstItem?.trackingCode || firstItem?.itemCode || null;
+              if (code && /^[A-Z0-9]{8,22}$/i.test(String(code))) tryNotify(String(code));
             }).catch(() => {});
           }
           return response;
@@ -1575,7 +1593,7 @@
       fetchRestore = () => { window.fetch = origFetch; };
     }
 
-    // Cho J&T Express: Gọi API danh sách đơn hàng ngầm để lấy mã vận đơn tự động sau khi tạo đơn
+    // Cho J&T Express: Gọi API danh sách đơn hàng ngầm có đối chiếu danh tính đơn
     if (targetPlatform === 'jt') {
       const pollJtApi = async () => {
         if (found) return;
@@ -1601,11 +1619,28 @@
               if (body) {
                 const list = body.data?.list || body.data?.records || body.data || body.list || [];
                 if (Array.isArray(list) && list.length > 0) {
+                  const targetOrderCode = String(targetOrderInfo?.orderCode || targetOrderInfo?.order_code || '').trim().toLowerCase();
+                  const targetPhone = String(targetOrderInfo?.phone || '').replace(/\D/g, '');
+                  const targetName = String(targetOrderInfo?.name || '').replace(/[\s\-\.,]/g, '').toLowerCase();
+
                   for (const item of list) {
                     const code = item.billCode || item.waybillNo || item.trackingNo || item.txLogisticId || item.code || null;
                     if (code && /^[A-Z0-9]{8,22}$/i.test(String(code))) {
-                      tryNotify(String(code));
-                      break;
+                      const itemOrderCode = String(item.txLogisticId || item.shopOrderCode || item.customerOrderCode || item.orderCode || item.orderNo || '').trim().toLowerCase();
+                      const itemPhone = String(item.receiverPhone || item.receiverMobile || item.recipientPhone || item.phone || '').replace(/\D/g, '');
+                      const itemName = String(item.receiverName || item.recipientName || item.name || '').replace(/[\s\-\.,]/g, '').toLowerCase();
+
+                      const codeMatched = targetOrderCode && itemOrderCode && (itemOrderCode === targetOrderCode || itemOrderCode.includes(targetOrderCode) || targetOrderCode.includes(itemOrderCode));
+                      const phoneMatched = targetPhone && itemPhone && (itemPhone.includes(targetPhone) || targetPhone.includes(itemPhone));
+                      const nameMatched = targetName && targetName.length > 2 && itemName && (itemName.includes(targetName) || targetName.includes(itemName));
+
+                      // Xác thực danh tính: ưu tiên mã đơn, nếu không có mã đơn thì cần khớp cả SĐT + tên
+                      const isConfidentMatch = targetOrderCode ? codeMatched : (targetPhone ? (phoneMatched && (!targetName || nameMatched)) : true);
+
+                      if (isConfidentMatch) {
+                        tryNotify(String(code));
+                        break;
+                      }
                     }
                   }
                 }
@@ -1615,21 +1650,29 @@
         } catch (_) {}
       };
 
-      setTimeout(pollJtApi, 1500);
-      setTimeout(pollJtApi, 3500);
-      setTimeout(pollJtApi, 7000);
+      jtPollTimer1 = setTimeout(pollJtApi, 800);
+      jtPollTimer2 = setTimeout(pollJtApi, 2500);
+      jtPollTimer3 = setTimeout(pollJtApi, 5000);
     }
 
     // URL change detection (SPA redirect)
-    const urlCheckTimer = setInterval(() => {
+    urlCheckTimer = setInterval(() => {
       if (found) { clearInterval(urlCheckTimer); return; }
       const text = document.body.innerText || '';
       const code = extractCode(text);
       if (code) tryNotify(code);
     }, 1000);
-    setTimeout(() => { clearInterval(urlCheckTimer); if (!found) { trackMo.disconnect(); if (fetchRestore) fetchRestore(); } }, 30000);
 
-    let trackTimer = setTimeout(() => { if (!found) { trackMo.disconnect(); if (fetchRestore) fetchRestore(); } }, 30000);
+    trackTimer = setTimeout(() => {
+      if (!found) {
+        trackMo.disconnect();
+        if (fetchRestore) fetchRestore();
+        if (urlCheckTimer) clearInterval(urlCheckTimer);
+        if (jtPollTimer1) clearTimeout(jtPollTimer1);
+        if (jtPollTimer2) clearTimeout(jtPollTimer2);
+        if (jtPollTimer3) clearTimeout(jtPollTimer3);
+      }
+    }, 25000);
   }
 
   // ─── CẬP NHẬT LẠI TIỀN COD VÀO FORM BƯU ĐIỆN NẾU NGƯỜI DÙNG SỬA TRONG BẢNG XÉT DUYỆT ───
@@ -2320,9 +2363,11 @@
             showVnpostToast(`📦 Đã xác nhận lên đơn (${sourceText})! Mã vận đơn: ` + trackingCode, 'success');
           } else if (platId === 'jt') {
             showVnpostToast(`✅ Đã ghi nhận đơn J&T (${sourceText}) thành công!`, 'success');
+            // J&T: chạy monitor để poll API danh sách đơn (billCode) + bắt mã trên DOM sau khi tạo đơn có đối chiếu danh tính
+            startTrackingCodeMonitor(draftId || submittedOrder.id, platId, null, submittedOrder);
           } else {
             showVnpostToast(`📬 Đã ghi nhận đơn VNPost (${sourceText})! Đang cập nhật mã vận đơn...`, 'success');
-            startTrackingCodeMonitor(draftId || submittedOrder.id, platId);
+            startTrackingCodeMonitor(draftId || submittedOrder.id, platId, null, submittedOrder);
           }
 
           globalThis.__AF_JUST_FILLED__ = false;
@@ -2408,7 +2453,11 @@
                 const errMsg = body?.message || body?.error || body?.errorMessage || ('HTTP ' + response.status);
                 onFailure(errMsg);
               } else if (body) {
-                const code = body.orderId || body.orderCode || body.trackingCode || body.maVanDon || body.shipmentNumber || body.itemCode || body.barcode || body.code || body.id || null;
+                const d = body.data || body.result || body;
+                const firstItem = (Array.isArray(d) && d.length > 0) ? d[0] : ((Array.isArray(body.data) && body.data.length > 0) ? body.data[0] : null);
+                const code = body.billCode || body.waybillNo || body.trackingCode || body.maVanDon || body.shipmentNumber || body.itemCode || body.barcode || body.orderId || body.orderCode || body.code || body.id ||
+                             d?.billCode || d?.waybillNo || d?.trackingCode || d?.maVanDon || d?.shipmentNumber || d?.itemCode || d?.orderCode ||
+                             firstItem?.billCode || firstItem?.waybillNo || firstItem?.trackingCode || firstItem?.itemCode || null;
                 const foundCode = (code && /^[A-Z0-9]{8,22}$/i.test(String(code))) ? String(code) : null;
                 onSuccess(foundCode);
               }
@@ -3684,14 +3733,14 @@
         })();
         return true;
       }
-      return true;
+      return false;
     });
   }
   // ─── TỰ ĐỘNG BẮT MÃ VẬN ĐƠN TRÊN TRANG ORDER TABLE CỦA J&T EXPRESS ───
   if (window.location.hostname.includes('jtexpress.vn')) {
     const scanJtOrderTablePage = async () => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      const rows = document.querySelectorAll('.el-table__row, table.el-table__body tr');
+      const rows = document.querySelectorAll('tr, .el-table__row, table.el-table__body tr');
       if (!rows || rows.length === 0) return;
 
       const submitted = await OrderStorage.getSubmittedOrders().catch(() => []);
@@ -3719,7 +3768,10 @@
           const normOrderCode = sub.orderCode && sub.orderCode !== '—' ? sub.orderCode.replace(/[\s\-\.,]/g, '').toLowerCase() : null;
           const orderCodeMatch = normOrderCode && normalizedText.includes(normOrderCode);
 
-          if (phoneMatch || nameMatch || orderCodeMatch) {
+          // BẢO VỆ BẤT BIẾN ĐỊNH DANH ĐƠN: Khi có mã đơn, chỉ mã đơn mới đủ quyền gán vận đơn
+          const confidentMatch = normOrderCode ? orderCodeMatch : (phoneMatch && nameMatch);
+
+          if (confidentMatch) {
             window.__processedWaybills = window.__processedWaybills || new Set();
             if (window.__processedWaybills.has(waybillCode)) return;
             window.__processedWaybills.add(waybillCode);
@@ -3737,8 +3789,8 @@
       });
     };
 
-    setInterval(scanJtOrderTablePage, 5000);
-    setTimeout(() => onDOMReady(scanJtOrderTablePage), 2500);
+    setInterval(scanJtOrderTablePage, 4000);
+    setTimeout(() => onDOMReady(scanJtOrderTablePage), 2000);
   }
 
   // ─── TỰ ĐỘNG BẮT MÃ VẬN ĐƠN TRÊN TRANG ORDER MANAGER CỦA VNPOST ───
@@ -4274,8 +4326,9 @@
         
         // J&T tracking code patterns
         const jtRegex = /^8\d{11,14}$/i;
+        const jtRegex2 = /^jt\d{10,14}$/i;
         
-        return vnpostRegex.test(s) || vnpostRegex2.test(s) || vnpostRegex3.test(s) || jtRegex.test(s);
+        return vnpostRegex.test(s) || vnpostRegex2.test(s) || vnpostRegex3.test(s) || jtRegex.test(s) || jtRegex2.test(s);
       }
 
       window.addEventListener('message', (event) => {

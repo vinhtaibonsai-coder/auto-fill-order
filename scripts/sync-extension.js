@@ -80,6 +80,11 @@ if (fs.existsSync(distBase)) {
     copyRecursive(srcPath, destPath);
   });
 
+  const distInterceptor = path.join(distBase, 'interceptor.js');
+  if (fs.existsSync(distInterceptor)) {
+    copyRecursive(distInterceptor, path.join(targetBase, 'interceptor.js'));
+  }
+
   ['privacy.html', 'terms.html'].forEach(item => {
     const srcPath = path.resolve(__dirname, '..', item);
     const destPath = path.join(targetBase, item);
