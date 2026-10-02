@@ -66,6 +66,8 @@ const TAB_TITLES = {
   'server': 'Kết Nối Máy Chủ Supabase'
 };
 
+import { Zap, Shield, ExternalLink } from 'lucide-react';
+
 const getRoleDisplay = (role) => {
   const roleMap = {
     'OWNER': 'Chủ cửa hàng (Owner)',
@@ -78,6 +80,13 @@ const getRoleDisplay = (role) => {
     'SYSTEM_ADMIN': 'Quản trị hệ thống (Admin)'
   };
   return roleMap[role] || role;
+};
+
+const getWorkspaceUrl = () => {
+  if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function') {
+    return chrome.runtime.getURL('index.html');
+  }
+  return '/workspace';
 };
 
 const getAdminDashboardUrl = () => {
@@ -670,6 +679,10 @@ export default function App() {
     window.open(getAdminDashboardUrl());
   };
 
+  const handleOpenWorkspace = () => {
+    window.open(getWorkspaceUrl());
+  };
+
   return (
     <div className={`options-layout ${mobileMenuOpen ? 'mobile-menu-active' : ''}`}>
       {/* MOBILE BACKDROP OVERLAY */}
@@ -727,6 +740,32 @@ export default function App() {
               )}
             </>
           )}
+
+          {/* CHUYỂN TRANG / CROSS-PORTAL SWITCHER */}
+          <div className="nav-section-title">Chuyển Không Gian Làm Việc</div>
+          <button
+            className="nav-item"
+            onClick={handleOpenWorkspace}
+            style={{ color: 'var(--primary)', fontWeight: 700 }}
+            title="Mở Mobile Workspace bóc tách đơn và bán hàng"
+          >
+            <Zap size={15} style={{ flexShrink: 0 }} />
+            <span>Mobile Workspace</span>
+            <ExternalLink size={13} style={{ marginLeft: 'auto', opacity: 0.6 }} />
+          </button>
+
+          {(uiRole === 'master_admin' || userRole === 'SYSTEM_ADMIN') && (
+            <button
+              className="nav-item"
+              onClick={handleOpenAdminDashboard}
+              style={{ color: '#2563eb', fontWeight: 700 }}
+              title="Mở Bảng điều khiển Master Admin SaaS"
+            >
+              <Shield size={15} style={{ flexShrink: 0 }} />
+              <span>Quản trị Master Admin</span>
+              <ExternalLink size={13} style={{ marginLeft: 'auto', opacity: 0.6 }} />
+            </button>
+          )}
         </nav>
 
         {/* SIDEBAR FOOTER (USER PROFILE CARD) */}
@@ -737,6 +776,7 @@ export default function App() {
             uiRole={uiRole}
             appVersion={appVersion}
             onOpenAdmin={handleOpenAdminDashboard}
+            onOpenWorkspace={handleOpenWorkspace}
             onLogout={handleLogout}
           />
         </div>
@@ -755,6 +795,7 @@ export default function App() {
           activeTab={activeTab}
           globalSearch={globalSearch}
           onOpenAdmin={handleOpenAdminDashboard}
+          onOpenWorkspace={handleOpenWorkspace}
           onSearch={handleGlobalSearch}
           onNavigate={handleNavigateWithSearch}
           onLogout={handleLogout}

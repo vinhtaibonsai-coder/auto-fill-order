@@ -806,10 +806,33 @@ export default function App() {
               alignItems: 'center',
               gap: '4px'
             }}
-            title="Mở cài đặt cửa hàng"
+            title="Mở cài đặt cửa hàng (Options)"
           >
             <Settings size={13} />
+            <span style={{ fontSize: '11px', display: 'none' }}>Shop</span>
           </button>
+
+          {canOpenAdminDashboard() && (
+            <button
+              onClick={openAdminDashboard}
+              style={{
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                color: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Mở Bảng điều khiển Master Admin"
+            >
+              <Shield size={13} />
+            </button>
+          )}
         </div>
       </header>
 
@@ -1248,6 +1271,29 @@ export default function App() {
                 <span>Cổng Quản Lý Cửa Hàng (Shop Options)</span>
                 <ExternalLink size={15} color="var(--text-muted)" />
               </button>
+
+              {canOpenAdminDashboard() && (
+                <button
+                  onClick={openAdminDashboard}
+                  className="touch-action-btn"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '0 14px',
+                    border: '1px solid #bfdbfe',
+                    background: '#eff6ff',
+                    fontSize: '13.5px',
+                    color: '#1d4ed8',
+                    fontWeight: 700
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Shield size={16} color="#2563eb" />
+                    <span>Quản Trị Hệ Thống (Master Admin)</span>
+                  </span>
+                  <ExternalLink size={15} color="#2563eb" />
+                </button>
+              )}
 
               <button
                 onClick={async () => {

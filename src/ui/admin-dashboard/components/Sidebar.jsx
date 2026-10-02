@@ -2,7 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard, Store, Users, CreditCard, Bot, Sliders,
   MapPin, Truck, Smartphone, ShieldCheck, Activity, Headphones, Rocket, Zap,
-  PackageSearch, Key, ShieldAlert, HeartPulse, Handshake
+  PackageSearch, Key, ShieldAlert, HeartPulse, Handshake, ExternalLink
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -98,6 +98,50 @@ export default function Sidebar({ activeTab, setActiveTab, userRole = 'SYSTEM_AD
             </div>
           );
         })}
+
+        {/* CHUYỂN KHÔNG GIAN LÀM VIỆC */}
+        <div className="sidebar-group">
+          <div className="sidebar-group-title">Chuyển Không Gian Làm Việc</div>
+          <div
+            className="sidebar-item"
+            onClick={() => {
+              if (onClose) onClose();
+              if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function') {
+                window.open(chrome.runtime.getURL('index.html'), '_blank');
+              } else {
+                window.location.assign('/workspace');
+              }
+            }}
+            style={{ color: '#0284c7', fontWeight: 600 }}
+            title="Mở Mobile Workspace bóc tách và tạo đơn"
+          >
+            <div className="sidebar-item-icon">
+              <Zap size={16} color="#0284c7" />
+            </div>
+            <span>Mobile Workspace</span>
+            <ExternalLink size={13} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+          </div>
+
+          <div
+            className="sidebar-item"
+            onClick={() => {
+              if (onClose) onClose();
+              if (typeof chrome !== 'undefined' && chrome.runtime?.openOptionsPage) {
+                chrome.runtime.openOptionsPage();
+              } else {
+                window.location.assign('/options');
+              }
+            }}
+            style={{ color: '#16a34a', fontWeight: 600 }}
+            title="Mở Cổng Quản Lý Cửa Hàng (Shop Options)"
+          >
+            <div className="sidebar-item-icon">
+              <Store size={16} color="#16a34a" />
+            </div>
+            <span>Quản trị Cửa Hàng</span>
+            <ExternalLink size={13} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+          </div>
+        </div>
       </div>
 
       {/* Footer System Status */}

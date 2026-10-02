@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Search, Globe, Moon, Sun, Bell, Shield, Store, Database,
-  LogOut, ExternalLink, Check, Clock, AlertCircle, Package, User, ArrowRight, Menu
+  LogOut, ExternalLink, Check, Clock, AlertCircle, Package, User, ArrowRight, Menu, Zap
 } from 'lucide-react';
 import { AuthService } from '../../../domain/auth/auth.service.esm.js';
 import { OrderStorage } from '../../../application/storage.esm.js';
@@ -42,6 +42,7 @@ export default function TopHeader({
   isDbConnected = true,
   activeTab,
   onOpenAdmin,
+  onOpenWorkspace,
   onSearch,
   onNavigate,
   globalSearch = '',
@@ -310,6 +311,13 @@ export default function TopHeader({
   const email = currentUser?.email || 'Chưa cập nhật email';
   const avatarUrl = currentUser?.avatar_url || currentUser?.avatarUrl;
 
+  const getWorkspaceUrl = () => {
+    if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function') {
+      return chrome.runtime.getURL('index.html');
+    }
+    return '/workspace';
+  };
+
   const getAdminDashboardUrl = () => {
     if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function') {
       return chrome.runtime.getURL('admin-dashboard/admin.html');
@@ -511,6 +519,30 @@ export default function TopHeader({
           <span className="db-text">{isDbConnected ? 'Đã kết nối DB' : 'Mất kết nối'}</span>
         </div>
 
+        {/* QUICK WORKSPACE SWITCH BUTTON */}
+        <button
+          className="topbar-action-btn"
+          onClick={() => {
+            if (onOpenWorkspace) {
+              onOpenWorkspace();
+            } else {
+              window.open(getWorkspaceUrl(), '_blank');
+            }
+          }}
+          title="Chuyển sang Mobile Workspace (Bóc tách đơn & Bán hàng)"
+          style={{
+            fontWeight: 700,
+            fontSize: '12.5px',
+            color: 'var(--primary)',
+            background: 'var(--primary-light)',
+            borderColor: 'var(--primary-border)',
+            gap: '6px'
+          }}
+        >
+          <Zap size={15} color="var(--primary)" />
+          <span>Workspace</span>
+        </button>
+
         {/* SHOP NAME BADGE */}
         <div className="topbar-shop-badge" title={`Cửa hàng đang hoạt động: ${shopName || 'Cửa hàng của tôi'}`}>
           <Store size={14} className="shop-badge-icon" />
@@ -631,6 +663,22 @@ export default function TopHeader({
               <div className="dropdown-divider"></div>
 
               <div className="avatar-dropdown-links">
+                <button
+                  className="dropdown-link-btn"
+                  onClick={() => {
+                    setShowAvatarMenu(false);
+                    if (onOpenWorkspace) {
+                      onOpenWorkspace();
+                    } else {
+                      window.open(getWorkspaceUrl(), '_blank');
+                    }
+                  }}
+                >
+                  <Zap size={14} color="#f59e0b" />
+                  <span>Mobile Workspace (Bán hàng)</span>
+                  <ExternalLink size={12} style={{ marginLeft: 'auto', opacity: 0.6 }} />
+                </button>
+
                 {uiRole === 'master_admin' && (
                   <button
                     className="dropdown-link-btn"
@@ -643,7 +691,7 @@ export default function TopHeader({
                       }
                     }}
                   >
-                    <Shield size={14} />
+                    <Shield size={14} color="#2563eb" />
                     <span>Bảng quản trị Master Admin</span>
                     <ExternalLink size={12} style={{ marginLeft: 'auto', opacity: 0.6 }} />
                   </button>

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Shield, LogOut, ExternalLink, ChevronUp, Check } from 'lucide-react';
+import { User, Shield, LogOut, ExternalLink, ChevronUp, Check, Zap } from 'lucide-react';
 import { AuthService } from '../../../domain/auth/auth.service.esm.js';
 
-export default function UserProfileCard({ currentUser, userRole, uiRole, onOpenAdmin, onLogout, appVersion }) {
+export default function UserProfileCard({ currentUser, userRole, uiRole, onOpenAdmin, onOpenWorkspace, onLogout, appVersion }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -77,6 +77,25 @@ export default function UserProfileCard({ currentUser, userRole, uiRole, onOpenA
           <div className="popover-divider"></div>
 
           <div className="popover-menu">
+            <button
+              className="popover-menu-item"
+              onClick={() => {
+                setIsOpen(false);
+                if (onOpenWorkspace) {
+                  onOpenWorkspace();
+                } else {
+                  const url = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function'
+                    ? chrome.runtime.getURL('index.html')
+                    : '/workspace';
+                  window.open(url, '_blank');
+                }
+              }}
+            >
+              <Zap size={15} className="popover-icon" color="#f59e0b" />
+              <span>Mobile Workspace (Bán hàng)</span>
+              <ExternalLink size={13} style={{ marginLeft: 'auto', opacity: 0.6 }} />
+            </button>
+
             {uiRole === 'master_admin' && (
               <button
                 className="popover-menu-item"
@@ -89,7 +108,7 @@ export default function UserProfileCard({ currentUser, userRole, uiRole, onOpenA
                   }
                 }}
               >
-                <Shield size={15} className="popover-icon" />
+                <Shield size={15} className="popover-icon" color="#2563eb" />
                 <span>Bảng quản trị Master Admin</span>
                 <ExternalLink size={13} style={{ marginLeft: 'auto', opacity: 0.6 }} />
               </button>
