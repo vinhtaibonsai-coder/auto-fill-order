@@ -332,7 +332,15 @@ export default function App() {
       const email = String(userObj.email || '').toLowerCase();
       const adminRoles = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MASTER_ADMIN', 'ADMIN', 'SUPPORT_ADMIN', 'FINANCE_ADMIN', 'CONTENT_ADMIN'];
       const isAdminRole = adminRoles.includes(role) || role.endsWith('_ADMIN') || role.includes('ADMIN') || email === 'admin@luathuysinh.vn' || email.startsWith('admin@');
-      if (isAdminRole || isSysAdmin) {
+      
+      // Nếu user chủ động mở workspace (ví dụ đường dẫn là /workspace hoặc có search params /?workspace=true hoặc đang thao tác trên Mobile), không cưỡng ép redirect sang Admin
+      const isExplicitWorkspace = typeof window !== 'undefined' && (
+        window.location.pathname.includes('/workspace') ||
+        window.location.search.includes('workspace=true') ||
+        window.location.search.includes('tab=') ||
+        sessionStorage.getItem('stay_in_workspace') === 'true'
+      );
+      if ((isAdminRole || isSysAdmin) && !isExplicitWorkspace) {
         routeAdminTarget();
         return;
       }
@@ -714,7 +722,13 @@ export default function App() {
     return <Login onLoginSuccess={async () => {
       setIsAuthLoading(true);
       const sess = await AuthSession.getSession();
-      if (canOpenAdminDashboard() || await AuthService.isSystemAdmin()) {
+      const isExplicitWorkspace = typeof window !== 'undefined' && (
+        window.location.pathname.includes('/workspace') ||
+        window.location.search.includes('workspace=true') ||
+        window.location.search.includes('tab=') ||
+        sessionStorage.getItem('stay_in_workspace') === 'true'
+      );
+      if ((canOpenAdminDashboard() || await AuthService.isSystemAdmin()) && !isExplicitWorkspace) {
         routeAdminTarget();
         return;
       }

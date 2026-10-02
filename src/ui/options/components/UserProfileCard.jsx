@@ -34,11 +34,33 @@ export default function UserProfileCard({ currentUser, userRole, uiRole, onOpenA
   const email = currentUser?.email || 'Chưa cập nhật email';
   const avatarUrl = currentUser?.avatar_url || currentUser?.avatarUrl;
 
+  const isExtensionEnvironment = () => {
+    return typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function';
+  };
+
+  const getWorkspaceUrl = () => {
+    if (isExtensionEnvironment()) {
+      return chrome.runtime.getURL('index.html');
+    }
+    return '/index.html';
+  };
+
   const getAdminDashboardUrl = () => {
-    if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function') {
-      return chrome.runtime.getURL('admin-dashboard/admin.html');
+    if (isExtensionEnvironment()) {
+      return chrome.runtime.getURL('admin.html');
     }
     return '/admin';
+  };
+
+  const navigateToPortal = (url) => {
+    if (!url) return;
+    const isExtension = isExtensionEnvironment();
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 900 || 'ontouchstart' in window);
+    if (!isExtension || isMobile) {
+      window.location.assign(url);
+    } else {
+      window.open(url, '_blank');
+    }
   };
 
   const handleLogout = async () => {
@@ -84,10 +106,7 @@ export default function UserProfileCard({ currentUser, userRole, uiRole, onOpenA
                 if (onOpenWorkspace) {
                   onOpenWorkspace();
                 } else {
-                  const url = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function'
-                    ? chrome.runtime.getURL('index.html')
-                    : '/workspace';
-                  window.open(url, '_blank');
+                  navigateToPortal(getWorkspaceUrl());
                 }
               }}
             >
@@ -104,7 +123,7 @@ export default function UserProfileCard({ currentUser, userRole, uiRole, onOpenA
                   if (onOpenAdmin) {
                     onOpenAdmin();
                   } else {
-                    window.open(getAdminDashboardUrl(), '_blank');
+                    navigateToPortal(getAdminDashboardUrl());
                   }
                 }}
               >

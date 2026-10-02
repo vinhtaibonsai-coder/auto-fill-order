@@ -12,11 +12,23 @@
       "destination": "/admin.html"
     },
     {
+      "source": "/admin/(.*)",
+      "destination": "/admin.html"
+    },
+    {
       "source": "/options",
       "destination": "/options.html"
     },
     {
+      "source": "/options/(.*)",
+      "destination": "/options.html"
+    },
+    {
       "source": "/workspace",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/workspace/(.*)",
       "destination": "/index.html"
     }
   ],

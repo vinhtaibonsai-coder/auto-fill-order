@@ -86,14 +86,27 @@ const getWorkspaceUrl = () => {
   if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function') {
     return chrome.runtime.getURL('index.html');
   }
-  return '/workspace';
+  // Trên Vercel / WebApp, root '/' hoặc '/index.html' hoặc '/workspace' đều dẫn tới Mobile Workspace
+  return '/index.html';
 };
 
 const getAdminDashboardUrl = () => {
   if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function') {
-    return chrome.runtime.getURL('admin-dashboard/admin.html');
+    return chrome.runtime.getURL('admin.html');
   }
   return '/admin';
+};
+
+const navigateToPortal = (url) => {
+  if (!url) return;
+  const isExtension = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function';
+  const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 900 || 'ontouchstart' in window);
+  // Nếu là Mobile hoặc WebApp không phải Extension, điều hướng trực tiếp trong cùng tab
+  if (!isExtension || isMobile) {
+    window.location.assign(url);
+  } else {
+    window.open(url, '_blank');
+  }
 };
 
 export default function App() {
@@ -676,11 +689,21 @@ export default function App() {
   };
 
   const handleOpenAdminDashboard = () => {
-    window.open(getAdminDashboardUrl());
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 900 || 'ontouchstart' in window);
+    if (isMobile) {
+      window.location.assign(getAdminDashboardUrl());
+    } else {
+      window.open(getAdminDashboardUrl());
+    }
   };
 
   const handleOpenWorkspace = () => {
-    window.open(getWorkspaceUrl());
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 900 || 'ontouchstart' in window);
+    if (isMobile) {
+      window.location.assign(getWorkspaceUrl());
+    } else {
+      window.open(getWorkspaceUrl());
+    }
   };
 
   return (
