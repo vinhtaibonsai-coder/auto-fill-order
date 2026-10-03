@@ -1506,9 +1506,6 @@
   // ─── THEO DÕI MÃ VẬN ĐƠN SAU KHI LÊN ĐƠN ───
   function startTrackingCodeMonitor(savedOrderId, targetPlatform, onCodeFound, targetOrderInfo) {
     let found = false;
-    let jtPollTimer1 = null;
-    let jtPollTimer2 = null;
-    let jtPollTimer3 = null;
     let urlCheckTimer = null;
     let trackTimer = null;
     let fetchRestore = null;
@@ -1550,9 +1547,6 @@
       if (fetchRestore && typeof fetchRestore === 'function') fetchRestore();
       if (trackTimer) clearTimeout(trackTimer);
       if (urlCheckTimer) clearInterval(urlCheckTimer);
-      if (jtPollTimer1) clearTimeout(jtPollTimer1);
-      if (jtPollTimer2) clearTimeout(jtPollTimer2);
-      if (jtPollTimer3) clearTimeout(jtPollTimer3);
     }
 
     // DOM monitoring
@@ -1593,68 +1587,6 @@
       fetchRestore = () => { window.fetch = origFetch; };
     }
 
-    // Cho J&T Express: Gọi API danh sách đơn hàng ngầm có đối chiếu danh tính đơn
-    if (targetPlatform === 'jt') {
-      const pollJtApi = async () => {
-        if (found) return;
-        try {
-          const endpoints = [
-            '/api/order/order/pageList',
-            '/api/v2/order/page',
-            '/api/order/pageList',
-            '/api/order/list',
-            '/api/v1/order/list'
-          ];
-          for (const ep of endpoints) {
-            if (found) break;
-            const resp = await fetch(ep, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ page: 1, pageSize: 5, pageNum: 1, size: 5 }),
-              credentials: 'include'
-            }).catch(() => null);
-
-            if (resp && resp.ok) {
-              const body = await resp.json().catch(() => null);
-              if (body) {
-                const list = body.data?.list || body.data?.records || body.data || body.list || [];
-                if (Array.isArray(list) && list.length > 0) {
-                  const targetOrderCode = String(targetOrderInfo?.orderCode || targetOrderInfo?.order_code || '').trim().toLowerCase();
-                  const targetPhone = String(targetOrderInfo?.phone || '').replace(/\D/g, '');
-                  const targetName = String(targetOrderInfo?.name || '').replace(/[\s\-\.,]/g, '').toLowerCase();
-
-                  for (const item of list) {
-                    const code = item.billCode || item.waybillNo || item.trackingNo || item.txLogisticId || item.code || null;
-                    if (code && /^[A-Z0-9]{8,22}$/i.test(String(code))) {
-                      const itemOrderCode = String(item.txLogisticId || item.shopOrderCode || item.customerOrderCode || item.orderCode || item.orderNo || '').trim().toLowerCase();
-                      const itemPhone = String(item.receiverPhone || item.receiverMobile || item.recipientPhone || item.phone || '').replace(/\D/g, '');
-                      const itemName = String(item.receiverName || item.recipientName || item.name || '').replace(/[\s\-\.,]/g, '').toLowerCase();
-
-                      const codeMatched = targetOrderCode && itemOrderCode && (itemOrderCode === targetOrderCode || itemOrderCode.includes(targetOrderCode) || targetOrderCode.includes(itemOrderCode));
-                      const phoneMatched = targetPhone && itemPhone && (itemPhone.includes(targetPhone) || targetPhone.includes(itemPhone));
-                      const nameMatched = targetName && targetName.length > 2 && itemName && (itemName.includes(targetName) || targetName.includes(itemName));
-
-                      // Xác thực danh tính: ưu tiên mã đơn, nếu không có mã đơn thì cần khớp cả SĐT + tên
-                      const isConfidentMatch = targetOrderCode ? codeMatched : (targetPhone ? (phoneMatched && (!targetName || nameMatched)) : true);
-
-                      if (isConfidentMatch) {
-                        tryNotify(String(code));
-                        break;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch (_) {}
-      };
-
-      jtPollTimer1 = setTimeout(pollJtApi, 800);
-      jtPollTimer2 = setTimeout(pollJtApi, 2500);
-      jtPollTimer3 = setTimeout(pollJtApi, 5000);
-    }
-
     // URL change detection (SPA redirect)
     urlCheckTimer = setInterval(() => {
       if (found) { clearInterval(urlCheckTimer); return; }
@@ -1668,9 +1600,6 @@
         trackMo.disconnect();
         if (fetchRestore) fetchRestore();
         if (urlCheckTimer) clearInterval(urlCheckTimer);
-        if (jtPollTimer1) clearTimeout(jtPollTimer1);
-        if (jtPollTimer2) clearTimeout(jtPollTimer2);
-        if (jtPollTimer3) clearTimeout(jtPollTimer3);
       }
     }, 25000);
   }
