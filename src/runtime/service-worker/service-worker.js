@@ -1435,13 +1435,10 @@ async function autoFetchJtWaybillInBackground(order) {
   if (!order) return;
   const orderId = order.savedOrderId || order.id;
 
-  // Gửi API POST ngầm với credentials session J&T (không mở thêm tab mới)
-  const endpoints = [
-    'https://khachhang.jtexpress.vn/api/order/order/pageList',
-    'https://khachhang.jtexpress.vn/api/v2/order/page',
-    'https://khachhang.jtexpress.vn/api/order/pageList',
-    'https://khachhang.jtexpress.vn/api/order/list'
-  ];
+  // J&T đã chuyển sang SPA router và chặn các endpoint POST cũ (trả về 405).
+  // Việc bắt mã vận đơn chủ yếu qua content script DOM/Network hook khi người dùng submit đơn.
+  // Ở background, chỉ thử endpoint chính thức nếu có, tránh spam fetch gây lỗi 405.
+  const endpoints = [];
   for (const ep of endpoints) {
     try {
       const resp = await fetch(ep, {

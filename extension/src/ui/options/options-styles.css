@@ -2263,12 +2263,19 @@ html, body {
 
   /* Responsive Table Container */
   .table-responsive,
-  .dash-table-wrapper,
-  table {
+  .dash-table-wrapper {
     display: block;
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+
+  .table-responsive table,
+  .dash-table-wrapper table {
+    display: table;
+    width: 100%;
   }
 
   /* Mobile Data Card optimizations */
@@ -2281,6 +2288,163 @@ html, body {
     margin-bottom: 10px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
+
+  /* Mobile Filter Grid */
+  .filters-grid-mobile {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .filters-grid-mobile > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+  }
+
+  .filters-grid-mobile select,
+  .filters-grid-mobile input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
 }
+
+/* =========================================================================
+   PWA ORDER CARD LIST STYLING (RESPONSIVE TOUCH-FIRST ORDERS)
+   ========================================================================= */
+.pwa-order-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pwa-order-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+.pwa-order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pwa-order-card-customer {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pwa-order-card-time {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.pwa-order-card-cod {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.pwa-order-card-cod-val {
+  font-weight: 800;
+  font-size: 15px;
+  color: #10b981;
+}
+
+.pwa-order-card-address {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: var(--surface-muted, #f8fafc);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.pwa-tracking-box {
+  background: #f1f5f9;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pwa-tracking-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.5px;
+  color: #0f172a;
+}
+
+.pwa-touch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+
+.pwa-touch-btn:active {
+  transform: scale(0.97);
+}
+
+.view-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.view-mode-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+}
+
+.view-mode-toggle-btn.active {
+  background: var(--card);
+  color: var(--primary);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
 
 

@@ -4,7 +4,8 @@ import {
   Check, ExternalLink, RefreshCw, Truck, DollarSign,
   User, Phone, Clock, FileSpreadsheet, AlertCircle, Cloud, HardDrive,
   History, Activity, CheckCircle2, AlertTriangle, X, UploadCloud,
-  ChevronDown, ChevronRight, Monitor, FileText, MapPin
+  ChevronDown, ChevronRight, Monitor, FileText, MapPin,
+  LayoutList, Table2
 } from 'lucide-react';
 import { OrderStorage } from '../../../../application/storage.esm.js';
 import { AuthSession } from '../../../../domain/auth/auth.session.esm.js';
@@ -185,6 +186,22 @@ export default function SubmittedOrders() {
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('af_orders_view_mode');
+      if (saved === 'table' || saved === 'cards') return saved;
+      return typeof window !== 'undefined' && window.innerWidth <= 768 ? 'cards' : 'table';
+    } catch (_) {
+      return typeof window !== 'undefined' && window.innerWidth <= 768 ? 'cards' : 'table';
+    }
+  });
+
+  const handleSetViewMode = (mode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('af_orders_view_mode', mode);
+    } catch (_) {}
+  };
 
   const unsyncedCount = useMemo(() => {
     return (orders || []).filter(o => o && o.isCloud === false).length;
@@ -807,6 +824,26 @@ export default function SubmittedOrders() {
           >
             <RefreshCw size={14} className={loading ? 'spin' : ''} /> {loading ? 'Đang tải...' : 'Làm mới'}
           </button>
+
+          {/* VIEW MODE TOGGLE (BẢNG / THẺ PWA) */}
+          <div className="view-mode-toggle" title="Chuyển chế độ hiển thị Bảng hoặc Thẻ PWA gọn gàng">
+            <button
+              type="button"
+              className={`view-mode-toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
+              onClick={() => handleSetViewMode('cards')}
+            >
+              <LayoutList size={14} />
+              <span>Gọn PWA</span>
+            </button>
+            <button
+              type="button"
+              className={`view-mode-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => handleSetViewMode('table')}
+            >
+              <Table2 size={14} />
+              <span>Bảng</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -969,7 +1006,7 @@ export default function SubmittedOrders() {
         </div>
 
         {/* ROW 2: CUSTOM DATE RANGE & SECONDARY FILTERS */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid var(--border)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <div className="filters-grid-mobile" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid var(--border)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           {datePreset === 'custom' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
               <Calendar size={15} color="var(--text-muted)" />
@@ -1067,21 +1104,301 @@ export default function SubmittedOrders() {
         </div>
       )}
 
-      {/* ORDERS TABLE */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+      {/* ORDERS DISPLAY (PWA CARDS OR TABLE) */}
+      <div className="card" style={{ padding: viewMode === 'cards' && !loading && filtered.length > 0 ? '16px' : 0, overflow: 'hidden', background: viewMode === 'cards' ? 'transparent' : 'var(--card)', border: viewMode === 'cards' ? 'none' : '1px solid var(--border)', borderRadius: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         {loading ? (
-          <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
             <RefreshCw size={24} className="spin" style={{ margin: '0 auto 10px' }} />
             <div>Đang tải dữ liệu đơn hàng...</div>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
             <Package size={36} color="var(--text-muted)" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
             <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-main)' }}>Không tìm thấy đơn hàng nào</div>
             <div style={{ fontSize: '13px', marginTop: '4px' }}>Thử thay đổi bộ lọc thời gian hoặc từ khóa tìm kiếm.</div>
           </div>
+        ) : viewMode === 'cards' ? (
+          /* =========================================================================
+             PWA COMPACT TOUCH CARDS VIEW
+             ========================================================================= */
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '12px', width: '100%' }}>
+            {paginatedOrders.map((order, idx) => {
+              const orderId = String(order.id || order.saved_order_id || order.savedOrderId || idx);
+              const tracking = valueOf(order, 'trackingCode', 'tracking_code');
+              const hasTracking = tracking && tracking !== '-' && tracking !== '—' && tracking !== 'chờ cập nhật mã';
+              const phone = valueOf(order, 'phone');
+              const customerName = getCleanCustomerName(order);
+              const isRecipientFee = isRecipientPayingFee(order);
+              const carrier = carrierLabel(valueOf(order, 'platform'));
+              const isJt = String(valueOf(order, 'platform')).toLowerCase().includes('jt');
+              const trackingUrl = getCarrierTrackingUrl(order.platform, tracking);
+              const orderCode = valueOf(order, 'orderCode', 'order_code');
+              const submittedAt = valueOf(order, 'submittedAt', 'submitted_at', 'createdAt', 'created_at');
+              const cod = Number(valueOf(order, 'codAmount', 'cod_amount')) || 0;
+              const address = valueOf(order, 'address') || '-';
+              const orderStatus = valueOf(order, 'status') || 'submitted';
+              const statusMeta = getDeliveryStatusMeta(orderStatus);
+              const isExpanded = expandedOrderId === orderId;
+
+              const rawText = valueOf(order, 'rawText', 'raw_text', 'originalText', 'text', 'rawOrder', 'raw_order', 'content', 'input') || (
+                [
+                  customerName && customerName !== '-' ? `Khách hàng: ${customerName}` : '',
+                  phone ? `SĐT: ${phone}` : '',
+                  address && address !== '-' ? `Địa chỉ: ${address}` : '',
+                  orderCode && orderCode !== '-' ? `Mã đơn: ${orderCode}` : '',
+                  cod > 0 ? `Tiền COD: ${cod.toLocaleString('vi-VN')}đ` : (order.codAmount !== undefined ? `Tiền COD: 0đ` : ''),
+                  valueOf(order, 'note', 'extraNote') ? `Ghi chú: ${valueOf(order, 'note', 'extraNote')}` : ''
+                ].filter(Boolean).join('\n')
+              );
+
+              return (
+                <div key={orderId} className="pwa-order-card">
+                  {/* CARD HEADER */}
+                  <div className="pwa-order-card-header">
+                    <div>
+                      <div className="pwa-order-card-customer">
+                        <span>{customerName}</span>
+                        {phone && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); copyText(phone, `p_pwa_${orderId}`); }}
+                            style={{
+                              background: '#eff6ff',
+                              color: '#2563eb',
+                              border: '1px solid #bfdbfe',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                            title="Sao chép SĐT"
+                          >
+                            <Phone size={10} />
+                            <span>{phone}</span>
+                            {copiedId === `p_pwa_${orderId}` && <Check size={10} color="#16a34a" />}
+                          </button>
+                        )}
+                      </div>
+                      <div className="pwa-order-card-time">
+                        🕒 {formatDate(submittedAt)} {submittedAt && `• ${relativeTime(submittedAt)}`}
+                      </div>
+                    </div>
+
+                    <div className="pwa-order-card-cod">
+                      <div className="pwa-order-card-cod-val">
+                        {cod > 0 ? `${cod.toLocaleString('vi-VN')}đ` : '0đ'}
+                      </div>
+                      <span style={{
+                        fontSize: '10.5px',
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: isRecipientFee ? '#eff6ff' : '#f8fafc',
+                        color: isRecipientFee ? '#2563eb' : '#64748b',
+                        border: isRecipientFee ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                        display: 'inline-block',
+                        marginTop: '2px'
+                      }}>
+                        {isRecipientFee ? 'Khách trả cước' : 'Shop trả cước'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ADDRESS */}
+                  <div className="pwa-order-card-address">
+                    <MapPin size={14} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <span style={{ wordBreak: 'break-word' }}>{address}</span>
+                  </div>
+
+                  {/* TRACKING CODE BOX */}
+                  <div className="pwa-tracking-box">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'wrap' }}>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: isJt ? '#fef2f2' : '#fff7ed',
+                        color: isJt ? '#dc2626' : '#c2410c',
+                        border: isJt ? '1px solid #fecaca' : '1px solid #fed7aa'
+                      }}>
+                        {carrier}
+                      </span>
+                      {hasTracking ? (
+                        <code className="pwa-tracking-code">{tracking}</code>
+                      ) : (
+                        <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Chưa có mã vận đơn</span>
+                      )}
+                    </div>
+
+                    {hasTracking && (
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="pwa-touch-btn"
+                          style={{
+                            background: copiedId === `t_pwa_${orderId}` ? '#10b981' : '#2563eb',
+                            color: '#ffffff',
+                            padding: '5px 10px'
+                          }}
+                          onClick={() => copyText(tracking, `t_pwa_${orderId}`)}
+                          title="Sao chép mã vận đơn"
+                        >
+                          {copiedId === `t_pwa_${orderId}` ? <Check size={12} /> : <Copy size={12} />}
+                          <span>{copiedId === `t_pwa_${orderId}` ? 'Đã chép' : 'Chép mã'}</span>
+                        </button>
+
+                        {trackingUrl && (
+                          <a
+                            href={trackingUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="pwa-touch-btn"
+                            style={{
+                              background: '#f1f5f9',
+                              color: '#334155',
+                              border: '1px solid #cbd5e1',
+                              padding: '5px 8px',
+                              textDecoration: 'none'
+                            }}
+                            title={`Tra cứu trên ${carrier}`}
+                          >
+                            <ExternalLink size={12} />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* STATUS & EXPAND ACTION ROW */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{
+                        background: statusMeta.bg,
+                        color: statusMeta.color,
+                        border: `1px solid ${statusMeta.border}`,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 700
+                      }}>
+                        {statusMeta.label}
+                      </span>
+                      {orderCode && orderCode !== '-' && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          #{orderCode}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTimelineOrder(order)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          fontSize: '11px',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                        title="Xem nhật ký vòng đời đơn"
+                      >
+                        <Clock size={11} /> Nhật ký
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setExpandedOrderId(prev => prev === orderId ? null : orderId)}
+                        style={{
+                          background: isExpanded ? '#eff6ff' : 'transparent',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          fontSize: '11px',
+                          color: isExpanded ? '#2563eb' : 'var(--text-main)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <span>{isExpanded ? 'Thu gọn' : 'Chi tiết'}</span>
+                        {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* EXPANDED DETAILS IN CARD */}
+                  {isExpanded && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '12px',
+                      background: 'var(--surface-muted, #f8fafc)',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border)',
+                      fontSize: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--primary)' }}>Nội dung đơn thô</span>
+                        <button
+                          type="button"
+                          onClick={() => copyText(rawText, `raw_${orderId}`)}
+                          style={{
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {copiedId === `raw_${orderId}` ? <Check size={11} color="#16a34a" /> : <Copy size={11} />}
+                          <span>{copiedId === `raw_${orderId}` ? 'Đã sao chép' : 'Sao chép'}</span>
+                        </button>
+                      </div>
+                      <pre style={{
+                        margin: 0,
+                        padding: '8px',
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '6px',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        fontFamily: 'inherit',
+                        fontSize: '11.5px',
+                        color: 'var(--text-main)',
+                        maxHeight: '120px',
+                        overflowY: 'auto'
+                      }}>
+                        {rawText}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <div style={{ overflowX: 'auto', width: '100%', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+          /* =========================================================================
+             STANDARD TABLE VIEW
+             ========================================================================= */
+          <div className="table-responsive dash-table-wrapper" style={{ overflowX: 'auto', width: '100%', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '980px', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--surface-muted, #f8fafc)', borderBottom: '1px solid var(--border, #e2e8f0)', position: 'sticky', top: 0, zIndex: 10 }}>
