@@ -503,6 +503,42 @@
     }
     if (addrResult.ward) {
       let w = addrResult.ward;
+      // Tra cứu xem xã/phường có thuộc đơn vị đã sáp nhập sang đơn vị 2 cấp mới (2025) không
+      try {
+        const provName = addrResult.province || '';
+        const _nn = (s) => String(s || '').normalize('NFD').toLowerCase().replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+        const _pw = (s) => _nn(s).replace(/^(phuong|xa|thi tran|thi xa|p\.|x\.)\s+/, '').trim();
+        const _pp = (s) => _nn(s).replace(/^(tinh|thanh pho|tp\.?|t\.?)\s+/, '').trim();
+        const wNorm = _pw(w);
+        const pNorm = _pp(provName);
+
+        const newAdmDb = (typeof globalThis !== 'undefined' && globalThis.NEW_ADM_DB) ? globalThis.NEW_ADM_DB : (typeof window !== 'undefined' ? window.NEW_ADM_DB : null);
+        if (newAdmDb) {
+          const matchProv = newAdmDb.provinces.find(p => _pp(p.name) === pNorm) ||
+                            (pNorm ? newAdmDb.provinces.find(p => _pp(p.name).includes(pNorm) || pNorm.includes(_pp(p.name))) : null);
+          if (matchProv) {
+            const newWards = newAdmDb.wards[matchProv.name] || [];
+            const exact = newWards.find(nw => _pw(nw.name) === wNorm);
+            if (exact) {
+              w = exact.name;
+            } else {
+              const merged = newWards.find(nw => (nw.old_units || []).some(o => _pw(o) === wNorm));
+              if (merged) {
+                w = merged.name;
+              }
+            }
+          }
+        } else if (typeof globalThis !== 'undefined' && globalThis.WARD_MERGER_MAP) {
+          for (const [oldKey, newVal] of Object.entries(globalThis.WARD_MERGER_MAP)) {
+            const keyNorm = _nn(oldKey);
+            if (keyNorm.includes(wNorm) && (!pNorm || keyNorm.includes(pNorm) || _pp(newVal.province) === pNorm)) {
+              w = newVal.ward;
+              break;
+            }
+          }
+        }
+      } catch (_) {}
+
       if (!/^(phường|xã|thị trấn|đặc khu|p\.|x\.)\s/i.test(w)) {
         if (addrResult.province && /thành phố|tp\b/i.test(addrResult.province) && addrResult.district && /quận/i.test(addrResult.district)) {
           w = 'Phường ' + w;
@@ -3087,13 +3123,73 @@
       .trim();
   }
 
-  function handleAiAddressClick(addressVal) {
+  async function handleAiAddressClick(addressVal) {
     if (!addressVal || !globalThis.parsedDataStore) return;
     copyToClipboard(addressVal);
     
     const cleanAddress = strip2025Province(addressVal);
+    const prevAddress = globalThis.parsedDataStore.address || '';
     globalThis.parsedDataStore.address = cleanAddress;
     globalThis.parsedDataStore.addressLevel = 2;
+
+    // Phân rã và đồng bộ phân cấp hành chính 2 cấp (Ward & Province, xóa District)
+    try {
+      const parts = cleanAddress.split(',').map(s => s.trim()).filter(Boolean);
+      let provPart = parts.length > 1 ? parts[parts.length - 1] : '';
+      let wardPart = parts.length > 2 ? parts[parts.length - 2] : (parts.length === 2 ? parts[0] : '');
+      let streetPart = parts.length > 2 ? parts.slice(0, parts.length - 2).join(', ') : '';
+
+      if (typeof AddressRules !== 'undefined' && typeof AddressRules.resolveTwoLevel === 'function') {
+        const resolved = await AddressRules.resolveTwoLevel(wardPart, '', provPart);
+        if (resolved) {
+          if (resolved.ward) wardPart = resolved.ward;
+          if (resolved.province) provPart = resolved.province;
+        }
+      }
+
+      globalThis.parsedDataStore.addressParts = {
+        street: streetPart || globalThis.parsedDataStore.addressParts?.street || '',
+        ward: wardPart,
+        district: '',
+        province: provPart
+      };
+
+      const wardEl = getVnpostEl('rev-addr-ward');
+      const distEl = getVnpostEl('rev-addr-district');
+      const provEl = getVnpostEl('rev-addr-province');
+      if (wardEl) wardEl.textContent = wardPart || '---';
+      if (distEl) distEl.textContent = '--- (2 Cấp)';
+      if (provEl) provEl.textContent = provPart || '---';
+
+      // Ghi nhận máy học (AKB learning) để nhớ vĩnh viễn
+      if (typeof AddressLearning !== 'undefined' && typeof AddressLearning.learn === 'function') {
+        const learnObj = {
+          street: streetPart || globalThis.parsedDataStore.addressParts?.street || '',
+          ward: wardPart,
+          district: '',
+          province: provPart,
+          confidence: 100,
+          isTwoLevel: true
+        };
+        const phone = globalThis.parsedDataStore.phone || '';
+        AddressLearning.learn(cleanAddress, learnObj, phone, {
+          sourceType: 'human_confirmed',
+          verified: true,
+          confidence: 100
+        }).catch(() => {});
+
+        if (prevAddress && prevAddress !== cleanAddress) {
+          AddressLearning.learn(prevAddress, learnObj, phone, {
+            sourceType: 'human_confirmed',
+            verified: true,
+            confidence: 100
+          }).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('[handleAiAddressClick] Error syncing addressParts:', e);
+    }
+
     const revAddress = getVnpostEl('rev-address');
     if (revAddress) revAddress.textContent = cleanAddress;
 

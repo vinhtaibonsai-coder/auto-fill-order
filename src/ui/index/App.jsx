@@ -1133,10 +1133,11 @@ export default function App() {
                   padding: '10px 12px 10px 36px',
                   borderRadius: '10px',
                   border: '1.5px solid var(--border)',
-                  fontSize: '13px',
+                  fontSize: '16px',
                   outline: 'none',
                   background: 'var(--bg-card)',
-                  color: 'var(--text-main)'
+                  color: 'var(--text-main)',
+                  touchAction: 'manipulation'
                 }}
               />
             </div>

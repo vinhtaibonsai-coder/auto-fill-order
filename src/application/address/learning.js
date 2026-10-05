@@ -41,6 +41,26 @@
     '149 duong huynh cuong phuong an cu ninh kieu tp can tho': {
       street: '149 Đường Huỳnh Cương', ward: 'Phường An Cư', district: 'Quận Ninh Kiều',
       province: 'Thành phố Cần Thơ', confidence: 100, source: 'akb_builtin'
+    },
+    '342/59 võ văn kiệt, phường cô giang, quận 1, thành phố hồ chí minh': {
+      street: '342/59 Võ Văn Kiệt', ward: 'Phường Cầu Ông Lãnh', district: '',
+      province: 'Thành phố Hồ Chí Minh', confidence: 100, source: 'akb_builtin', isTwoLevel: true
+    },
+    '342/59 võ văn kiệt, phường cô giang, quận 1, tp hồ chí minh': {
+      street: '342/59 Võ Văn Kiệt', ward: 'Phường Cầu Ông Lãnh', district: '',
+      province: 'Thành phố Hồ Chí Minh', confidence: 100, source: 'akb_builtin', isTwoLevel: true
+    },
+    '342/59 võ văn kiệt, phường cô giang, quận 1, tp. hồ chí minh': {
+      street: '342/59 Võ Văn Kiệt', ward: 'Phường Cầu Ông Lãnh', district: '',
+      province: 'Thành phố Hồ Chí Minh', confidence: 100, source: 'akb_builtin', isTwoLevel: true
+    },
+    '342/59 võ văn kiệt, cô giang, quận 1, hồ chí minh': {
+      street: '342/59 Võ Văn Kiệt', ward: 'Phường Cầu Ông Lãnh', district: '',
+      province: 'Thành phố Hồ Chí Minh', confidence: 100, source: 'akb_builtin', isTwoLevel: true
+    },
+    '342/59 võ văn kiệt, phường cô giang, quận 1': {
+      street: '342/59 Võ Văn Kiệt', ward: 'Phường Cầu Ông Lãnh', district: '',
+      province: 'Thành phố Hồ Chí Minh', confidence: 100, source: 'akb_builtin', isTwoLevel: true
     }
   };
 

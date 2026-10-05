@@ -1,6 +1,6 @@
 {
   "testSuite": "G004 Carrier Browser Smoke Test",
-  "timestamp": "2026-10-04T04:32:14.501Z",
+  "timestamp": "2026-10-05T11:08:45.530Z",
   "carriers": {
     "vnpost": {
       "happyPath": {

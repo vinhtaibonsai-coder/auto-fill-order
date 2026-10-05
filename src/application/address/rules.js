@@ -441,6 +441,75 @@
         finalRes.suggestedAddress = suggestedAddr;
       }
       return finalRes;
+    },
+
+    /**
+     * Quy đổi đơn vị hành chính sang chuẩn 2 cấp (2025):
+     * Nếu xã/phường thuộc đơn vị sáp nhập (old_units), tra cứu đơn vị mới tương ứng.
+     */
+    async resolveTwoLevel(ward = '', district = '', province = '') {
+      let prov = province || '';
+      let w = ward || '';
+      if (!w && !prov) return { ward: w, district: '', province: prov };
+
+      const _nn = (s) => String(s || '').normalize('NFD').toLowerCase().replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+      const _pw = (s) => _nn(s).replace(/^(phuong|xa|thi tran|thi xa|p\.|x\.)\s+/, '').trim();
+      const _pp = (s) => _nn(s).replace(/^(tinh|thanh pho|tp\.?|t\.?)\s+/, '').trim();
+
+      const wardNorm = _pw(w);
+      const provNorm = _pp(prov);
+
+      try {
+        let newAdmDb = (typeof globalThis !== 'undefined' && globalThis.NEW_ADM_DB) ? globalThis.NEW_ADM_DB : null;
+        if (!newAdmDb && typeof globalThis !== 'undefined' && typeof globalThis.loadNewAdmDb === 'function') {
+          newAdmDb = await globalThis.loadNewAdmDb().catch(() => null);
+        }
+
+        if (newAdmDb) {
+          const matchProv = newAdmDb.provinces.find(p => _pp(p.name) === provNorm) ||
+                            (provNorm ? newAdmDb.provinces.find(p => _pp(p.name).includes(provNorm) || provNorm.includes(_pp(p.name))) : null);
+          if (matchProv) {
+            prov = matchProv.name;
+            const newWards = newAdmDb.wards[matchProv.name] || [];
+            // Kiểm tra xem đã là ward 2 cấp hợp lệ chưa
+            const exactWard = newWards.find(nw => _pw(nw.name) === wardNorm);
+            if (exactWard) {
+              return { ward: exactWard.name, district: '', province: prov };
+            }
+            // Kiểm tra trong old_units (đã sáp nhập)
+            const mergedWard = newWards.find(nw => (nw.old_units || []).some(o => _pw(o) === wardNorm));
+            if (mergedWard) {
+              return { ward: mergedWard.name, district: '', province: prov, wasMerged: true, oldWard: w };
+            }
+          }
+        }
+
+        // Fallback: Tra cứu trong WARD_MERGER_MAP nếu có
+        let WARD_MERGER_MAP = typeof globalThis !== 'undefined' && globalThis.WARD_MERGER_MAP ? globalThis.WARD_MERGER_MAP : null;
+        if (!WARD_MERGER_MAP) {
+          try {
+            let moduleUrl = './database/ward_merger.js';
+            if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function') {
+              try { moduleUrl = chrome.runtime.getURL('src/application/address/database/ward_merger.js'); } catch (_) {}
+            }
+            const mergerModule = await import(/* @vite-ignore */ moduleUrl);
+            WARD_MERGER_MAP = mergerModule?.WARD_MERGER_MAP || mergerModule?.default || null;
+            if (WARD_MERGER_MAP && typeof globalThis !== 'undefined') globalThis.WARD_MERGER_MAP = WARD_MERGER_MAP;
+          } catch (_) {}
+        }
+        if (WARD_MERGER_MAP) {
+          for (const [oldKey, newVal] of Object.entries(WARD_MERGER_MAP)) {
+            const keyNorm = _nn(oldKey);
+            if (keyNorm.includes(wardNorm) && (!provNorm || keyNorm.includes(provNorm) || _pp(newVal.province) === provNorm)) {
+              return { ward: newVal.ward, district: '', province: newVal.province || prov, wasMerged: true, oldWard: w };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[AddressRules.resolveTwoLevel] Error:', err);
+      }
+
+      return { ward: w, district: '', province: prov };
     }
   };
 

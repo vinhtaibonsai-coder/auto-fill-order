@@ -53,6 +53,12 @@ body {
   touch-action: manipulation;
 }
 
+/* Chặn toàn bộ hành vi tự động phóng to (auto zoom) khi chạm/focus vào ô tìm kiếm hoặc bất kỳ input nào */
+input, select, textarea {
+  font-size: 16px;
+  touch-action: manipulation;
+}
+
 /* App Shell */
 .mobile-app-shell {
   max-width: 640px;
