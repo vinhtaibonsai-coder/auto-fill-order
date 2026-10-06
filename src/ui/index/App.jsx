@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AuthSession } from '../../domain/auth/auth.session.esm.js';
 import { AuthService } from '../../domain/auth/auth.service.esm.js';
+import { RealtimeService } from '../../domain/realtime/realtime.service.esm.js';
 import { OrderStorage } from '../../application/storage.esm.js';
 import { OrderProcessor } from '../../application/order-parser/parser.esm.js';
 import Login from '../options/pages/Auth/Login.jsx';
@@ -516,6 +517,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let unsubscribeRealtime = null;
+
     const initAuth = async () => {
       let isAuth = false;
       try {
@@ -523,6 +526,16 @@ export default function App() {
         setIsAuthenticated(isAuth);
         if (isAuth) {
           await loadAll();
+
+          // Kết nối Supabase Realtime cho Shop
+          const sess = await AuthSession.getSession?.().catch(() => null);
+          const shopId = sess?.active_shop_id;
+          if (shopId && RealtimeService && typeof RealtimeService.subscribeShopChannel === 'function') {
+            RealtimeService.subscribeShopChannel(shopId, (table, payload) => {
+              console.log(`[Workspace Realtime] Phát hiện thay đổi ${table}:`, payload?.eventType);
+              loadAll();
+            }).catch(e => console.warn('[Workspace Realtime] Subscribe failed:', e));
+          }
         }
       } catch (err) {
         setIsAuthenticated(false);
@@ -532,6 +545,71 @@ export default function App() {
       }
     };
     initAuth();
+
+    let debounceTimer = null;
+    const triggerDebouncedLoad = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadAll();
+      }, 300);
+    };
+
+    // 1. Lắng nghe chrome.storage thay đổi (khi content script hoặc panel lưu đơn)
+    const handleStorageChange = (changes, areaName) => {
+      if (areaName === 'local') {
+        const hasRelevantKey = Object.keys(changes).some(k =>
+          k.includes('submitted') || k.includes('order') || k === 'last_submitted_order' || k === 'last_cloud_order_sync' || k === 'activeShopId'
+        );
+        if (hasRelevantKey) {
+          triggerDebouncedLoad();
+        }
+      }
+    };
+    if (typeof chrome !== 'undefined' && chrome?.storage?.onChanged) {
+      chrome.storage.onChanged.addListener(handleStorageChange);
+    }
+
+    // 2. Lắng nghe runtime message từ Content Script / Extension Panel
+    const handleRuntimeMessage = (msg) => {
+      if (msg && (
+        msg.type === 'cloud_sync_update' ||
+        msg.type === 'order_submitted' ||
+        msg.type === 'submitted_orders_updated' ||
+        msg.type === 'orders-updated' ||
+        msg.action === 'refresh_orders' ||
+        msg.action === 'ordersUpdated'
+      )) {
+        triggerDebouncedLoad();
+      }
+    };
+    if (typeof chrome !== 'undefined' && chrome?.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener(handleRuntimeMessage);
+    }
+
+    // 3. Lắng nghe custom DOM events & window storage (PWA / WebApp)
+    const handleCustomOrderEvent = () => triggerDebouncedLoad();
+    window.addEventListener('order-saved-db', handleCustomOrderEvent);
+    window.addEventListener('submitted-orders-updated', handleCustomOrderEvent);
+    window.addEventListener('orders-updated', handleCustomOrderEvent);
+    window.addEventListener('storage', (e) => {
+      if (e.key && (e.key.includes('submitted') || e.key.includes('order'))) {
+        triggerDebouncedLoad();
+      }
+    });
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (typeof unsubscribeRealtime === 'function') unsubscribeRealtime();
+      if (typeof chrome !== 'undefined' && chrome?.storage?.onChanged) {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      }
+      if (typeof chrome !== 'undefined' && chrome?.runtime?.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
+      }
+      window.removeEventListener('order-saved-db', handleCustomOrderEvent);
+      window.removeEventListener('submitted-orders-updated', handleCustomOrderEvent);
+      window.removeEventListener('orders-updated', handleCustomOrderEvent);
+    };
   }, [loadAll]);
 
   // Standard Order Parser

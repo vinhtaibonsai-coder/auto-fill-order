@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { OrderStorage } from '../../../../application/storage.esm.js';
 import { AuthSession } from '../../../../domain/auth/auth.session.esm.js';
+import { RealtimeService } from '../../../../domain/realtime/realtime.service.esm.js';
 import Pagination from '../../components/Pagination';
 import OrderTimelineDrawer from '../../components/OrderTimelineDrawer';
 
@@ -459,6 +460,22 @@ export default function SubmittedOrders() {
 
   useEffect(() => {
     loadOrders();
+
+    // Kết nối Supabase Realtime cho Shop
+    const initRealtime = async () => {
+      try {
+        const activeShop = typeof OrderStorage !== 'undefined' ? await OrderStorage.getActiveShop().catch(() => null) : null;
+        const sess = typeof AuthSession !== 'undefined' ? await AuthSession.getSession().catch(() => null) : null;
+        const targetShopId = activeShop ? String(activeShop.id || activeShop) : (sess?.active_shop_id ? String(sess.active_shop_id) : null);
+        if (targetShopId && RealtimeService && typeof RealtimeService.subscribeShopChannel === 'function') {
+          RealtimeService.subscribeShopChannel(targetShopId, (table, payload) => {
+            console.log(`[SubmittedOrders Realtime] Phát hiện thay đổi ${table}:`, payload?.eventType);
+            triggerDebouncedLoad();
+          }).catch(e => console.warn('[SubmittedOrders Realtime] Subscribe failed:', e));
+        }
+      } catch (_) {}
+    };
+    initRealtime();
 
     let debounceTimer = null;
     const triggerDebouncedLoad = () => {
