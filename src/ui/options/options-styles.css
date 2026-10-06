@@ -1523,6 +1523,8 @@ html, body {
   grid-template-columns: 8fr 4fr;
   gap: 16px;
   margin-bottom: 16px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .dash-row-2 {
@@ -1530,6 +1532,8 @@ html, body {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 16px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Cards */
@@ -1538,6 +1542,9 @@ html, body {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
   padding: 20px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .dash-card-header {
@@ -1676,7 +1683,8 @@ html, body {
 .dash-status-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .dash-status-dot {
@@ -1716,7 +1724,13 @@ html, body {
 
 /* Table */
 .dash-table-wrap {
+  display: block;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  box-sizing: border-box;
 }
 
 .dash-table {
@@ -2187,6 +2201,10 @@ html, body {
 }
 
 @media (max-width: 900px) {
+  .dash-row,
+  .dash-row-2 {
+    grid-template-columns: 1fr !important;
+  }
   .mobile-hamburger-btn {
     display: inline-flex;
   }

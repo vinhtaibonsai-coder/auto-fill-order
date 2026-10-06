@@ -155,6 +155,19 @@ function OrderCard({ order, copiedKey, onCopy }) {
             <span className={`carrier-badge ${isJt ? 'carrier-jt' : 'carrier-vnpost'}`}>
               {order.carrier}
             </span>
+            {order.carrierAccount && order.carrierAccount !== 'Mặc định' && (
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                padding: '2px 6px',
+                borderRadius: '4px',
+                background: '#f8fafc',
+                color: '#475569',
+                border: '1px solid #cbd5e1'
+              }} title={`Tài khoản ${order.carrier}: ${order.carrierAccount}`}>
+                TK: {order.carrierAccount}
+              </span>
+            )}
             <code className="tracking-code-text">
               {order.trackingCode}
             </code>
@@ -434,6 +447,7 @@ export default function App() {
             orderCode: s.order_code || s.orderCode || '',
             trackingCode: s.tracking_code || s.trackingCode || '',
             carrier: carrier,
+            carrierAccount: s.carrier_account || s.carrierAccount || s.sender_account || s.senderAccount || '',
             status: s.status || 'submitted',
             value: val,
             date: s.submitted_at || s.submittedAt || s.submittedDate || s.created_at || s.createdAt,
@@ -452,6 +466,7 @@ export default function App() {
             orderCode: o.order_code || '',
             trackingCode: '',
             carrier: carrier,
+            carrierAccount: o.carrier_account || o.carrierAccount || o.sender_account || o.senderAccount || '',
             status: 'draft',
             value: Number(o.cod_amount) || 0,
             date: o.created_at,

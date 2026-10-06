@@ -1130,6 +1130,7 @@ export default function SubmittedOrders() {
               const customerName = getCleanCustomerName(order);
               const isRecipientFee = isRecipientPayingFee(order);
               const carrier = carrierLabel(valueOf(order, 'platform'));
+              const carrierAccount = getCarrierAccount(order);
               const isJt = String(valueOf(order, 'platform')).toLowerCase().includes('jt');
               const trackingUrl = getCarrierTrackingUrl(order.platform, tracking);
               const orderCode = valueOf(order, 'orderCode', 'order_code');
@@ -1228,6 +1229,19 @@ export default function SubmittedOrders() {
                       }}>
                         {carrier}
                       </span>
+                      {carrierAccount && carrierAccount !== 'Mặc định' && (
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: '#f8fafc',
+                          color: '#475569',
+                          border: '1px solid #cbd5e1'
+                        }} title={`Tài khoản ${carrier}: ${carrierAccount}`}>
+                          TK: {carrierAccount}
+                        </span>
+                      )}
                       {hasTracking ? (
                         <code className="pwa-tracking-code">{tracking}</code>
                       ) : (
