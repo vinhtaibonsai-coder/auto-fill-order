@@ -151,26 +151,34 @@ function OrderCard({ order, copiedKey, onCopy }) {
       {/* TRACKING CODE HIGHLIGHT BOX */}
       {order.trackingCode ? (
         <div className="tracking-card tracking-highlight-box">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-            <span className={`carrier-badge ${isJt ? 'carrier-jt' : 'carrier-vnpost'}`}>
-              {order.carrier}
-            </span>
-            {order.carrierAccount && order.carrierAccount !== 'Mặc định' && (
-              <span style={{
-                fontSize: '11px',
-                fontWeight: 600,
-                padding: '2px 6px',
-                borderRadius: '4px',
-                background: '#f8fafc',
-                color: '#475569',
-                border: '1px solid #cbd5e1'
-              }} title={`Tài khoản ${order.carrier}: ${order.carrierAccount}`}>
-                TK: {order.carrierAccount}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span className={`carrier-badge ${isJt ? 'carrier-jt' : 'carrier-vnpost'}`}>
+                {order.carrier}
               </span>
-            )}
-            <code className="tracking-code-text">
-              {order.trackingCode}
-            </code>
+              {order.carrierAccount && order.carrierAccount !== 'Mặc định' && (
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  background: '#f8fafc',
+                  color: '#475569',
+                  border: '1px solid #cbd5e1',
+                  maxWidth: '180px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }} title={`Tài khoản ${order.carrier}: ${order.carrierAccount}`}>
+                  TK: {order.carrierAccount}
+                </span>
+              )}
+            </div>
+            <div>
+              <code className="tracking-code-text">
+                {order.trackingCode}
+              </code>
+            </div>
           </div>
 
           <button
@@ -192,10 +200,23 @@ function OrderCard({ order, copiedKey, onCopy }) {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--text-subtle)', fontStyle: 'italic' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--text-subtle)', fontStyle: 'italic', padding: '6px 0' }}>
           <span className={`carrier-badge ${isJt ? 'carrier-jt' : 'carrier-vnpost'}`}>
             {order.carrier}
           </span>
+          {order.carrierAccount && order.carrierAccount !== 'Mặc định' && (
+            <span style={{
+              fontSize: '11px',
+              fontWeight: 600,
+              padding: '2px 6px',
+              borderRadius: '4px',
+              background: '#f8fafc',
+              color: '#475569',
+              border: '1px solid #cbd5e1'
+            }}>
+              TK: {order.carrierAccount}
+            </span>
+          )}
           <span>Đơn nháp (Chưa lên mã vận đơn)</span>
         </div>
       )}

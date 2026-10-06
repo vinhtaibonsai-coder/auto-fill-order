@@ -154,11 +154,12 @@ input, select, textarea {
 .tracking-card code,
 .tracking-code-text {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: 0.5px;
-  word-break: break-all;
+  word-break: keep-all;
+  white-space: nowrap;
 }
 
 .copy-btn-touch {

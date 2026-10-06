@@ -1217,36 +1217,44 @@ export default function SubmittedOrders() {
 
                   {/* TRACKING CODE BOX */}
                   <div className="pwa-tracking-box">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'wrap' }}>
-                      <span style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        background: isJt ? '#fef2f2' : '#fff7ed',
-                        color: isJt ? '#dc2626' : '#c2410c',
-                        border: isJt ? '1px solid #fecaca' : '1px solid #fed7aa'
-                      }}>
-                        {carrier}
-                      </span>
-                      {carrierAccount && carrierAccount !== 'Mặc định' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <span style={{
                           fontSize: '11px',
-                          fontWeight: 600,
+                          fontWeight: 700,
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          background: '#f8fafc',
-                          color: '#475569',
-                          border: '1px solid #cbd5e1'
-                        }} title={`Tài khoản ${carrier}: ${carrierAccount}`}>
-                          TK: {carrierAccount}
+                          background: isJt ? '#fef2f2' : '#fff7ed',
+                          color: isJt ? '#dc2626' : '#c2410c',
+                          border: isJt ? '1px solid #fecaca' : '1px solid #fed7aa'
+                        }}>
+                          {carrier}
                         </span>
-                      )}
-                      {hasTracking ? (
-                        <code className="pwa-tracking-code">{tracking}</code>
-                      ) : (
-                        <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Chưa có mã vận đơn</span>
-                      )}
+                        {carrierAccount && carrierAccount !== 'Mặc định' && (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: '#f8fafc',
+                            color: '#475569',
+                            border: '1px solid #cbd5e1',
+                            maxWidth: '180px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }} title={`Tài khoản ${carrier}: ${carrierAccount}`}>
+                            TK: {carrierAccount}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        {hasTracking ? (
+                          <code className="pwa-tracking-code">{tracking}</code>
+                        ) : (
+                          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Chưa có mã vận đơn</span>
+                        )}
+                      </div>
                     </div>
 
                     {hasTracking && (

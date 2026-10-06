@@ -2411,6 +2411,8 @@ html, body {
   font-size: 13.5px;
   letter-spacing: 0.5px;
   color: #0f172a;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .pwa-touch-btn {
