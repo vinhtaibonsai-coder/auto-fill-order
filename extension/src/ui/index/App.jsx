@@ -57,11 +57,19 @@ function isSameDay(d1, d2) {
          d1.getDate() === d2.getDate();
 }
 
+function parseSafeDate(dateStr) {
+  if (!dateStr) return null;
+  if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr;
+  const s = String(dateStr).trim().replace(' ', 'T');
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function matchDateFilter(dateStr, filterKey, customStart = '', customEnd = '') {
   if (!filterKey || filterKey === 'all') return true;
   if (!dateStr) return false;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return false;
+  const d = parseSafeDate(dateStr);
+  if (!d) return false;
 
   const now = new Date();
   if (filterKey === 'today') {
@@ -298,7 +306,10 @@ function OrderCard({ order, copiedKey, onCopy, onOpenJourney }) {
       {/* Date Time */}
       <div style={{ fontSize: '11px', color: 'var(--text-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
         <span>Mã đơn: {order.orderCode || '—'}</span>
-        <span>{order.date ? new Date(order.date).toLocaleString('vi-VN') : ''}</span>
+        <span>{(() => {
+          const d = parseSafeDate(order.date);
+          return d ? d.toLocaleString('vi-VN') : (order.date || '');
+        })()}</span>
       </div>
     </div>
   );
@@ -445,8 +456,13 @@ export default function App() {
       const adminRoles = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MASTER_ADMIN', 'ADMIN', 'SUPPORT_ADMIN', 'FINANCE_ADMIN', 'CONTENT_ADMIN'];
       const isAdminRole = adminRoles.includes(role) || role.endsWith('_ADMIN') || role.includes('ADMIN') || email === 'admin@luathuysinh.vn' || email.startsWith('admin@');
       
-      // Nếu user chủ động mở workspace (ví dụ đường dẫn là /workspace hoặc có search params /?workspace=true hoặc đang thao tác trên Mobile), không cưỡng ép redirect sang Admin
+      // Nếu user chủ động mở workspace hoặc đang ở trên thiết bị di động (màn hình hẹp/mobile UA), không cưỡng ép redirect sang Admin
+      const isMobileView = typeof window !== 'undefined' && (
+        window.innerWidth < 768 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '')
+      );
       const isExplicitWorkspace = typeof window !== 'undefined' && (
+        isMobileView ||
         window.location.pathname.includes('/workspace') ||
         window.location.search.includes('workspace=true') ||
         window.location.search.includes('tab=') ||
@@ -934,7 +950,12 @@ export default function App() {
     return <Login onLoginSuccess={async () => {
       setIsAuthLoading(true);
       const sess = await AuthSession.getSession();
+      const isMobileView = typeof window !== 'undefined' && (
+        window.innerWidth < 768 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '')
+      );
       const isExplicitWorkspace = typeof window !== 'undefined' && (
+        isMobileView ||
         window.location.pathname.includes('/workspace') ||
         window.location.search.includes('workspace=true') ||
         window.location.search.includes('tab=') ||

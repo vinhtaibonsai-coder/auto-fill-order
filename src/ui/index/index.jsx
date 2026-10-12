@@ -6,6 +6,7 @@ import '../../infrastructure/supabase/client.js';
 import '../../domain/auth/auth.events.js';
 import '../../domain/auth/auth.session.js';
 import '../../domain/auth/auth.service.js';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
 import App from './App.jsx';
 import './index-styles.css';
 
@@ -14,7 +15,9 @@ if (rootEl) {
   const root = ReactDom.createRoot(rootEl);
   root.render(
     <React.StrictMode>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </React.StrictMode>
   );
 }
