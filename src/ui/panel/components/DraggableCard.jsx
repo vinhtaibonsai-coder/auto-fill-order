@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-export default function DraggableCard({ children, onClose, title, isAuth = false, session, carrierAccount, draftCount = 0, onToggleDraftQueue }) {
+export default function DraggableCard({ children, onClose, title, isAuth = false, session, carrierAccount, draftCount = 0, onToggleDraftQueue, isSubmitting = false, submittingNotice = '' }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -155,7 +155,41 @@ export default function DraggableCard({ children, onClose, title, isAuth = false
           <button className="af-panel-header-btn" title="Thu nhỏ" onClick={onClose}>—</button>
         </div>
       </div>
-      {children}
+      <div style={{ position: 'relative' }}>
+        {children}
+        {isSubmitting && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(255, 255, 255, 0.88)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 100,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            padding: '20px 16px',
+            textAlign: 'center',
+            borderRadius: '0 0 12px 12px'
+          }}>
+            <div style={{
+              width: '28px',
+              height: '28px',
+              border: '3px solid #e2e8f0',
+              borderTopColor: '#2563eb',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite'
+            }} />
+            <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e293b' }}>
+              {submittingNotice || 'Đang gửi đơn lên hệ thống...'}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748b', maxWidth: '240px', lineHeight: 1.4 }}>
+              Panel tạm thời bị khóa. Ô nhập sẽ tự động mở lại ngay khi hệ thống tạo đơn thành công &amp; cấp mã vận đơn!
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -71,14 +71,19 @@
       const release = (await response.json())[0];
       const clientVersion = global.chrome?.runtime?.getManifest?.().version || '0.0.0';
       if (release?.min_extension_version && compareVersions(clientVersion, release.min_extension_version) < 0) return { ok: false, reason: 'CLIENT_VERSION_TOO_OLD', requiredVersion: release.min_extension_version };
-      if (!release || !applyRemoteSelectors(carrierCode, release.selectors)) return { ok: false, reason: 'NO_RELEASE' };
-      if (global.chrome?.storage?.local) await global.chrome.storage.local.set({ [`remote_selectors_${carrierCode}`]: release });
+      if (global.chrome?.runtime?.id && global.chrome?.storage?.local) {
+        try {
+          await global.chrome.storage.local.set({ [`remote_selectors_${carrierCode}`]: release });
+        } catch (_) {}
+      }
       return { ok: true, version: release.version };
     } catch (error) {
-      if (global.chrome?.storage?.local) {
-        const cached = await global.chrome.storage.local.get([`remote_selectors_${carrierCode}`]);
-        const release = cached?.[`remote_selectors_${carrierCode}`];
-        if (release && applyRemoteSelectors(carrierCode, release.selectors)) return { ok: true, cached: true, version: release.version };
+      if (global.chrome?.runtime?.id && global.chrome?.storage?.local) {
+        try {
+          const cached = await global.chrome.storage.local.get([`remote_selectors_${carrierCode}`]);
+          const release = cached?.[`remote_selectors_${carrierCode}`];
+          if (release && applyRemoteSelectors(carrierCode, release.selectors)) return { ok: true, cached: true, version: release.version };
+        } catch (_) {}
       }
       return { ok: false, reason: error.message };
     }

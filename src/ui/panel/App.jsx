@@ -25,6 +25,8 @@ export default function App() {
   const [updateStatus, setUpdateStatus] = useState(null);
   const [draftOrders, setDraftOrders] = useState([]);
   const [draftQueueOpen, setDraftQueueOpen] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittingNotice, setSubmittingNotice] = useState('');
   const asyncResultGate = useRef(createAsyncResultGate());
 
   const triggerToast = (msg, type = 'info') => {
@@ -184,18 +186,35 @@ export default function App() {
     };
 
     const handleOrderSaved = () => {
+      setIsSubmitting(false);
+      setSubmittingNotice('');
       handleClearOrderEvent();
       loadDrafts();
       triggerToast('💾 Đã lưu đơn hàng & làm mới panel!', 'success');
     };
 
+    const handleSubmitStart = (e) => {
+      setIsSubmitting(true);
+      const plat = e?.detail?.platform === 'jt' ? 'J&T Express' : 'VNPost';
+      setSubmittingNotice(`Đang gửi đơn lên ${plat}...`);
+    };
+
+    const handleSubmitEnd = (e) => {
+      setIsSubmitting(false);
+      setSubmittingNotice('');
+    };
+
     window.addEventListener('order-saved-db', handleOrderSaved);
     window.addEventListener('autofill:clear-order', handleClearOrderEvent);
+    window.addEventListener('autofill:carrier-submit-start', handleSubmitStart);
+    window.addEventListener('autofill:carrier-submit-end', handleSubmitEnd);
     window.addEventListener('draft-queue-updated', loadDrafts);
     window.addEventListener('orders-updated', loadDrafts);
     return () => {
       window.removeEventListener('order-saved-db', handleOrderSaved);
       window.removeEventListener('autofill:clear-order', handleClearOrderEvent);
+      window.removeEventListener('autofill:carrier-submit-start', handleSubmitStart);
+      window.removeEventListener('autofill:carrier-submit-end', handleSubmitEnd);
       window.removeEventListener('draft-queue-updated', loadDrafts);
       window.removeEventListener('orders-updated', loadDrafts);
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
@@ -333,34 +352,61 @@ export default function App() {
     const requestToken = asyncResultGate.current.begin();
     setParsedData(editedData);
 
-    // LOCAL-FIRST AI-LAST: Nếu đơn hàng đã đầy đủ và rõ ràng, thử chuẩn hoá địa chỉ cục bộ
-    if (isOrderLocallyComplete(editedData) && window.AddressEngine && typeof window.AddressEngine.process === 'function') {
+    // Chuẩn hoá địa chỉ bằng Engine cục bộ và chuyển thẳng sang màn hình REVIEW không gọi AI
+    let finalAddress = editedData.address || '';
+    let warning = '';
+    let confidence = 95;
+    let addressMetadata = {
+      rawAddress: editedData.address || '',
+      normalizedAddress: editedData.address || '',
+      province: '',
+      ward: '',
+      addressSource: 'local_fastpath'
+    };
+
+    if (window.AddressEngine && typeof window.AddressEngine.process === 'function' && finalAddress && finalAddress !== 'không tìm thấy') {
       try {
-        const engResult = await window.AddressEngine.process(editedData.address, editedData.phone || '');
-        if (!asyncResultGate.current.isCurrent(requestToken)) return;
-        if (engResult && engResult.province && (engResult.ward || engResult.district) && (engResult.confidence || 0) >= 80) {
-          const finalAddress = engResult.fullAddress || editedData.address;
-          setParsedData({
-            ...editedData,
-            address: finalAddress,
-            warning: engResult.warning || '',
-            confidence: engResult.confidence || 95,
-            confidenceThreshold: 90,
+        const engResult = await window.AddressEngine.process(finalAddress, editedData.phone || '');
+        if (engResult) {
+          finalAddress = engResult.fullAddress || finalAddress;
+          warning = engResult.warning || '';
+          confidence = engResult.confidence || 95;
+          addressMetadata = {
             rawAddress: editedData.address || '',
             normalizedAddress: finalAddress,
             province: engResult.province || '',
             ward: engResult.ward || '',
             addressSource: engResult.source || 'local_fastpath'
-          });
-          triggerToast('⚡ Chuẩn hoá tức thì bằng Engine cục bộ (tiết kiệm quota AI)', 'success');
-          setState('REVIEW');
-          return;
+          };
         }
       } catch (e) {
-        console.warn('[React Panel] Local-first check fallback to AI:', e);
+        console.warn('[React Panel] Local address process error:', e);
       }
     }
 
+    if (!asyncResultGate.current.isCurrent(requestToken)) return;
+    setParsedData({
+      ...editedData,
+      address: finalAddress,
+      warning,
+      confidence,
+      confidenceThreshold: 90,
+      ...addressMetadata
+    });
+    triggerToast('⚡ Đã xác nhận bóc tách cục bộ (sẵn sàng điền hoặc thẩm định AI)!', 'success');
+    setState('REVIEW');
+  };
+
+  const handleRunAiVerify = async (editedData) => {
+    if (!isAuth || (!session?.access_token && !session?.shop_access_key)) {
+      triggerToast('⚠️ Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại!', 'error');
+      setIsAuth(false);
+      setState('IDLE');
+      return;
+    }
+
+    const requestToken = asyncResultGate.current.begin();
+    setParsedData(editedData);
     setState('LOADING');
     chrome.runtime.sendMessage({ 
           action: 'runGroq', 
@@ -734,6 +780,8 @@ export default function App() {
       carrierAccount={carrierAccount}
       draftCount={draftOrders.length}
       onToggleDraftQueue={() => setDraftQueueOpen(prev => !prev)}
+      isSubmitting={isSubmitting}
+      submittingNotice={submittingNotice}
     >
       {updateStatus?.hasUpdate && (
         <div style={{
@@ -830,6 +878,7 @@ export default function App() {
           rawText={rawText}
           imageThumbnail={currentImage || parsedData?.imageThumbnail}
           onConfirm={handleConfirmParseReview}
+          onAiVerify={handleRunAiVerify}
           onCancel={() => setState('IDLE')}
         />
       )}
@@ -844,7 +893,8 @@ export default function App() {
           rawText={rawText}
           imageThumbnail={currentImage || parsedData?.imageThumbnail}
           onParse={handleParse}
-          onConfirm={handleConfirm} 
+          onConfirm={handleConfirm}
+          onAiVerify={handleRunAiVerify}
           onCancel={() => setState('IDLE')} 
           onSave={() => {
             asyncResultGate.current.invalidate();

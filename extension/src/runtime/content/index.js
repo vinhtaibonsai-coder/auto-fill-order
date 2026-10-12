@@ -1191,61 +1191,18 @@
         console.warn('Lỗi ghi lịch sử:', e);
       }
 
-      // ─── BƯỚC 3: AI THẨM ĐỊNH & ĐỐI SOÁT TỰ ĐỘNG (BACKGROUND AI VERIFICATION) ───
-      // Cục bộ bóc tách siêu tốc (0.01s) hiển thị ngay lập tức để người dùng không phải chờ.
-      // Tiếp theo, AI chạy ngầm để đối soát (SĐT, tên, COD triệu/k, mã đơn, địa chỉ) và đánh giá độ tin cậy.
-      try {
-        const cleanPhone = (localResult.phone || '').replace(/\D/g, '');
-        const hasValidPhone = cleanPhone.length === 10 || cleanPhone.length === 11;
-        const hasName = Boolean(localResult.name && localResult.name.trim().length >= 2 && localResult.name !== 'không tìm thấy');
-        const hasAddress = Boolean(localResult.address && localResult.address.trim().length >= 8);
-        const hasWard = Boolean(localResult.ward || (localResult.addressBreakdown && localResult.addressBreakdown.ward));
-
-        // Chỉ tự động gọi AI khi độ tin cậy thấp hoặc thiếu thông tin cốt lõi (SĐT, Tên, Địa chỉ chi tiết)
-        const needsAiAssistance = !hasValidPhone || !hasName || !hasAddress || !hasWard;
-
-        if (!needsAiAssistance) {
-          // Bóc tách cục bộ đạt độ tin cậy cao -> Hiển thị tức thì, không làm nghẽn quota AI
-          localResult.confidence = {
-            score: 92,
-            level: 'offline',
-            reasons: ['Bóc tách cục bộ chính xác cao (SĐT, Tên, Địa chỉ đầy đủ)']
-          };
-          if (typeof displayParsedData === 'function') {
-            displayParsedData(localResult);
-          }
-          if (typeof globalThis.updateAiConfidenceBadge === 'function') {
-            globalThis.updateAiConfidenceBadge('offline');
-          }
-        } else {
-          localResult.confidence = {
-            score: (hasValidPhone && hasAddress) ? 75 : 55,
-            level: 'verifying',
-            reasons: ['Đang chạy thẩm định AI đối soát thông tin...']
-          };
-          if (typeof displayParsedData === 'function') {
-            displayParsedData(localResult);
-          }
-          if (typeof globalThis.updateAiConfidenceBadge === 'function') {
-            globalThis.updateAiConfidenceBadge('verifying');
-          }
-
-          let session = (typeof AuthSession !== 'undefined' && typeof AuthSession.getSession === 'function')
-            ? await AuthSession.getSession().catch(() => null)
-            : null;
-          if (!session || (!session.access_token && !session.shop_access_key)) {
-            const stored = await new Promise(r => chrome.storage.local.get(['vnpost_session', 'shop_access_key'], r));
-            if (stored?.vnpost_session) session = stored.vnpost_session;
-            else if (stored?.shop_access_key) session = { shop_access_key: stored.shop_access_key };
-          }
-          if (session && (session.access_token || session.shop_access_key)) {
-            verifyWithAI(text, localResult, session, false, sessionId).catch(err => {
-              console.warn('[AI Verify Background] Error:', err);
-            });
-          }
-        }
-      } catch (verifyErr) {
-        console.warn('[AI Verify Trigger] Error:', verifyErr);
+      // ─── BƯỚC 3: KẾT QUẢ BÓC TÁCH CỤC BỘ (TIẾN TRÌNH AI TÁCH RIÊNG) ───
+      // Bóc tách cục bộ hiển thị ngay lập tức (0.01s). Tiến trình AI chỉ chạy khi người dùng chủ động bấm "Thẩm định AI".
+      localResult.confidence = {
+        score: 92,
+        level: 'offline',
+        reasons: ['Bóc tách cục bộ hoàn tất · Bấm nút "Thẩm định AI" nếu cần đối soát chuyên sâu']
+      };
+      if (typeof displayParsedData === 'function') {
+        displayParsedData(localResult);
+      }
+      if (typeof globalThis.updateAiConfidenceBadge === 'function') {
+        globalThis.updateAiConfidenceBadge('offline');
       }
     } catch (err) {
       Logger.error("Lỗi phân tích đơn:", err);
@@ -2019,6 +1976,13 @@
               codAmount: approvedCod
             };
 
+            // Khóa UI panel và ô nhập liệu trong suốt quá trình đẩy đơn lên hãng
+            window.dispatchEvent(new CustomEvent('autofill:carrier-submit-start', { detail: { platform: activePlatform } }));
+            try {
+              const rawEl = typeof getVnpostEl === 'function' ? getVnpostEl('rawOrderText') : null;
+              if (rawEl) rawEl.disabled = true;
+            } catch (_) {}
+
             // Kích hoạt theo dõi lưu đơn (doSave) trực tiếp với approvedCod đã chốt
             setupAutoSaveOnSubmit(activePlatform, approvedCod, true);
 
@@ -2042,8 +2006,12 @@
               simulateFullClick(btn);
             }
             setTimeout(() => { if (btn.dataset) btn.dataset.afApproved = ''; }, 3000);
+          } else {
+            // Người dùng hủy bỏ trên modal xét duyệt
+            window.dispatchEvent(new CustomEvent('autofill:carrier-submit-end'));
           }
         } catch (modalErr) {
+          window.dispatchEvent(new CustomEvent('autofill:carrier-submit-end'));
           console.error('[handleCarrierSubmitClick] Lỗi hiển thị modal xét duyệt đơn:', modalErr);
           if (typeof showVnpostToast === 'function') {
             showVnpostToast('⚠️ Có lỗi khi hiển thị Bảng Xét Duyệt Đơn: ' + (modalErr?.message || modalErr), 'error');
@@ -2222,11 +2190,20 @@
         if (resolved) return;
         resolved = true;
         cleanup();
+        try {
+          const rawEl = typeof getVnpostEl === 'function' ? getVnpostEl('rawOrderText') : null;
+          if (rawEl) rawEl.disabled = false;
+        } catch (_) {}
+        window.dispatchEvent(new CustomEvent('autofill:carrier-submit-end', { detail: { error: errText } }));
         showVnpostToast('❌ VNPost/J&T báo lỗi chưa thành công. Chưa ghi nhận đơn đã lên!', 'error');
       }
 
       function onSuccess(trackingCode) {
         if (resolved) return;
+        try {
+          const rawEl = typeof getVnpostEl === 'function' ? getVnpostEl('rawOrderText') : null;
+          if (rawEl) rawEl.disabled = false;
+        } catch (_) {}
 
         // Tìm trackingCode nếu chưa có
         if (!trackingCode) {
@@ -3758,6 +3735,187 @@
         })();
         return true;
       }
+
+      // ─── 4. LẤY CHI TIẾT HÀNH TRÌNH VÀ SỰ KIỆN ĐƠN HÀNG (JOURNEY / TIMELINE) ───
+      if (request.action === 'VNPOST_FETCH_JOURNEY_VIA_WEB') {
+        (async () => {
+          try {
+            const token = request.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : '') || '';
+            const code = String(request.code || '').trim();
+            if (!code) {
+              sendResponse({ success: false, error: 'Thiếu mã vận đơn để tra cứu hành trình.' });
+              return;
+            }
+            if (!token) {
+              sendResponse({ success: false, error: 'Chưa đăng nhập trên tab MyVNPost.' });
+              return;
+            }
+
+            const authHeader = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+            const headers = {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': authHeader,
+              'cApiKey': '19001111'
+            };
+
+            // 1. Tìm đơn hàng trước để lấy orderHdrId & thông tin cơ bản
+            let orderObj = null;
+            try {
+              const resSearch = await fetch(`https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/searchByOrderCodeOrItemCode?searchValue=${encodeURIComponent(code)}`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ searchValue: code })
+              });
+              if (resSearch.ok) {
+                const sData = await resSearch.json().catch(() => null);
+                const c = Array.isArray(sData) ? sData[0] : (sData?.data || sData);
+                if (c && (c.orderHdrId || c.itemCode || c.orderCode)) {
+                  orderObj = c;
+                }
+              }
+            } catch (_) {}
+
+            if (!orderObj) {
+              try {
+                const resSearch2 = await fetch(`https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/searchAllByParam?page=0&size=5`, {
+                  method: 'POST',
+                  headers,
+                  body: JSON.stringify({ searchValue: code, itemCode: code, orderCode: code })
+                });
+                if (resSearch2.ok) {
+                  const sData2 = await resSearch2.json().catch(() => null);
+                  const list2 = Array.isArray(sData2) ? sData2 : (sData2?.data || sData2?.content || []);
+                  if (list2.length > 0) {
+                    orderObj = list2.find(it =>
+                      String(it.itemCode || '').toUpperCase() === code.toUpperCase() ||
+                      String(it.orderCode || '').toUpperCase() === code.toUpperCase()
+                    ) || list2[0];
+                  }
+                }
+              } catch (_) {}
+            }
+
+            const orderHdrId = orderObj?.orderHdrId || orderObj?.id;
+            let traces = [];
+            let detailData = null;
+
+            // 2. Thử truy vấn các endpoint hành trình thực tế của MyVNPost
+            const journeyEndpoints = [
+              `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/get-tracking-journey?itemCode=${encodeURIComponent(code)}`,
+              `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/get-tracking-journey?orderCode=${encodeURIComponent(code)}`,
+              `https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/getDetailOrderHdr/${orderHdrId || 0}`,
+              `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/tracking?code=${encodeURIComponent(code)}`,
+              `https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/traceOrder?itemCode=${encodeURIComponent(code)}`
+            ];
+
+            for (const ep of journeyEndpoints) {
+              if (ep.includes('/getDetailOrderHdr/0')) continue;
+              try {
+                const resJ = await fetch(ep, {
+                  method: 'GET',
+                  headers
+                });
+                if (resJ.ok) {
+                  const jData = await resJ.json().catch(() => null);
+                  if (jData) {
+                    detailData = jData;
+                    const possibleList = jData?.lstTrace || jData?.traces || jData?.journey || jData?.data?.traces || jData?.data || (Array.isArray(jData) ? jData : null);
+                    if (Array.isArray(possibleList) && possibleList.length > 0) {
+                      traces = possibleList;
+                      break;
+                    }
+                  }
+                }
+              } catch (_) {}
+            }
+
+            // 3. Nếu không có traces từ endpoint get-tracking-journey, tổng hợp từ order detail
+            if (traces.length === 0 && orderObj) {
+              traces = [
+                {
+                  statusDate: orderObj.updateDate || orderObj.createDate || new Date().toISOString(),
+                  statusName: orderObj.orderStatusName || orderObj.statusName || 'Bưu tá nhận yêu cầu thu gom',
+                  location: orderObj.senderAddress || orderObj.postOfficeName || 'Bưu cục tiếp nhận',
+                  note: orderObj.note || ''
+                }
+              ];
+            }
+
+            sendResponse({
+              success: true,
+              order: orderObj,
+              traces: traces,
+              detail: detailData
+            });
+          } catch (err) {
+            sendResponse({ success: false, error: err.message });
+          }
+        })();
+        return true;
+      }
+
+      // ─── 5. TỰ ĐỘNG BẬT POPUP HÀNH TRÌNH TRÊN TRANG ORDER-MANAGER CỦA VNPOST ───
+      if (request.action === 'VNPOST_AUTO_OPEN_JOURNEY_MODAL') {
+        (async () => {
+          try {
+            const code = String(request.code || '').trim();
+            if (!code) {
+              sendResponse({ success: false, error: 'Thiếu mã đơn.' });
+              return;
+            }
+
+            // Tìm ô input tìm kiếm trên trang quản lý đơn của MyVNPost
+            const searchInput = document.querySelector('input[placeholder*="Tìm theo" i]') ||
+                                document.querySelector('input[placeholder*="mã vận đơn" i]') ||
+                                document.querySelector('input[placeholder*="mã đơn" i]') ||
+                                document.querySelector('.ant-input-search input') ||
+                                document.querySelector('input.ant-input');
+
+            if (searchInput) {
+              searchInput.focus();
+              const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+              if (nativeSetter) {
+                nativeSetter.call(searchInput, code);
+              } else {
+                searchInput.value = code;
+              }
+              searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+              searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+              // Bấm nút tìm kiếm hoặc Enter
+              const searchBtn = searchInput.closest('.ant-input-search')?.querySelector('button') ||
+                                searchInput.parentElement?.querySelector('button') ||
+                                document.querySelector('button[type="submit"]') ||
+                                Array.from(document.querySelectorAll('button')).find(b => (b.innerText || '').includes('Tìm kiếm'));
+
+              if (searchBtn) {
+                searchBtn.click();
+              } else {
+                searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+              }
+
+              // Đợi bảng load xong và tự click vào icon / mã đơn để mở modal
+              setTimeout(() => {
+                const rows = Array.from(document.querySelectorAll('tr, .ant-table-row'));
+                const matchedRow = rows.find(r => (r.innerText || '').toLowerCase().includes(code.toLowerCase()));
+                if (matchedRow) {
+                  const clickTarget = matchedRow.querySelector('a, button, span[style*="cursor"], .ant-typography, code') || matchedRow;
+                  clickTarget.click();
+                }
+              }, 900);
+
+              sendResponse({ success: true, message: `Đang tự động tìm kiếm và mở hành trình đơn ${code}` });
+            } else {
+              sendResponse({ success: false, error: 'Không tìm thấy ô tìm kiếm trên trang VNPost.' });
+            }
+          } catch (err) {
+            sendResponse({ success: false, error: err.message });
+          }
+        })();
+        return true;
+      }
+
       return false;
     });
   }

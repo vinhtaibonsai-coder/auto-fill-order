@@ -140,74 +140,133 @@
 
   async function autoCOD(codValue) {
     try {
-      let codRow = await waitFor(function() {
+      if (!codValue || Number(codValue) <= 0) return false;
+      const targetStr = String(codValue).replace(/\D/g, '');
+      if (!targetStr) return false;
+
+      function findElements() {
+        let codRow = null;
         const rows = [...document.querySelectorAll("tr.g-tr, tr, [role='row'], .ant-table-row")];
-        return rows.find(row => {
+        codRow = rows.find(row => {
           const t = (row.innerText || row.textContent || '').toLowerCase();
           return (t.includes("phát hàng thu tiền") || t.includes("thu tiền cod") || t.includes("tiền thu hộ") || t.includes("thu hộ (cod)")) && !t.includes("hủy");
         }) || null;
-      }, 800, 30);
-      
-      let checkbox = null;
-      let input = null;
 
-      if (codRow) {
-        checkbox = codRow.querySelector('input.ant-checkbox-input, input[type="checkbox"]');
-        input = codRow.querySelector('input.ant-input-number-input, input[name="PROP0018"], input[role="spinbutton"]');
-      } else {
-        const label = Array.from(document.querySelectorAll('label, span, b, div')).find(el => {
-          const txt = (el.innerText || el.textContent || '').toLowerCase();
-          return (txt.includes('phát hàng thu tiền') || txt.includes('thu tiền cod') || txt.includes('tiền thu hộ')) && !txt.includes('hủy');
-        });
-        if (label) {
-          const container = label.closest('.ant-form-item, tr, .ant-row') || label.parentElement;
-          if (container) {
-            checkbox = container.querySelector('input.ant-checkbox-input, input[type="checkbox"]');
-            input = container.querySelector('input.ant-input-number-input, input[name="PROP0018"], input[role="spinbutton"]');
+        let checkbox = null;
+        let input = null;
+
+        if (codRow) {
+          checkbox = codRow.querySelector('input.ant-checkbox-input, input[type="checkbox"]');
+          input = codRow.querySelector('input.ant-input-number-input, input[name="PROP0018"], input[role="spinbutton"]');
+        } else {
+          const label = Array.from(document.querySelectorAll('label, span, b, div')).find(el => {
+            const txt = (el.innerText || el.textContent || '').toLowerCase();
+            return (txt.includes('phát hàng thu tiền') || txt.includes('thu tiền cod') || txt.includes('tiền thu hộ')) && !txt.includes('hủy');
+          });
+          if (label) {
+            const container = label.closest('.ant-form-item, tr, .ant-row') || label.parentElement;
+            if (container) {
+              checkbox = container.querySelector('input.ant-checkbox-input, input[type="checkbox"]');
+              input = container.querySelector('input.ant-input-number-input, input[name="PROP0018"], input[role="spinbutton"]');
+            }
           }
         }
+
+        if (!checkbox) {
+          checkbox = document.querySelector('input[name="PROP0018_CHECK"], tr:has(input[name="PROP0018"]) input[type="checkbox"]');
+        }
+        if (!input) {
+          input = document.querySelector('input[name="PROP0018"]') ||
+                  (codRow ? codRow.querySelector('input:not([type="checkbox"])') : null);
+        }
+        return { codRow, checkbox, input };
       }
 
+      let { codRow, checkbox, input } = await waitFor(() => {
+        const found = findElements();
+        return (found.codRow || found.checkbox || found.input) ? found : null;
+      }, 1000, 30) || findElements();
+
+      // Đảm bảo checkbox luôn được BẬT
       if (checkbox && !checkbox.checked) {
         const checkTarget = checkbox.closest('.ant-checkbox, label') || checkbox;
         simulateFullClick(checkTarget);
         if (!checkbox.checked) {
           checkbox.checked = true;
+          checkbox.dispatchEvent(new Event('input', { bubbles: true }));
           checkbox.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        await waitFor(function() {
-          const inp = input || document.querySelector('input[name="PROP0018"]') || (codRow ? codRow.querySelector('input.ant-input-number-input, input[role="spinbutton"]') : null);
-          if (inp && !inp.disabled) {
-            input = inp;
-            return inp;
-          }
-          return null;
-        }, 800, 30);
       }
 
+      // Đợi input enabled sau khi tick checkbox
+      input = await waitFor(() => {
+        const found = findElements();
+        const inp = found.input || document.querySelector('input[name="PROP0018"]');
+        if (inp && !inp.disabled && !inp.readOnly) return inp;
+        return null;
+      }, 1000, 30);
+
       if (!input) {
-        input = document.querySelector('input[name="PROP0018"]') || 
-                (codRow ? codRow.querySelector('input:not([type="checkbox"])') : null);
+        const found = findElements();
+        input = found.input;
       }
       if (!input) return false;
 
-      input.focus();
-      setInputValue(input, String(codValue));
-      const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-      if (nativeSetter) {
-        nativeSetter.call(input, String(codValue));
-      }
-      input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: String(codValue) }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-      input.blur();
+      // Hàm điền và đồng bộ giá trị với React / Ant Design Form State
+      function applyInputValue(inp, valStr) {
+        try {
+          inp.focus();
+          inp.select?.();
 
-      await waitFor(function() { 
-        const v = String(input.value || '').replace(/\D/g, '');
-        const target = String(codValue).replace(/\D/g, '');
-        return v === target ? true : null; 
-      }, 300, 30);
-      return true;
-    } catch (err) { console.log("❌ autoCOD ERROR:", err); return false; }
+          // Native property descriptor setter
+          const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+          if (nativeSetter) {
+            nativeSetter.call(inp, valStr);
+          } else {
+            inp.value = valStr;
+          }
+
+          // Value tracker cho React
+          if (inp._valueTracker) {
+            inp._valueTracker.setValue('');
+          }
+
+          // Chuỗi sự kiện bàn phím & input đầy đủ
+          inp.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: '0' }));
+          inp.dispatchEvent(new InputEvent("input", { bubbles: true, cancelable: true, inputType: "insertText", data: valStr }));
+          inp.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, cancelable: true, key: '0' }));
+          inp.dispatchEvent(new Event("change", { bubbles: true }));
+          
+          if (typeof setInputValue === 'function') {
+            setInputValue(inp, valStr);
+          }
+
+          // Trigger Enter & blur để Ant Design / rc-input-number commit format
+          inp.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter', keyCode: 13, which: 13 }));
+          inp.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+        } catch (e) {
+          console.warn('applyInputValue error:', e);
+        }
+      }
+
+      applyInputValue(input, targetStr);
+
+      // Kiểm tra và retry nếu giá trị chưa được nhận
+      const isCommitted = await waitFor(() => {
+        const curDigits = String(input.value || '').replace(/\D/g, '');
+        if (curDigits === targetStr) return true;
+        // Nếu bị reset về rỗng hoặc 0, re-apply
+        if (!curDigits || curDigits === '0') {
+          applyInputValue(input, targetStr);
+        }
+        return null;
+      }, 500, 50);
+
+      return !!isCommitted;
+    } catch (err) {
+      console.log("❌ autoCOD ERROR:", err);
+      return false;
+    }
   }
 
   async function resolveVNPostDefaultWeight(store = {}) {
@@ -613,6 +672,10 @@
 
       if (codAmount && Number(codAmount) > 0) {
         await autoCOD(codAmount);
+        // Bảo vệ COD chống lại VNPost template / tính cước async ghi đè về 0
+        setTimeout(() => autoCOD(codAmount), 600);
+        setTimeout(() => autoCOD(codAmount), 1400);
+        setTimeout(() => autoCOD(codAmount), 2200);
       }
 
       // Thu phí ship: thực hiện SAU khi form đã điền xong

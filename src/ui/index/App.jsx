@@ -10,8 +10,9 @@ import {
   CheckCircle2, Clock, AlertTriangle, ExternalLink,
   Shield, LogOut, Settings, Copy, Check, Truck,
   FileText, User, ArrowUpRight, DollarSign, Sparkles,
-  AlertCircle
+  AlertCircle, Calendar
 } from 'lucide-react';
+import CarrierJourneyDrawer from '../options/components/CarrierJourneyDrawer.jsx';
 import { copyToClipboard } from './clipboard.js';
 import QuickCopyPanel from './components/QuickCopyPanel.jsx';
 import {
@@ -39,6 +40,64 @@ const CARRIERS = [
   { key: 'submitted', label: 'Đã gửi' },
   { key: 'draft', label: 'Nháp' }
 ];
+
+const DATE_FILTERS = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'today', label: 'Hôm nay' },
+  { key: 'yesterday', label: 'Hôm qua' },
+  { key: '7days', label: '7 ngày qua' },
+  { key: 'this_month', label: 'Tháng này' },
+  { key: 'last_month', label: 'Tháng trước' },
+  { key: 'custom', label: 'Tùy chỉnh 🗓️' }
+];
+
+function isSameDay(d1, d2) {
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+}
+
+function matchDateFilter(dateStr, filterKey, customStart = '', customEnd = '') {
+  if (!filterKey || filterKey === 'all') return true;
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return false;
+
+  const now = new Date();
+  if (filterKey === 'today') {
+    return isSameDay(d, now);
+  }
+  if (filterKey === 'yesterday') {
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    return isSameDay(d, yesterday);
+  }
+  if (filterKey === '7days') {
+    // 7 ngày gần nhất (tính từ 00:00 của 6 ngày trước đến hết hôm nay)
+    const start7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0, 0);
+    return d >= start7Days;
+  }
+  if (filterKey === 'this_month') {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+  if (filterKey === 'last_month') {
+    const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const lastMonthIdx = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    return d.getFullYear() === lastMonthYear && d.getMonth() === lastMonthIdx;
+  }
+  if (filterKey === 'custom') {
+    if (customStart) {
+      const s = new Date(customStart + 'T00:00:00');
+      if (!isNaN(s.getTime()) && d < s) return false;
+    }
+    if (customEnd) {
+      const e = new Date(customEnd + 'T23:59:59.999');
+      if (!isNaN(e.getTime()) && d > e) return false;
+    }
+    return true;
+  }
+  return true;
+}
 
 const submittedIdentityKey = order => {
   const tracking = normalizeTracking(order.tracking_code || order.trackingCode);
@@ -87,7 +146,7 @@ function BottomNavButton({ active, onClick, icon: Icon, label, badgeCount }) {
   );
 }
 
-function OrderCard({ order, copiedKey, onCopy }) {
+function OrderCard({ order, copiedKey, onCopy, onOpenJourney }) {
   const phone = normalizePhone(order.phone);
   const isJt = order.carrier === 'J&T';
 
@@ -182,23 +241,37 @@ function OrderCard({ order, copiedKey, onCopy }) {
             </div>
           </div>
 
-          <button
-            onClick={() => onCopy(order.trackingCode, `track_${order.id}`, 'mã vận đơn')}
-            className="copy-btn-touch"
-            style={{ background: copiedKey === `track_${order.id}` ? 'var(--success)' : 'var(--primary)' }}
-          >
-            {copiedKey === `track_${order.id}` ? (
-              <>
-                <Check size={13} />
-                <span>Đã chép</span>
-              </>
-            ) : (
-              <>
-                <Copy size={13} />
-                <span>Sao chép mã</span>
-              </>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            {onOpenJourney && (
+              <button
+                type="button"
+                onClick={() => onOpenJourney(order)}
+                className="journey-btn-touch"
+                title="Xem chi tiết hành trình đơn hàng"
+              >
+                <Truck size={13} />
+                <span>Hành trình</span>
+              </button>
             )}
-          </button>
+
+            <button
+              onClick={() => onCopy(order.trackingCode, `track_${order.id}`, 'mã vận đơn')}
+              className="copy-btn-touch"
+              style={{ background: copiedKey === `track_${order.id}` ? 'var(--success)' : 'var(--primary)' }}
+            >
+              {copiedKey === `track_${order.id}` ? (
+                <>
+                  <Check size={13} />
+                  <span>Đã chép</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} />
+                  <span>Sao chép mã</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--text-subtle)', fontStyle: 'italic', padding: '6px 0' }}>
@@ -297,6 +370,10 @@ export default function App() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [carrierFilter, setCarrierFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [journeyOrder, setJourneyOrder] = useState(null);
   const [cloudError, setCloudError] = useState('');
 
   // Current user & active shop
@@ -799,11 +876,16 @@ export default function App() {
   // Filtered orders list
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
+      // 1. Lọc theo trạng thái / nhà vận chuyển
       if (carrierFilter === 'vnpost' && o.carrier !== 'VNPOST') return false;
       if (carrierFilter === 'jt' && o.carrier !== 'J&T') return false;
       if (carrierFilter === 'submitted' && o.tag !== 'Đã gửi') return false;
       if (carrierFilter === 'draft' && o.tag !== 'Nháp') return false;
 
+      // 2. Lọc theo khoảng ngày
+      if (!matchDateFilter(o.date, dateFilter, customStart, customEnd)) return false;
+
+      // 3. Tìm kiếm từ khóa
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
       return (o.name || '').toLowerCase().includes(q) ||
@@ -811,15 +893,31 @@ export default function App() {
              (o.orderCode || '').toLowerCase().includes(q) ||
              (o.trackingCode || '').toLowerCase().includes(q);
     });
-  }, [orders, carrierFilter, searchQuery]);
+  }, [orders, carrierFilter, dateFilter, customStart, customEnd, searchQuery]);
 
-  const counts = useMemo(() => ({
-    all: orders.length,
-    vnpost: orders.filter(o => o.carrier === 'VNPOST').length,
-    jt: orders.filter(o => o.carrier === 'J&T').length,
-    submitted: orders.filter(o => o.tag === 'Đã gửi').length,
-    draft: orders.filter(o => o.tag === 'Nháp').length,
-  }), [orders]);
+  // Thống kê động theo bộ lọc hiện tại (tổng đơn, tổng tiền COD)
+  const filteredSummary = useMemo(() => {
+    let totalCod = 0;
+    filteredOrders.forEach(o => {
+      totalCod += Number(o.value) || 0;
+    });
+    return {
+      count: filteredOrders.length,
+      totalCod: totalCod
+    };
+  }, [filteredOrders]);
+
+  const counts = useMemo(() => {
+    // Đếm số lượng theo ngày hiện tại đang chọn
+    const dateScopedOrders = orders.filter(o => matchDateFilter(o.date, dateFilter, customStart, customEnd));
+    return {
+      all: dateScopedOrders.length,
+      vnpost: dateScopedOrders.filter(o => o.carrier === 'VNPOST').length,
+      jt: dateScopedOrders.filter(o => o.carrier === 'J&T').length,
+      submitted: dateScopedOrders.filter(o => o.tag === 'Đã gửi').length,
+      draft: dateScopedOrders.filter(o => o.tag === 'Nháp').length,
+    };
+  }, [orders, dateFilter, customStart, customEnd]);
 
   if (isAuthLoading || isLoading) {
     return (
@@ -1116,6 +1214,7 @@ export default function App() {
                     order={o}
                     copiedKey={copiedKey}
                     onCopy={copyText}
+                    onOpenJourney={setJourneyOrder}
                   />
                 ))}
               </div>
@@ -1295,7 +1394,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Filter Pills Row */}
+            {/* Carrier & Status Filter Pills */}
             <div className="filter-pills-row">
               {CARRIERS.map(c => (
                 <button
@@ -1306,6 +1405,129 @@ export default function App() {
                   {c.label} ({typeof counts[c.key] === 'number' ? counts[c.key] : counts.all})
                 </button>
               ))}
+            </div>
+
+            {/* Date Range Filter Pills (Hôm nay, Hôm qua, 7 ngày qua, Tháng này, Tháng trước, Tùy chỉnh) */}
+            <div className="filter-pills-row" style={{ paddingTop: '2px' }}>
+              {DATE_FILTERS.map(df => (
+                <button
+                  key={df.key}
+                  onClick={() => setDateFilter(df.key)}
+                  className={`filter-pill-btn date-filter-pill ${dateFilter === df.key ? 'active' : ''}`}
+                >
+                  <Calendar size={12} style={{ opacity: dateFilter === df.key ? 1 : 0.6 }} />
+                  {df.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Date Range Picker when dateFilter === 'custom' */}
+            {dateFilter === 'custom' && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: '10px',
+                padding: '8px 12px',
+                fontSize: '13px',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '130px' }}>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>Từ:</span>
+                  <input
+                    type="date"
+                    value={customStart}
+                    onChange={(e) => setCustomStart(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '6px 8px',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      background: 'var(--bg-main)',
+                      color: 'var(--text-main)',
+                      fontSize: '13px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '130px' }}>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>Đến:</span>
+                  <input
+                    type="date"
+                    value={customEnd}
+                    onChange={(e) => setCustomEnd(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '6px 8px',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      background: 'var(--bg-main)',
+                      color: 'var(--text-main)',
+                      fontSize: '13px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                {(customStart || customEnd) && (
+                  <button
+                    type="button"
+                    onClick={() => { setCustomStart(''); setCustomEnd(''); }}
+                    style={{
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      padding: '6px 10px',
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                      color: '#475569',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Xóa ngày
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Filter Summary Stats Bar (Tổng đơn & Tiền thu hộ COD) */}
+            <div style={{
+              background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+              color: '#ffffff',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 4px 12px rgba(49, 46, 129, 0.15)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Package size={17} color="#a5b4fc" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.75)', fontWeight: 600 }}>Tổng số đơn</div>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff' }}>
+                    {num.format(filteredSummary.count)} <span style={{ fontSize: '11px', fontWeight: 500, opacity: 0.85 }}>đơn</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.75)', fontWeight: 600 }}>Tiền thu hộ (COD)</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: '#34d399' }}>
+                  {money.format(filteredSummary.totalCod)}
+                </div>
+              </div>
             </div>
 
             {/* Orders List */}
@@ -1322,6 +1544,7 @@ export default function App() {
                     order={o}
                     copiedKey={copiedKey}
                     onCopy={copyText}
+                    onOpenJourney={setJourneyOrder}
                   />
                 ))
               )}
@@ -1479,6 +1702,15 @@ export default function App() {
           label="Tài khoản"
         />
       </nav>
+
+      {/* Carrier Journey Modal / Drawer */}
+      {journeyOrder && (
+        <CarrierJourneyDrawer
+          isOpen={Boolean(journeyOrder)}
+          onClose={() => setJourneyOrder(null)}
+          order={journeyOrder}
+        />
+      )}
 
     </div>
   );

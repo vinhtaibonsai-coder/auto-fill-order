@@ -12,6 +12,7 @@ import { AuthSession } from '../../../../domain/auth/auth.session.esm.js';
 import { RealtimeService } from '../../../../domain/realtime/realtime.service.esm.js';
 import Pagination from '../../components/Pagination';
 import OrderTimelineDrawer from '../../components/OrderTimelineDrawer';
+import CarrierJourneyDrawer from '../../components/CarrierJourneyDrawer';
 
 const removeVietnameseTones = (str) => {
   if (!str) return '';
@@ -1335,6 +1336,29 @@ export default function SubmittedOrders() {
                     </div>
 
                     <div style={{ display: 'flex', gap: '6px' }}>
+                      {tracking && tracking !== '-' && tracking !== '—' && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedJourneyOrder(order)}
+                          style={{
+                            background: '#fef3c7',
+                            border: '1px solid #fde68a',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#b45309',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Xem hành trình vận đơn trực tiếp"
+                        >
+                          <Truck size={11} /> Hành trình
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => setSelectedTimelineOrder(order)}
@@ -1648,6 +1672,26 @@ export default function SubmittedOrders() {
                                 }}
                               >
                                 {copiedId === `tr_${idx}` ? <Check size={12} /> : <Copy size={12} />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setSelectedJourneyOrder(order); }}
+                                title="Xem hành trình bưu kiện trực tiếp"
+                                style={{
+                                  border: 'none',
+                                  background: '#fef3c7',
+                                  color: '#b45309',
+                                  borderRadius: 4,
+                                  padding: '2px 6px',
+                                  fontSize: 10.5,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3
+                                }}
+                              >
+                                <Truck size={10} /> Hành trình
                               </button>
                               {trackingUrl && (
                                 <a
@@ -2059,131 +2103,13 @@ export default function SubmittedOrders() {
         )}
       </div>
 
-      {/* TIMELINE MODAL FOR WEBHOOK LOGS */}
+      {/* CARRIER JOURNEY DRAWER (LIVE VNPOST WEB SESSION + AUTO TAB OPEN) */}
       {selectedJourneyOrder && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15, 23, 42, 0.6)',
-          backdropFilter: 'blur(3px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 99999,
-          padding: '20px'
-        }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '14px',
-            width: '100%',
-            maxWidth: '560px',
-            maxHeight: '85vh',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            border: '1px solid var(--border)',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid var(--border)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              background: '#f8fafc'
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <History size={18} color="#2563eb" /> Lịch Sử Hành Trình Vận Đơn
-                </h3>
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                  Mã đơn: <b>{valueOf(selectedJourneyOrder, 'orderCode', 'order_code')}</b> | Vận đơn: <b style={{ color: '#2563eb' }}>{valueOf(selectedJourneyOrder, 'trackingCode', 'tracking_code')}</b>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedJourneyOrder(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  borderRadius: '6px',
-                  color: '#64748b'
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
-              {(() => {
-                const logs = selectedJourneyOrder.webhookLogs || selectedJourneyOrder.webhook_logs || [];
-                if (!Array.isArray(logs) || logs.length === 0) {
-                  return (
-                    <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8', fontSize: '13px' }}>
-                      Chưa có dữ liệu hành trình webhook cho đơn hàng này.
-                    </div>
-                  );
-                }
-
-                return (
-                  <div style={{ position: 'relative', paddingLeft: '24px', borderLeft: '2px solid #e2e8f0', marginLeft: '10px' }}>
-                    {logs.map((log, lIdx) => (
-                      <div key={lIdx} style={{ position: 'relative', marginBottom: '20px' }}>
-                        <div style={{
-                          position: 'absolute',
-                          left: '-31px',
-                          top: '2px',
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '50%',
-                          background: lIdx === logs.length - 1 ? '#16a34a' : '#2563eb',
-                          border: '2px solid #ffffff',
-                          boxShadow: '0 0 0 2px rgba(37, 99, 235, 0.2)'
-                        }} />
-                        <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
-                          {formatDate(log.statusDate || log.date || log.time || log.created_at || log.timestamp || log.receivedAt)}
-                        </div>
-                        <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
-                          {log.statusName || log.statusDesc || log.status_desc || log.status || 'Cập nhật trạng thái'}
-                        </div>
-                        {(log.location || log.postman || log.note || log.totalFee || log.weight) && (
-                          <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px' }}>
-                            {log.location && <div>📍 Vị trí: <b>{log.location}</b></div>}
-                            {log.postman && <div>👤 Bưu tá: {log.postman}</div>}
-                            {log.note && <div>📝 Ghi chú: {log.note}</div>}
-                            {log.totalFee ? <div>💰 Cước thực tế: <b>{Number(log.totalFee).toLocaleString('vi-VN')} đ</b></div> : null}
-                            {log.weight ? <div>⚖️ Khối lượng cân: <b>{log.weight} g</b></div> : null}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={() => setSelectedJourneyOrder(null)}
-                style={{
-                  background: '#e2e8f0',
-                  color: '#334155',
-                  border: 'none',
-                  padding: '7px 16px',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
+        <CarrierJourneyDrawer
+          isOpen={Boolean(selectedJourneyOrder)}
+          onClose={() => setSelectedJourneyOrder(null)}
+          order={selectedJourneyOrder}
+        />
       )}
 
       {selectedTimelineOrder && (

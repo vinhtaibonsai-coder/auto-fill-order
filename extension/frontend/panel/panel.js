@@ -472,6 +472,9 @@
                 <button id="btnParseOrder" class="btn-parse-primary">
                   ${PANEL_ICONS.parse} <span>Tách Đơn Tự Động</span>
                 </button>
+                <button id="btnAiVerify" class="btn-ai-verify" type="button" title="Chạy AI đối soát & thẩm định nâng cao">
+                  ✨ <span>Thẩm định AI</span>
+                </button>
                 <button id="btnClearOrder" class="btn-clear-secondary">
                   ${PANEL_ICONS.clear} <span>Xóa</span>
                 </button>
@@ -651,6 +654,9 @@
             <button id="btnFillJT" class="btn-fill btn-fill-jt" style="${jtBtnStyle};" disabled>
               ${PANEL_ICONS.fill} <span>Nhập đơn</span>
             </button>
+            <button id="btnAiVerifyBottom" class="btn-fill btn-ai-verify" type="button" title="Chạy AI đối soát & thẩm định nâng cao" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); flex: 1;">
+              ✨ <span>Thẩm định AI</span>
+            </button>
             <button id="btnSaveOrder" class="btn-fill btn-save-order" disabled>
               ${PANEL_ICONS.save} <span>Lưu đơn</span>
             </button>
@@ -807,6 +813,14 @@
       const btnAiVerify = root.getElementById('btnAiVerify');
       if (btnAiVerify) {
         btnAiVerify.addEventListener('click', () => {
+          if (typeof globalThis.handleAiVerifyManual === 'function') {
+            globalThis.handleAiVerifyManual();
+          }
+        });
+      }
+      const btnAiVerifyBottom = root.getElementById('btnAiVerifyBottom');
+      if (btnAiVerifyBottom) {
+        btnAiVerifyBottom.addEventListener('click', () => {
           if (typeof globalThis.handleAiVerifyManual === 'function') {
             globalThis.handleAiVerifyManual();
           }
@@ -3311,7 +3325,16 @@
               }
               return;
             }
-            doClose(true);
+            // Thiết lập trạng thái isSubmitting cho nút Xác nhận gửi
+            confirmBtn.disabled = true;
+            confirmBtn.classList.add('is-submitting');
+            confirmBtn.innerHTML = `
+              <span class="af-btn-spinner" style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:af-spin 0.8s linear infinite;margin-right:6px;vertical-align:middle;"></span>
+              Đang gửi lên bưu điện...
+            `;
+            if (cancelBtn) cancelBtn.disabled = true;
+            if (closeBtn) closeBtn.disabled = true;
+            setTimeout(() => doClose(true), 150);
           };
         }
 

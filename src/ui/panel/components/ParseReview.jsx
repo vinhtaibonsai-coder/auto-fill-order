@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Edit2, User, Phone, MapPin, Hash, Package, DollarSign, FileText, AlertCircle, Camera, X } from 'lucide-react';
+import { Check, Edit2, User, Phone, MapPin, Hash, Package, DollarSign, FileText, AlertCircle, Camera, X, Sparkles } from 'lucide-react';
 
 function formatVND(value) {
   if (value === undefined || value === null || value === '') return '0 đ';
@@ -15,7 +15,7 @@ function isValidPhoneNumber(phone) {
   return /^(0\d{9,10})$/.test(clean);
 }
 
-export default function ParseReview({ data, rawText, imageThumbnail, onConfirm, onCancel }) {
+export default function ParseReview({ data, rawText, imageThumbnail, onConfirm, onAiVerify, onCancel }) {
   const [formData, setFormData] = useState({
     name: data?.name || '',
     phone: data?.phone || '',
@@ -224,16 +224,33 @@ export default function ParseReview({ data, rawText, imageThumbnail, onConfirm, 
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '10px' }}>
-        <button className="af-btn-fill" onClick={() => onConfirm(formData)} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }} title="Gửi dữ liệu lên AI để đối soát và chuẩn hóa chi tiết">
-          <Check size={14} /> Xác nhận & Thẩm định AI
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 0.8fr', gap: '8px' }}>
+        <button 
+          className="af-btn-fill" 
+          onClick={() => onConfirm(formData)} 
+          style={{ background: '#10b981', padding: '8px 10px', fontSize: '11.5px', fontWeight: 600 }} 
+          title="Sử dụng ngay kết quả bóc tách cục bộ không cần qua AI"
+        >
+          <Check size={13} /> Dùng luôn
         </button>
-        <button className="af-btn-delete" onClick={onCancel} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>
-          <Edit2 size={14} /> Sửa lại
+        <button 
+          className="af-btn-fill" 
+          onClick={() => onAiVerify ? onAiVerify(formData) : onConfirm(formData)} 
+          style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', padding: '8px 10px', fontSize: '11.5px', fontWeight: 600 }} 
+          title="Chạy AI đối soát & thẩm định chuyên sâu toàn bộ thông tin đơn hàng"
+        >
+          <Sparkles size={13} /> Thẩm định AI
+        </button>
+        <button 
+          className="af-btn-delete" 
+          onClick={onCancel} 
+          style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '8px 6px', fontSize: '11.5px' }}
+        >
+          <Edit2 size={13} /> Sửa lại
         </button>
       </div>
       <div style={{ fontSize: '10.5px', color: '#64748b', textAlign: 'center', marginTop: '-4px' }}>
-        ⚡ Bóc tách cục bộ tức thì · Bấm Xác nhận để AI đối soát &amp; chuẩn hóa chi tiết
+        ⚡ Bóc tách cục bộ hoàn tất · Bấm <strong>Thẩm định AI</strong> để AI đối soát chi tiết hoặc <strong>Dùng luôn</strong>
       </div>
 
       {/* MODAL PHÓNG TO ẢNH GỐC ĐỂ ĐỐI CHIẾU */}

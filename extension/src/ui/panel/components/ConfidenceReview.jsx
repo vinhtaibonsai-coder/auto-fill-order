@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Zap, ClipboardPaste, Trash2, ArrowDownToLine, Save, Printer, User, Phone, Hash, FileText, MapPin, AlertTriangle, CheckCircle2, Camera, X, CheckSquare, Square } from 'lucide-react';
+import { Zap, ClipboardPaste, Trash2, ArrowDownToLine, Save, Printer, User, Phone, Hash, FileText, MapPin, AlertTriangle, CheckCircle2, Camera, X, CheckSquare, Square, Sparkles } from 'lucide-react';
 import { evaluateFieldConfidence, canSubmitWithFieldReviews } from '../../../application/ai/field-confidence.evaluator.js';
 import { persistImageOrderExtractions } from '../../../domain/image/image-extraction.service.js';
 
@@ -11,7 +11,7 @@ function formatVND(value) {
   return num.toLocaleString('vi-VN') + ' đ';
 }
 
-export default function ConfidenceReview({ data, rawText, imageThumbnail, onParse, onConfirm, onCancel, onSave }) {
+export default function ConfidenceReview({ data, rawText, imageThumbnail, onParse, onConfirm, onAiVerify, onCancel, onSave }) {
   const [formData, setFormData] = useState({
     name: data?.name || '',
     phone: data?.phone || '',
@@ -146,7 +146,7 @@ export default function ConfidenceReview({ data, rawText, imageThumbnail, onPars
               }
             }}
           />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: onAiVerify ? '1fr 105px 70px 55px' : '1fr 80px 80px', gap: '6px' }}>
             <button 
               className="af-btn-primary" 
               onClick={() => onParse(currentText)}
@@ -154,6 +154,16 @@ export default function ConfidenceReview({ data, rawText, imageThumbnail, onPars
             >
               <span style={{ display: 'inline-flex', alignItems: 'center' }}><Zap size={14} /></span> Tách Đơn
             </button>
+            {onAiVerify && (
+              <button 
+                className="af-btn-primary" 
+                style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', padding: '6px 8px', fontSize: '11px', fontWeight: 600 }}
+                onClick={() => onAiVerify(formData)}
+                title="Chạy AI đối soát & thẩm định nâng cao"
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}><Sparkles size={13} /></span> Thẩm định AI
+              </button>
+            )}
             <button 
               className="af-btn-primary" 
               style={{ background: '#3b82f6' }}
@@ -362,9 +372,33 @@ export default function ConfidenceReview({ data, rawText, imageThumbnail, onPars
           <span style={{ display: 'inline-flex', alignItems: 'center' }}><Save size={14} /></span> Lưu đơn
         </button>
       </div>
-      <button className="af-btn-print" style={{ marginTop: '0px' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center' }}><Printer size={14} /></span> In đơn
-      </button>
+      <div style={{ display: 'grid', gridTemplateColumns: onAiVerify ? '1.2fr 1fr' : '1fr', gap: '10px', marginTop: '0px' }}>
+        {onAiVerify && (
+          <button 
+            type="button"
+            className="af-btn-primary" 
+            style={{ 
+              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', 
+              color: 'white', 
+              padding: '8px 10px', 
+              fontSize: '12px', 
+              fontWeight: 600,
+              boxShadow: '0 2px 4px rgba(79, 70, 229, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}
+            onClick={() => onAiVerify(formData)}
+            title="Chạy AI đối soát & thẩm định nâng cao toàn bộ thông tin đơn hàng"
+          >
+            <Sparkles size={14} /> Thẩm định AI
+          </button>
+        )}
+        <button className="af-btn-print" style={{ marginTop: '0px' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}><Printer size={14} /></span> In đơn
+        </button>
+      </div>
       {(() => {
         const rawConf = formData.confidence;
         const hasConf = typeof rawConf === 'number' && Number.isFinite(rawConf);

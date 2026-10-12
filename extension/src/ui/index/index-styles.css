@@ -191,6 +191,31 @@ input, select, textarea {
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25);
 }
 
+.journey-btn-touch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 6px 12px;
+  background: #f59e0b;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.25);
+  transition: background 0.15s ease, transform 0.1s ease;
+  flex-shrink: 0;
+}
+
+.journey-btn-touch:active {
+  transform: scale(0.96);
+  background: #d97706;
+}
+
 /* Carrier Badge Pills */
 .carrier-pill,
 .carrier-badge {
@@ -271,6 +296,17 @@ input, select, textarea {
   color: var(--primary);
   border-color: var(--primary-border);
   font-weight: 800;
+}
+
+.filter-pill-btn.date-filter-pill {
+  font-size: 11.5px;
+  padding: 5px 11px;
+}
+
+.filter-pill-btn.date-filter-pill.active {
+  background: #ede9fe;
+  color: #6366f1;
+  border-color: #c7d2fe;
 }
 
 /* Bottom Navigation Bar */
