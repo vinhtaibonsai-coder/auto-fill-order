@@ -97,9 +97,26 @@ export default function CarrierJourneyDrawer({
     }
   }
 
+  // Tra cứu công khai trực tiếp trên cổng định vị chính thức vietnampost.vn (không cần login)
+  const handleOpenPublicTracking = async () => {
+    const code = trackingCode || orderCode;
+    if (code) {
+      await copyToClipboard(String(code).trim());
+    }
+    const publicUrl = `https://vietnampost.vn/vi/ca-nhan/chuyen-phat/chuyen-phat-trong-nuoc#!?tab=tra-cuu-hanh-trinh`;
+    if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
+      chrome.tabs.create({ url: publicUrl });
+    } else {
+      window.open(publicUrl, '_blank');
+    }
+  };
+
   // Tự động mở trang MyVNPost và bung popup hành trình
   const handleOpenMyVNPost = async () => {
     const code = trackingCode || orderCode;
+    if (code) {
+      await copyToClipboard(String(code).trim());
+    }
     if (typeof chrome === 'undefined' || !chrome.tabs) {
       window.open(`https://my.vnpost.vn/manage/order-manager`, '_blank');
       return;
@@ -126,7 +143,7 @@ export default function CarrierJourneyDrawer({
       chrome.tabs.create({
         url: `https://my.vnpost.vn/manage/order-manager`
       }, (newTab) => {
-        // Đợi 2.5s trang load rồi trigger
+        // Đợi 2.8s trang load rồi trigger
         setTimeout(() => {
           chrome.tabs.sendMessage(newTab.id, {
             action: 'VNPOST_AUTO_OPEN_JOURNEY_MODAL',
@@ -263,28 +280,53 @@ export default function CarrierJourneyDrawer({
             <span>Tải lại</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleOpenMyVNPost}
-            style={{
-              background: '#f59e0b',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 2px 6px rgba(245, 158, 11, 0.3)'
-            }}
-            title="Tự động mở tab MyVNPost và bung popup hành trình gốc"
-          >
-            <ExternalLink size={13} />
-            <span>Mở trên MyVNPost ↗</span>
-          </button>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={handleOpenPublicTracking}
+              style={{
+                background: '#0284c7',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 2px 5px rgba(2, 132, 199, 0.25)'
+              }}
+              title="Tra cứu trực tiếp trên Cổng Định Vị Bưu Gửi chính thức VNPost (vietnampost.vn)"
+            >
+              <ExternalLink size={12} />
+              <span>Cổng tra cứu trực tiếp ↗</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenMyVNPost}
+              style={{
+                background: '#f59e0b',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 11px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 2px 6px rgba(245, 158, 11, 0.3)'
+              }}
+              title="Tự động mở tab MyVNPost và bung popup hành trình gốc"
+            >
+              <ExternalLink size={12} />
+              <span>Mở trên MyVNPost ↗</span>
+            </button>
+          </div>
         </div>
 
         {/* Shipper & Delivery Contact Card */}
@@ -360,36 +402,59 @@ export default function CarrierJourneyDrawer({
               background: '#fffbeb',
               border: '1px solid #fef3c7',
               borderRadius: '10px',
-              padding: '14px',
+              padding: '16px 14px',
               textAlign: 'center'
             }}>
               <AlertCircle size={28} color="#d97706" style={{ margin: '0 auto 8px' }} />
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#92400e', marginBottom: '6px' }}>
                 Thông báo kết nối MyVNPost
               </div>
-              <div style={{ fontSize: '12px', color: '#b45309', lineHeight: 1.5, marginBottom: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#b45309', lineHeight: 1.5, marginBottom: '14px' }}>
                 {errorMsg}
               </div>
-              <button
-                type="button"
-                onClick={handleOpenMyVNPost}
-                style={{
-                  background: '#d97706',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '7px 14px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <ExternalLink size={13} />
-                <span>Mở tự động trên MyVNPost ↗</span>
-              </button>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleOpenPublicTracking}
+                  style={{
+                    background: '#0284c7',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '7px 12px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  title="Mở cổng tra cứu công khai vietnampost.vn (đã tự sao chép mã đơn)"
+                >
+                  <ExternalLink size={13} />
+                  <span>Tra cứu trên VietnamPost.vn ↗</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenMyVNPost}
+                  style={{
+                    background: '#d97706',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '7px 12px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <ExternalLink size={13} />
+                  <span>Mở trên MyVNPost ↗</span>
+                </button>
+              </div>
             </div>
           ) : traces.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 10px', color: '#64748b' }}>

@@ -3907,11 +3907,24 @@
               return;
             }
 
-            // Tìm ô input tìm kiếm trên trang quản lý đơn của MyVNPost
+            // 1. Thử click vào tab "Tất cả đơn hàng" nếu đang ở tab khác để đảm bảo tìm thấy đơn
+            const allTabs = Array.from(document.querySelectorAll('.ant-tabs-tab, div[role="tab"]'));
+            const allOrderTab = allTabs.find(t => {
+              const txt = (t.innerText || '').toLowerCase();
+              return txt.includes('tất cả') || txt.includes('all');
+            });
+            if (allOrderTab && !allOrderTab.classList.contains('ant-tabs-tab-active')) {
+              allOrderTab.click();
+              await new Promise(r => setTimeout(r, 400));
+            }
+
+            // 2. Tìm ô input tìm kiếm trên trang quản lý đơn của MyVNPost
             const searchInput = document.querySelector('input[placeholder*="Tìm theo" i]') ||
                                 document.querySelector('input[placeholder*="mã vận đơn" i]') ||
                                 document.querySelector('input[placeholder*="mã đơn" i]') ||
+                                document.querySelector('input[placeholder*="Tìm kiếm" i]') ||
                                 document.querySelector('.ant-input-search input') ||
+                                document.querySelector('.search-box input') ||
                                 document.querySelector('input.ant-input');
 
             if (searchInput) {
@@ -3925,7 +3938,7 @@
               searchInput.dispatchEvent(new Event('input', { bubbles: true }));
               searchInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-              // Bấm nút tìm kiếm hoặc Enter
+              // Bấm nút tìm kiếm hoặc trigger phím Enter
               const searchBtn = searchInput.closest('.ant-input-search')?.querySelector('button') ||
                                 searchInput.parentElement?.querySelector('button') ||
                                 document.querySelector('button[type="submit"]') ||
@@ -3933,19 +3946,24 @@
 
               if (searchBtn) {
                 searchBtn.click();
-              } else {
-                searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
               }
+              searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
 
               // Đợi bảng load xong và tự click vào icon / mã đơn để mở modal
-              setTimeout(() => {
+              let attempts = 0;
+              const checkInterval = setInterval(() => {
+                attempts++;
                 const rows = Array.from(document.querySelectorAll('tr, .ant-table-row'));
                 const matchedRow = rows.find(r => (r.innerText || '').toLowerCase().includes(code.toLowerCase()));
                 if (matchedRow) {
-                  const clickTarget = matchedRow.querySelector('a, button, span[style*="cursor"], .ant-typography, code') || matchedRow;
+                  clearInterval(checkInterval);
+                  // Ưu tiên click vào mã vận đơn hoặc icon mắt / thông tin hành trình
+                  const clickTarget = matchedRow.querySelector('a, button, span[style*="cursor"], .ant-typography, code, .anticon') || matchedRow;
                   clickTarget.click();
+                } else if (attempts >= 8) {
+                  clearInterval(checkInterval);
                 }
-              }, 900);
+              }, 600);
 
               sendResponse({ success: true, message: `Đang tự động tìm kiếm và mở hành trình đơn ${code}` });
             } else {
