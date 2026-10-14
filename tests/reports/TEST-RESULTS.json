@@ -27,7 +27,7 @@
     {
       "name": "test_quotas has valid values",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "test_configs has groq_keys as array",
@@ -107,12 +107,12 @@
     {
       "name": "File exists: src/runtime/content/index.js",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "File exists: src/domain/auth/auth.service.js",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: src/domain/auth/auth.session.js",
@@ -127,7 +127,7 @@
     {
       "name": "File exists: src/domain/audit/audit.service.js",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "File exists: src/domain/shop/shop.service.js",
@@ -137,7 +137,7 @@
     {
       "name": "File exists: src/domain/shop/invite.service.js",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: src/domain/member/member.service.js",
@@ -187,7 +187,7 @@
     {
       "name": "File exists: database/migrations/v111_remote_selector_release_safety.sql",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: database/migrations/v113_standardize_ai_usage_and_cost.sql",
@@ -197,12 +197,12 @@
     {
       "name": "File exists: database/migrations/v114_payment_reconciliation_and_idempotency.sql",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "File exists: database/migrations/v115_system_incidents_and_alert_rules.sql",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: database/migrations/v116_provider_resilience_and_analytics.sql",
@@ -212,7 +212,7 @@
     {
       "name": "File exists: database/migrations/v117_standardize_job_outbox_reliability.sql",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: database/migrations/v118_data_quality_intelligence.sql",
@@ -222,7 +222,7 @@
     {
       "name": "File exists: database/migrations/v119_retention_automation_snapshots.sql",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "File exists: database/migrations/v120_reseller_portal_production.sql",
@@ -232,7 +232,7 @@
     {
       "name": "File exists: database/migrations/v121_prepaid_wallet_production_hardening.sql",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: database/migrations/v122_unit_economics_intelligence.sql",
@@ -292,12 +292,12 @@
     {
       "name": "File exists: src/domain/admin/retention.engine.js",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: src/domain/admin/reseller.engine.js",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "File exists: src/domain/admin/wallet.engine.js",
@@ -307,7 +307,7 @@
     {
       "name": "File exists: src/domain/admin/unit-economics.engine.js",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: src/ui/index/quick-copy.persistence.js",
@@ -322,12 +322,12 @@
     {
       "name": "File exists: docs/runbooks/PAYMENT_GATEWAY_OUTAGE.md",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "File exists: docs/runbooks/AI_PROVIDER_OUTAGE.md",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: docs/runbooks/CARRIER_DOM_CHANGE.md",
@@ -347,12 +347,12 @@
     {
       "name": "File exists: docs/runbooks/BACKUP_AND_RESTORE.md",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "File exists: scripts/backup-restore-drill.js",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "File exists: tests/unit/g017-backup-rollback-runbook.test.mjs",
@@ -372,32 +372,32 @@
     {
       "name": "Migration database/migrations/v3_enterprise_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "4ms"
     },
     {
       "name": "Migration database/migrations/v3_1_rbac_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "4ms"
     },
     {
       "name": "Migration database/migrations/v4_saas_architecture.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "2ms"
     },
     {
       "name": "Migration database/migrations/v5_master_admin_schema.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "2ms"
     },
     {
       "name": "Migration database/migrations/v6_DEPRECATED_panel_accounts.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "2ms"
     },
     {
       "name": "Migration database/migrations/v109_admin_p1_p2_commercial_intelligence.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "2ms"
     },
     {
       "name": "Migration database/migrations/v110_admin_p3_retention_engine.sql contains required keywords",
@@ -407,57 +407,57 @@
     {
       "name": "Migration database/migrations/v111_remote_selector_release_safety.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "3ms"
     },
     {
       "name": "Migration database/migrations/v113_standardize_ai_usage_and_cost.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "3ms"
     },
     {
       "name": "Migration database/migrations/v114_payment_reconciliation_and_idempotency.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "5ms"
     },
     {
       "name": "Migration database/migrations/v115_system_incidents_and_alert_rules.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "2ms"
     },
     {
       "name": "Migration database/migrations/v116_provider_resilience_and_analytics.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "4ms"
     },
     {
       "name": "Migration database/migrations/v117_standardize_job_outbox_reliability.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "2ms"
     },
     {
       "name": "Migration database/migrations/v118_data_quality_intelligence.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "Migration database/migrations/v119_retention_automation_snapshots.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "5ms"
     },
     {
       "name": "Migration database/migrations/v120_reseller_portal_production.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "5ms"
     },
     {
       "name": "Migration database/migrations/v121_prepaid_wallet_production_hardening.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "2ms"
     },
     {
       "name": "Migration database/migrations/v122_unit_economics_intelligence.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "2ms"
     },
     {
       "name": "Migration database/migrations/v123_harden_admin_delete_shop_idor.sql contains required keywords",
@@ -467,7 +467,7 @@
     {
       "name": "Migration database/migrations/v124_secure_admin_repair_user_auth.sql contains required keywords",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "3ms"
     },
     {
       "name": "auth.service.js exports required functions",
@@ -477,7 +477,7 @@
     {
       "name": "auth.session.js handles session management",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "permission.service.js exports RBAC logic",
@@ -487,12 +487,12 @@
     {
       "name": "shop.service.js has CRUD operations",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "audit.service.js logs actions",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "admin-dashboard/master-admin.js is non-empty",
@@ -502,22 +502,22 @@
     {
       "name": "admin-dashboard/login.html has login form",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "6ms"
     },
     {
       "name": "AI Cost engine exports calculateAiCost",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "Incident engine exports evaluateSystemAlertRules and sanitizeIncidentPayload",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "Provider resilience engine exports calculateBackoffWithJitter and classifyError",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "Outbox reliability engine exports JOB_STATUS and calculateBackoffWithJitter",
@@ -527,7 +527,7 @@
     {
       "name": "Retention engine exports createPlaybookTaskWithDedup",
       "status": "✅ PASS",
-      "duration": "1ms"
+      "duration": "0ms"
     },
     {
       "name": "Reseller engine exports calculateCommission and calculateRefundReversal",
@@ -542,7 +542,7 @@
     {
       "name": "Unit economics engine exports calculateUnitEconomics",
       "status": "✅ PASS",
-      "duration": "0ms"
+      "duration": "1ms"
     },
     {
       "name": "Quick-copy persistence exports obfuscatePayload and clearAllLocalDrafts",
@@ -557,7 +557,7 @@
     {
       "name": "No hardcoded passwords in source code",
       "status": "✅ PASS",
-      "duration": "3ms"
+      "duration": "4ms"
     },
     {
       "name": "manifest.json has minimum permissions",
@@ -565,8 +565,8 @@
       "duration": "1ms"
     }
   ],
-  "startTime": "2026-10-13T09:38:27.747Z",
-  "endTime": "2026-10-13T09:38:27.851Z",
+  "startTime": "2026-10-14T02:49:40.741Z",
+  "endTime": "2026-10-14T02:49:40.905Z",
   "environment": {
     "offline_dev_mode": true,
     "supabase_configured": false,
