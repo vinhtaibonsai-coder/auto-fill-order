@@ -61,18 +61,22 @@ for (const tc of testCases) {
   assert.equal(lineParsed.amount, tc.expected, `Amount for "${tc.text}" must be ${tc.expected}, got ${lineParsed.amount}`);
 }
 
-// Kiểm thử đơn hàng thực tế của khách hàng (Lê Đức - cod 4tr1)
-const userOrder = sandbox.OrderProcessor.parse([
-  '39 phan bội châu phường Ba Đồn Quảng Trị',
-  '0917947575',
-  'Lê Đức ( acc kim sa tùng )',
-  'lũa cover',
-  'cod 4tr1'
+// Kiểm thử đơn hàng thực tế của khách hàng (Hoàng quang huấn - Cod 1.900)
+const huanOrder = sandbox.OrderProcessor.parse([
+  'Hoàng quang huấn',
+  'Tổ 10 sông hiến, phường thục phán, tỉnh cao bằng',
+  '0919.349.994',
+  'Cover',
+  'Cod 1.900'
 ].join('\n'));
 
-assert.equal(userOrder.phone, '0917947575');
-assert.equal(userOrder.name, 'Lê Đức');
-assert.equal(userOrder.codAmount, 4100000, 'COD for "cod 4tr1" must be 4,100,000đ (4tr1 = 4.100.000đ)');
-assert.doesNotMatch(userOrder.address.toLowerCase(), /cod/, 'Address must not contain trailing COD');
+assert.equal(huanOrder.phone, '0919349994');
+assert.equal(huanOrder.codAmount, 1900000, 'Cod 1.900 must be parsed as 1,900,000 VND, not 1,900 VND');
+
+// Đảm bảo đơn có chữ đ rõ ràng như "2.000đ" không bị nhân nhầm
+assert.equal(sandbox.OrderProcessor.parseCOD('Cod 2.000đ'), 2000);
+assert.equal(sandbox.OrderProcessor.parseCOD('Cod 1.900.000'), 1900000);
+assert.equal(sandbox.OrderProcessor.parseCOD('Cod 1.500'), 1500000);
 
 console.log('Order parser COD zero and million-decimal regression tests passed.');
+

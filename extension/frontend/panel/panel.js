@@ -472,9 +472,6 @@
                 <button id="btnParseOrder" class="btn-parse-primary">
                   ${PANEL_ICONS.parse} <span>Tách Đơn Tự Động</span>
                 </button>
-                <button id="btnAiVerify" class="btn-ai-verify" type="button" title="Chạy AI đối soát & thẩm định nâng cao">
-                  ✨ <span>Thẩm định AI</span>
-                </button>
                 <button id="btnClearOrder" class="btn-clear-secondary">
                   ${PANEL_ICONS.clear} <span>Xóa</span>
                 </button>
@@ -654,7 +651,7 @@
             <button id="btnFillJT" class="btn-fill btn-fill-jt" style="${jtBtnStyle};" disabled>
               ${PANEL_ICONS.fill} <span>Nhập đơn</span>
             </button>
-            <button id="btnAiVerifyBottom" class="btn-fill btn-ai-verify" type="button" title="Chạy AI đối soát & thẩm định nâng cao" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); flex: 1;">
+            <button id="btnAiVerify" class="btn-fill btn-ai-verify" type="button" title="Chạy AI đối soát & thẩm định nâng cao" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); flex: 1; display: none;">
               ✨ <span>Thẩm định AI</span>
             </button>
             <button id="btnSaveOrder" class="btn-fill btn-save-order" disabled>
@@ -813,14 +810,6 @@
       const btnAiVerify = root.getElementById('btnAiVerify');
       if (btnAiVerify) {
         btnAiVerify.addEventListener('click', () => {
-          if (typeof globalThis.handleAiVerifyManual === 'function') {
-            globalThis.handleAiVerifyManual();
-          }
-        });
-      }
-      const btnAiVerifyBottom = root.getElementById('btnAiVerifyBottom');
-      if (btnAiVerifyBottom) {
-        btnAiVerifyBottom.addEventListener('click', () => {
           if (typeof globalThis.handleAiVerifyManual === 'function') {
             globalThis.handleAiVerifyManual();
           }
@@ -2535,6 +2524,7 @@
 
     const fillButtons = [getVnpostEl('btnFillVNPost'), getVnpostEl('btnFillJT')].filter(Boolean);
     const saveButton = getVnpostEl('btnSaveOrder');
+    const aiVerifyButton = getVnpostEl('btnAiVerify');
     const emptyState = getVnpostEl('panel-empty-state');
     const validationError = getVnpostEl('panel-validation-error');
     const checklist = getVnpostEl('panel-validation-checklist');
@@ -2542,16 +2532,28 @@
     const setActionsEnabled = (enabled) => {
       fillButtons.forEach(button => { button.disabled = !enabled; });
       if (saveButton) saveButton.disabled = !enabled;
+      if (aiVerifyButton) {
+        aiVerifyButton.disabled = !enabled;
+        aiVerifyButton.style.display = enabled ? 'inline-flex' : 'none';
+      }
     };
 
     if (!data) {
       readinessBar.className = 'order-readiness-bar readiness-idle';
       readinessText.textContent = '○ Chờ bóc tách nội dung đơn';
       if (confBadge) confBadge.style.display = 'none';
+      if (aiVerifyButton) {
+        aiVerifyButton.disabled = true;
+        aiVerifyButton.style.display = 'none';
+      }
       setActionsEnabled(false);
       if (emptyState) emptyState.hidden = false;
       if (validationError) validationError.hidden = true;
       return;
+    }
+
+    if (aiVerifyButton) {
+      aiVerifyButton.style.display = 'inline-flex';
     }
 
     // Cập nhật Confidence Badge
@@ -2664,7 +2666,7 @@
       if (emptyState) emptyState.hidden = true;
       if (validationError) validationError.hidden = true;
       if (dupAlert) dupAlert.style.display = 'none';
-      [getVnpostEl('btnFillVNPost'), getVnpostEl('btnFillJT'), getVnpostEl('btnSaveOrder')]
+      [getVnpostEl('btnFillVNPost'), getVnpostEl('btnFillJT'), getVnpostEl('btnSaveOrder'), getVnpostEl('btnAiVerify')]
         .filter(Boolean).forEach(button => { button.disabled = true; });
 
       const readinessBar = getVnpostEl('order-readiness-bar');

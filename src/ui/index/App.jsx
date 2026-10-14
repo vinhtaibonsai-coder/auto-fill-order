@@ -1001,30 +1001,40 @@ export default function App() {
 
       {/* App Bar Header */}
       <header className="app-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, marginRight: '6px' }}>
           <div className="brand-badge">
             AF
           </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: '14.5px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>{activeShopName}</span>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{
+              fontWeight: 800,
+              fontSize: '14px',
+              color: 'var(--text-main)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeShopName}</span>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block', flexShrink: 0 }} />
             </div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               Auto Fill Mobile Workspace
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexShrink: 0 }}>
           <button
             onClick={loadAll}
             style={{
               background: 'var(--bg-main)',
               border: '1px solid var(--border)',
               borderRadius: '8px',
-              padding: '6px 10px',
-              fontSize: '12px',
+              padding: '6px 8px',
+              fontSize: '11.5px',
               cursor: 'pointer',
               fontWeight: 700,
               color: 'var(--text-main)',
@@ -1035,7 +1045,7 @@ export default function App() {
             title="Đồng bộ lại dữ liệu"
           >
             <RefreshCw size={13} className={isLoading ? 'spin-anim' : ''} />
-            <span>Đồng bộ</span>
+            <span style={{ display: 'none' }}>Đồng bộ</span>
           </button>
 
           <button
@@ -1455,39 +1465,45 @@ export default function App() {
                 fontSize: '13px',
                 flexWrap: 'wrap'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '130px' }}>
-                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>Từ:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '100px', maxWidth: '100%' }}>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600, flexShrink: 0 }}>Từ:</span>
                   <input
                     type="date"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
                     style={{
                       flex: 1,
+                      minWidth: 0,
+                      width: '100%',
                       padding: '6px 8px',
                       border: '1px solid var(--border)',
                       borderRadius: '8px',
                       background: 'var(--bg-main)',
                       color: 'var(--text-main)',
                       fontSize: '13px',
-                      outline: 'none'
+                      outline: 'none',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '130px' }}>
-                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>Đến:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '100px', maxWidth: '100%' }}>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600, flexShrink: 0 }}>Đến:</span>
                   <input
                     type="date"
                     value={customEnd}
                     onChange={(e) => setCustomEnd(e.target.value)}
                     style={{
                       flex: 1,
+                      minWidth: 0,
+                      width: '100%',
                       padding: '6px 8px',
                       border: '1px solid var(--border)',
                       borderRadius: '8px',
                       background: 'var(--bg-main)',
                       color: 'var(--text-main)',
                       fontSize: '13px',
-                      outline: 'none'
+                      outline: 'none',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>

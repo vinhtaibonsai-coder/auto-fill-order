@@ -57,7 +57,14 @@ const OrderProcessor = {
     // 3. Dạng số có dấu chấm phân cách hàng nghìn (vd: "1.800.000", "300.000", "50.000")
     if (/^\d{1,3}(?:\.\d{3})+$/.test(normalized)) {
       const digits = normalized.replace(/\./g, '');
-      return parseInt(digits, 10) || 0;
+      const num = parseInt(digits, 10) || 0;
+      // Đặc thù thương mại điện tử VN: Người bán viết "Cod 1.900", "1.500", "2.000" (dưới 10.000 và chỉ có 1 dấu chấm, không có đuôi 'đ'/'vnd')
+      // là cách viết tắt nghìn đồng: 1.900k = 1.900.000đ (tương tự 1900 -> 1.900.000đ)
+      const hasExplicitDong = /(?:đ|d|vnd|đồng|dong)/i.test(s);
+      if (num >= 1000 && num < 10000 && (normalized.match(/\./g) || []).length === 1 && !hasExplicitDong) {
+        return num * 1000;
+      }
+      return num;
     }
 
     // 4. Dạng số nguyên thuần (vd: "300", "250", "850", "50000", "1800000")

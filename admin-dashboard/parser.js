@@ -58,7 +58,12 @@
       // 3. Dạng số có dấu chấm phân cách hàng nghìn (vd: "1.800.000", "300.000", "50.000")
       if (/^\d{1,3}(?:\.\d{3})+$/.test(normalized)) {
         const digits = normalized.replace(/\./g, '');
-        return parseInt(digits, 10) || 0;
+        const num = parseInt(digits, 10) || 0;
+        const hasExplicitDong = /(?:đ|d|vnd|đồng|dong)/i.test(s);
+        if (num >= 1000 && num < 10000 && (normalized.match(/\./g) || []).length === 1 && !hasExplicitDong) {
+          return num * 1000;
+        }
+        return num;
       }
 
       // 4. Dạng số nguyên thuần (vd: "300", "250", "850", "50000", "1800000")
