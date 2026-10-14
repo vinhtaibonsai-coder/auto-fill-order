@@ -3759,22 +3759,64 @@
               'cApiKey': '19001111'
             };
 
-            // 1. Tìm đơn hàng trước để lấy orderHdrId & thông tin cơ bản
+            // 1. Tìm đơn hàng qua các endpoint chính thức của MyVNPost
             let orderObj = null;
+            let traces = [];
+            let detailData = null;
+
+            // Chiến lược 1: Thử trực tiếp qua API chi tiết lịch sử trạng thái chính thức của VNPost (orderstatushistoryfindorg)
             try {
-              const resSearch = await fetch(`https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/searchByOrderCodeOrItemCode?searchValue=${encodeURIComponent(code)}`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ searchValue: code })
+              const resHist = await fetch(`https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderTemplate/orderstatushistoryfindorg?itemCode=${encodeURIComponent(code)}`, {
+                method: 'GET',
+                headers
               });
-              if (resSearch.ok) {
-                const sData = await resSearch.json().catch(() => null);
-                const c = Array.isArray(sData) ? sData[0] : (sData?.data || sData);
-                if (c && (c.orderHdrId || c.itemCode || c.orderCode)) {
-                  orderObj = c;
+              if (resHist.ok) {
+                const histData = await resHist.json().catch(() => null);
+                const listHist = Array.isArray(histData) ? histData : (histData?.data || histData?.lstTrace || []);
+                if (Array.isArray(listHist) && listHist.length > 0) {
+                  traces = listHist.map(item => ({
+                    statusDate: item.createdDate || item.date || item.statusDate || item.createDate,
+                    statusName: item.orderStatusName || item.statusName || item.action || 'Cập nhật hành trình',
+                    location: item.postOfficeName || item.location || item.address || item.senderAddress || '',
+                    note: item.note || item.description || ''
+                  }));
                 }
               }
             } catch (_) {}
+
+            // Chiến lược 2: Lấy thông tin đơn hàng đầy đủ từ findOrderHdrEntityByItemCodeLastVer
+            try {
+              const resVer = await fetch(`https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/findOrderHdrEntityByItemCodeLastVer?itemCode=${encodeURIComponent(code)}`, {
+                method: 'GET',
+                headers
+              });
+              if (resVer.ok) {
+                const vData = await resVer.json().catch(() => null);
+                const orderData = vData?.data || vData;
+                if (orderData && (orderData.itemCode || orderData.orderHdrId || orderData.orderCode)) {
+                  orderObj = orderData;
+                  detailData = orderData;
+                }
+              }
+            } catch (_) {}
+
+            // Chiến lược 3: Tìm kiếm theo OrderCode hoặc ItemCode nếu chưa tìm thấy thông tin đơn
+            if (!orderObj) {
+              try {
+                const resSearch = await fetch(`https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/searchByOrderCodeOrItemCode?searchValue=${encodeURIComponent(code)}`, {
+                  method: 'POST',
+                  headers,
+                  body: JSON.stringify({ searchValue: code })
+                });
+                if (resSearch.ok) {
+                  const sData = await resSearch.json().catch(() => null);
+                  const c = Array.isArray(sData) ? sData[0] : (sData?.data || sData);
+                  if (c && (c.orderHdrId || c.itemCode || c.orderCode)) {
+                    orderObj = c;
+                  }
+                }
+              } catch (_) {}
+            }
 
             if (!orderObj) {
               try {
@@ -3797,40 +3839,40 @@
             }
 
             const orderHdrId = orderObj?.orderHdrId || orderObj?.id;
-            let traces = [];
-            let detailData = null;
 
-            // 2. Thử truy vấn các endpoint hành trình thực tế của MyVNPost
-            const journeyEndpoints = [
-              `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/get-tracking-journey?itemCode=${encodeURIComponent(code)}`,
-              `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/get-tracking-journey?orderCode=${encodeURIComponent(code)}`,
-              `https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/getDetailOrderHdr/${orderHdrId || 0}`,
-              `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/tracking?code=${encodeURIComponent(code)}`,
-              `https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/traceOrder?itemCode=${encodeURIComponent(code)}`
-            ];
+            // Chiến lược 4: Thử tiếp các endpoint fallback nếu traces vẫn trống
+            if (traces.length === 0) {
+              const journeyEndpoints = [
+                `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/get-tracking-journey?itemCode=${encodeURIComponent(code)}`,
+                `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/get-tracking-journey?orderCode=${encodeURIComponent(code)}`,
+                `https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/getDetailOrderHdr/${orderHdrId || 0}`,
+                `https://api-pre-my.vnpost.vn/myvnp-web/v1/orders/tracking?code=${encodeURIComponent(code)}`,
+                `https://api-pre-my.vnpost.vn/myvnp-web/v1/OrderHdr/traceOrder?itemCode=${encodeURIComponent(code)}`
+              ];
 
-            for (const ep of journeyEndpoints) {
-              if (ep.includes('/getDetailOrderHdr/0')) continue;
-              try {
-                const resJ = await fetch(ep, {
-                  method: 'GET',
-                  headers
-                });
-                if (resJ.ok) {
-                  const jData = await resJ.json().catch(() => null);
-                  if (jData) {
-                    detailData = jData;
-                    const possibleList = jData?.lstTrace || jData?.traces || jData?.journey || jData?.data?.traces || jData?.data || (Array.isArray(jData) ? jData : null);
-                    if (Array.isArray(possibleList) && possibleList.length > 0) {
-                      traces = possibleList;
-                      break;
+              for (const ep of journeyEndpoints) {
+                if (ep.includes('/getDetailOrderHdr/0')) continue;
+                try {
+                  const resJ = await fetch(ep, {
+                    method: 'GET',
+                    headers
+                  });
+                  if (resJ.ok) {
+                    const jData = await resJ.json().catch(() => null);
+                    if (jData) {
+                      detailData = detailData || jData;
+                      const possibleList = jData?.lstTrace || jData?.traces || jData?.journey || jData?.data?.traces || jData?.data || (Array.isArray(jData) ? jData : null);
+                      if (Array.isArray(possibleList) && possibleList.length > 0) {
+                        traces = possibleList;
+                        break;
+                      }
                     }
                   }
-                }
-              } catch (_) {}
+                } catch (_) {}
+              }
             }
 
-            // 3. Nếu không có traces từ endpoint get-tracking-journey, tổng hợp từ order detail
+            // Chiến lược 5: Nếu không có traces từ API lịch sử nhưng có orderObj, tổng hợp từ order detail
             if (traces.length === 0 && orderObj) {
               traces = [
                 {

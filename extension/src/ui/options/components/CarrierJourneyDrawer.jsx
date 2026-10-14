@@ -58,7 +58,7 @@ export default function CarrierJourneyDrawer({
       }
 
       const targetTab = tabs[0];
-      const res = await new Promise(resolve => {
+      const fetchPromise = new Promise(resolve => {
         chrome.tabs.sendMessage(targetTab.id, {
           action: 'VNPOST_FETCH_JOURNEY_VIA_WEB',
           code: trackingCode || orderCode
@@ -73,6 +73,17 @@ export default function CarrierJourneyDrawer({
           resolve(response || { success: false, error: 'Không nhận được dữ liệu từ VNPost.' });
         });
       });
+
+      const timeoutPromise = new Promise(resolve => {
+        setTimeout(() => {
+          resolve({
+            success: false,
+            error: 'Hết thời gian chờ phản hồi từ tab MyVNPost. Vui lòng bấm "Mở trên MyVNPost" bên dưới để xem trực tiếp.'
+          });
+        }, 8000);
+      });
+
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
 
       if (res && res.success) {
         setJourneyData(res);
